@@ -10,7 +10,7 @@
   let hasQuestion = $derived(input !== '');
   let notation = $state('1d20');
 
-  async function roll() {
+  function roll() {
     const roller = new DiceRoller();
     roller.roll(notation);
 
