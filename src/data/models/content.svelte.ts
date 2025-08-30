@@ -1,4 +1,4 @@
-import type { ContentData } from "./types";
+import type { ContentData } from "../types";
 
 export function createContent() {
   let value = $state(JSON.parse(localStorage.getItem('content') || '{}'));
