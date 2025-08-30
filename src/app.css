@@ -16,6 +16,9 @@
   --theme-primary: #0c0a09;
   --theme-secondary: #44403c;
   --theme-tertiary: #78716c;
+  --theme-success: #22c55e;
+  --theme-warning: #eab308;
+  --theme-danger: #ef4444;
 }
 
 /* Base styles using CSS custom properties */
