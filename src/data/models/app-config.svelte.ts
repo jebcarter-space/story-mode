@@ -26,6 +26,13 @@ export function createAppConfig() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        
+        // Migration: rename writerMode to documentMode
+        if (parsed.features && 'writerMode' in parsed.features && !('documentMode' in parsed.features)) {
+          parsed.features.documentMode = parsed.features.writerMode;
+          delete parsed.features.writerMode;
+        }
+        
         // Merge with defaults to handle missing properties
         return {
           ...DEFAULT_CONFIG,

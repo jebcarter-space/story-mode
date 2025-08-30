@@ -7,7 +7,23 @@
   import { createAppConfig } from '../../data/models/app-config.svelte';
 
   const appConfig = createAppConfig();
-  let isDocumentMode = $state(localStorage.getItem('story-document-mode') === 'true');
+  
+  // Migration: handle old 'story-writer-mode' localStorage key
+  let isDocumentMode = $state((() => {
+    const newKey = localStorage.getItem('story-document-mode');
+    if (newKey !== null) {
+      return newKey === 'true';
+    }
+    // Check for old key and migrate
+    const oldKey = localStorage.getItem('story-writer-mode');
+    if (oldKey !== null) {
+      const value = oldKey === 'true';
+      localStorage.setItem('story-document-mode', value.toString());
+      localStorage.removeItem('story-writer-mode'); // Clean up old key
+      return value;
+    }
+    return false; // Default to Game Mode
+  })());
 
   // Save document mode preference to localStorage
   $effect(() => {
