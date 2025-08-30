@@ -44,7 +44,7 @@ export function createTemplates() {
 
   function getByCategory(category: string): TemplateList {
     const filtered: TemplateList = {};
-    for (const [key, template] of Object.entries(value)) {
+    for (const [key, template] of Object.entries(value) as [string, Template][]) {
       if (template.category === category) {
         filtered[key] = template;
       }
@@ -54,10 +54,14 @@ export function createTemplates() {
 
   function getCategories(): string[] {
     const categories = new Set<string>();
-    for (const template of Object.values(value)) {
+    for (const template of Object.values(value) as Template[]) {
       categories.add(template.category);
     }
     return Array.from(categories).sort();
+  }
+
+  function reload() {
+    value = JSON.parse(localStorage.getItem('templates') || '{}');
   }
 
   return {
@@ -72,5 +76,6 @@ export function createTemplates() {
     exportTemplates,
     getByCategory,
     getCategories,
+    reload,
   };
 }

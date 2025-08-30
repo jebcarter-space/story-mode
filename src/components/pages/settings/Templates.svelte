@@ -15,7 +15,7 @@
   import ListIcon from '../../../assets/list.svg';
   import CloseIcon from '../../../assets/trash.svg';
 
-  let open: TemplateViews = $state('view');
+  let open: TemplateViews = $state('');
   let template: Template = $state({
     name: '',
     description: '',
@@ -106,8 +106,8 @@
 
   function loadDefaults() {
     loadDefaultTemplates();
-    // Refresh the templates
-    templates.value = JSON.parse(localStorage.getItem('templates') || '{}');
+    // Force reactive update by reloading from localStorage
+    templates.reload();
   }
 
   function getTemplatesByCategory(category: string) {
