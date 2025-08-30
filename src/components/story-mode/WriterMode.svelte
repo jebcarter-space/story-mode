@@ -15,13 +15,19 @@
   import LLMIndicator from './LLMIndicator.svelte';
   import Sidebar from './Sidebar.svelte';
   import ExportUtilities from './ExportUtilities.svelte';
+  import DocumentMode from './DocumentMode.svelte';
   
-  let isWriterMode = $state(true);
+  let isDocumentMode = $state(localStorage.getItem('writer-document-mode') === 'true');
   let isFullscreen = $state(false);
   let panelPosition = $state({ x: 20, y: 100 });
   let panelSize = $state({ width: 320, height: 500 });
   let currentPanel: 'controls' | 'export' = $state('controls');
   let panelLocation: 'left' | 'right' | 'bottom' = $state('left');
+  
+  // Document mode settings
+  let showSystemContent = $state(localStorage.getItem('document-show-system') === 'true');
+  let focusMode = $state(false);
+  let typewriterMode = $state(false);
   
   let writingArea: HTMLElement;
   let writingText = $state('');
@@ -59,6 +65,20 @@
       localStorage.setItem('selected-llm-profile', selectedProfileKey);
     }
   });
+
+  $effect(() => {
+    // Save document mode preference to localStorage when it changes
+    localStorage.setItem('writer-document-mode', isDocumentMode.toString());
+  });
+
+  $effect(() => {
+    // Save system content visibility preference
+    localStorage.setItem('document-show-system', showSystemContent.toString());
+  });
+
+  function toggleDocumentMode() {
+    isDocumentMode = !isDocumentMode;
+  }
 
   function toggleFullscreen() {
     isFullscreen = !isFullscreen;
@@ -255,8 +275,17 @@
   <!-- Header Bar -->
   {#if !isFullscreen}
     <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border-b">
-      <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300">Writer Mode</h2>
+      <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {isDocumentMode ? 'Document Mode' : 'Writer Mode'}
+      </h2>
       <div class="flex items-center gap-2">
+        <button
+          onclick={toggleDocumentMode}
+          class="px-2 py-1 text-xs {isDocumentMode ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'} rounded hover:opacity-80"
+          title="Toggle document mode"
+        >
+          {isDocumentMode ? '📄 Document' : '📝 Writer'}
+        </button>
         <button
           onclick={() => currentPanel = currentPanel === 'controls' ? 'export' : 'controls'}
           class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -285,7 +314,17 @@
   {/if}
 
   <!-- Main Writing Area -->
-  <div class="flex-1 flex flex-col relative">
+  {#if isDocumentMode}
+    <!-- Document Mode - Seamless document editing -->
+    <DocumentMode 
+      bind:showSystemContent={showSystemContent}
+      bind:focusMode={focusMode}
+      bind:typewriterMode={typewriterMode}
+      bind:isFullscreen={isFullscreen}
+    />
+  {:else}
+    <!-- Traditional Writer Mode - Separate input/output sections -->
+    <div class="flex-1 flex flex-col relative">
     <!-- Content Display -->
     <div 
       bind:this={contentDisplay}
@@ -361,7 +400,8 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  {/if}
 
   <!-- Floating Control Panel -->
   <FloatingPanel
@@ -384,6 +424,39 @@
                   <option value={key}>{profile.name}</option>
                 {/each}
               </select>
+            </div>
+          {/if}
+          
+          {#if isDocumentMode}
+            <!-- Document Mode Settings -->
+            <div class="p-3 border-b">
+              <h4 class="text-sm font-medium mb-3">Document Settings</h4>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    bind:checked={showSystemContent}
+                    class="text-blue-600"
+                  />
+                  <span class="text-sm">Show system content</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    bind:checked={focusMode}
+                    class="text-blue-600"
+                  />
+                  <span class="text-sm">Focus mode</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    bind:checked={typewriterMode}
+                    class="text-blue-600"
+                  />
+                  <span class="text-sm">Typewriter mode</span>
+                </label>
+              </div>
             </div>
           {/if}
           
