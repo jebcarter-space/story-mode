@@ -8,18 +8,18 @@
   let value = $state('Settings');
 
   let filteredPages = $derived.by(() => {
-    const pages = [settingPages[0], settingPages[1]]; // Always show Settings and Feature Toggles
+    const pages = [settingPages[0], settingPages[1], settingPages[2]]; // Always show Settings, Feature Toggles, and Theme
     
     if (appConfig.features.enhancedTables) {
-      pages.push(settingPages[2]); // Custom Tables
+      pages.push(settingPages[3]); // Custom Tables
     }
     
     if (appConfig.features.templates) {
-      pages.push(settingPages[3]); // Templates
+      pages.push(settingPages[4]); // Templates
     }
     
     if (appConfig.features.llmIntegration) {
-      pages.push(settingPages[4]); // LLM Settings
+      pages.push(settingPages[5]); // LLM Settings
     }
     
     return pages;
