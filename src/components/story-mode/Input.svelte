@@ -96,11 +96,25 @@
       content.value[addedTimestamp].output = responseText;
       localStorage.setItem('content', JSON.stringify(content.value));
 
+      // If no response was generated, show error
+      if (!responseText.trim()) {
+        llmError = 'No response generated from LLM';
+        content.remove(addedTimestamp);
+      }
+
     } catch (error) {
       if (error instanceof Error) {
-        llmError = error.message;
+        if (error.message.includes('cancelled')) {
+          llmError = 'Generation cancelled by user';
+        } else if (error.message.includes('API request failed')) {
+          llmError = `API Error: ${error.message}`;
+        } else if (error.message.includes('fetch')) {
+          llmError = 'Network error - check your connection and API endpoint';
+        } else {
+          llmError = error.message;
+        }
       } else {
-        llmError = 'An unexpected error occurred';
+        llmError = 'An unexpected error occurred during generation';
       }
       console.error('LLM generation failed:', error);
     } finally {

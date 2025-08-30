@@ -2,6 +2,7 @@
   import type { LLMProfile, LLMViews } from "../../../data/types";
   import { createLLMProfiles } from "../../../data/models/llm-profiles.svelte.ts";
   import { LLMService } from "../../../lib/llm-service";
+  import { loadDefaultLLMProfiles } from "../../../lib/default-llm-profiles";
   import SettingPage from "../../ui/SettingPage.svelte";
 
   let profiles = createLLMProfiles();
@@ -110,6 +111,12 @@
     open = 'export';
   }
 
+  function loadDefaults() {
+    loadDefaultLLMProfiles();
+    // Force reactive update by reloading from localStorage
+    profiles.reload();
+  }
+
   function getDefaultEndpoint(provider: string): string {
     switch (provider) {
       case 'openai':
@@ -167,6 +174,9 @@
       </button>
       <button onclick={openExport} class="px-3 py-1 bg-blue-500 text-white rounded text-sm">
         Export
+      </button>
+      <button onclick={loadDefaults} class="px-3 py-1 bg-green-500 text-white rounded text-sm">
+        Load Defaults
       </button>
     </div>
   </div>

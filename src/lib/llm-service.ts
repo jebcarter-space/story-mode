@@ -131,58 +131,81 @@ export class LLMService {
       stream: true
     };
 
-    try {
-      const response = await fetch(this.getEndpoint(), {
-        method: 'POST',
-        headers: this.buildHeaders(),
-        body: JSON.stringify(request),
-        signal
-      });
+    let retries = 0;
+    const maxRetries = 3;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      if (!response.body) {
-        throw new Error('Response body is null');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
+    while (retries <= maxRetries) {
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        const response = await fetch(this.getEndpoint(), {
+          method: 'POST',
+          headers: this.buildHeaders(),
+          body: JSON.stringify(request),
+          signal
+        });
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+        if (!response.ok) {
+          const errorText = await response.text();
+          
+          // Check for specific error types that might benefit from retry
+          if (response.status >= 500 && retries < maxRetries) {
+            retries++;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000)); // Exponential backoff
+            continue;
+          }
+          
+          throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+        }
 
-          for (const line of lines) {
-            if (line.trim() === '') continue;
-            if (line.trim() === 'data: [DONE]') return;
-            if (!line.startsWith('data: ')) continue;
+        if (!response.body) {
+          throw new Error('Response body is null');
+        }
 
-            try {
-              const data = JSON.parse(line.slice(6));
-              const delta = data.choices?.[0]?.delta;
-              if (delta?.content) {
-                yield delta.content;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              if (line.trim() === 'data: [DONE]') return;
+              if (!line.startsWith('data: ')) continue;
+
+              try {
+                const data = JSON.parse(line.slice(6));
+                const delta = data.choices?.[0]?.delta;
+                if (delta?.content) {
+                  yield delta.content;
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse streaming response:', parseError);
               }
-            } catch (parseError) {
-              console.warn('Failed to parse streaming response:', parseError);
             }
           }
+        } finally {
+          reader.releaseLock();
         }
-      } finally {
-        reader.releaseLock();
+        return; // Successful completion, exit retry loop
+      } catch (error) {
+        if (signal?.aborted) {
+          throw new Error('Generation cancelled by user');
+        }
+        
+        if (retries < maxRetries && 
+            (error instanceof TypeError || // Network errors
+             (error instanceof Error && error.message.includes('fetch')))) {
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+          continue;
+        }
+        
+        throw error;
       }
-    } catch (error) {
-      if (signal?.aborted) {
-        throw new Error('Generation cancelled by user');
-      }
-      throw error;
     }
   }
 
@@ -204,27 +227,51 @@ export class LLMService {
       stream: false
     };
 
-    try {
-      const response = await fetch(this.getEndpoint(), {
-        method: 'POST',
-        headers: this.buildHeaders(),
-        body: JSON.stringify(request),
-        signal
-      });
+    let retries = 0;
+    const maxRetries = 3;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-      }
+    while (retries <= maxRetries) {
+      try {
+        const response = await fetch(this.getEndpoint(), {
+          method: 'POST',
+          headers: this.buildHeaders(),
+          body: JSON.stringify(request),
+          signal
+        });
 
-      const data: LLMResponse = await response.json();
-      return data.choices?.[0]?.message?.content || '';
-    } catch (error) {
-      if (signal?.aborted) {
-        throw new Error('Generation cancelled by user');
+        if (!response.ok) {
+          const errorText = await response.text();
+          
+          // Check for specific error types that might benefit from retry
+          if (response.status >= 500 && retries < maxRetries) {
+            retries++;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000)); // Exponential backoff
+            continue;
+          }
+          
+          throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data: LLMResponse = await response.json();
+        return data.choices?.[0]?.message?.content || '';
+      } catch (error) {
+        if (signal?.aborted) {
+          throw new Error('Generation cancelled by user');
+        }
+        
+        if (retries < maxRetries && 
+            (error instanceof TypeError || // Network errors
+             (error instanceof Error && error.message.includes('fetch')))) {
+          retries++;
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+          continue;
+        }
+        
+        throw error;
       }
-      throw error;
     }
+    
+    throw new Error('Maximum retries exceeded');
   }
 
   // Test connection to the API
