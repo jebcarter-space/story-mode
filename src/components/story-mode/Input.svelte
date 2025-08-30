@@ -2,6 +2,7 @@
   import { content } from "../../App.svelte";
   import { createInput } from "../../data/models/input.svelte";
   import { createLLMProfiles } from "../../data/models/llm-profiles.svelte";
+  import { createRepositories } from "../../data/models/repositories.svelte";
   import type { ContentData } from "../../data/types";
   import { addInput, getAnswer } from "./functions";
   import { LLMService } from "../../lib/llm-service";
@@ -15,6 +16,7 @@
   let cleared = $derived(input.cleared);
   
   let profiles = createLLMProfiles();
+  let repositories = createRepositories();
   let selectedProfileKey = $state(localStorage.getItem('selected-llm-profile') || '');
   let isGenerating = $state(false);
   let llmError = $state('');
@@ -63,12 +65,20 @@
     try {
       const service = new LLMService(selectedProfile);
       
+      // Gather repository items
+      const forcedItems = repositories.getForced();
+      const keywordMatches = repositories.getMatchingKeywords(question + ' ' + contentArray.map(c => c.input + ' ' + c.output).join(' '));
+      
+      // Combine and deduplicate repository items
+      const repositoryItems = Array.from(new Set([...forcedItems, ...keywordMatches]));
+      
       // Prepare context from story content
       const options = {
         context: contentArray,
         maxContextEntries: selectedProfile.maxContextEntries,
         includeSystemContent: selectedProfile.includeSystemContent,
-        signal: abortController.signal
+        signal: abortController.signal,
+        repositoryItems
       };
 
       let responseText = '';
