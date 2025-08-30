@@ -5,7 +5,7 @@
   import { createRepositories } from "../../data/models/repositories.svelte";
   import type { ContentData } from "../../data/types";
   import { addInput, getAnswer } from "./functions";
-  import { LLMService } from "../../lib/llm-service";
+  import { LLMService, type TokenCountInfo } from "../../lib/llm-service";
   import LLMIndicator from "./LLMIndicator.svelte";
 
   export let input = createInput();
@@ -21,6 +21,7 @@
   let isGenerating = $state(false);
   let llmError = $state('');
   let abortController: AbortController | null = null;
+  let tokenInfo = $state<TokenCountInfo | undefined>(undefined);
 
   // Get the currently selected profile
   let selectedProfile = $derived(
@@ -162,6 +163,42 @@
       }
     }
   }
+
+  // Update token count when content or profile changes
+  async function updateTokenCount() {
+    if (!selectedProfile) {
+      tokenInfo = undefined;
+      return;
+    }
+
+    try {
+      const service = new LLMService(selectedProfile);
+      
+      // Get forced repository items
+      const allRepoItems = Object.entries(repositories.value)
+        .map(([key, item]) => item)
+        .filter(item => item.forceInContext);
+
+      const options = {
+        context: contentArray,
+        maxContextEntries: selectedProfile.maxContextEntries,
+        includeSystemContent: selectedProfile.includeSystemContent,
+        repositoryItems: allRepoItems
+      };
+
+      tokenInfo = await service.getContextTokenCount(options);
+    } catch (error) {
+      console.warn('Failed to update token count:', error);
+      tokenInfo = undefined;
+    }
+  }
+
+  // Update token count when relevant data changes
+  $effect(() => {
+    if (selectedProfile && contentArray) {
+      updateTokenCount();
+    }
+  });
 </script>
 
 <!-- Profile Selection and Status -->
@@ -187,6 +224,7 @@
   profileName={selectedProfile?.name || ''}
   error={llmError}
   onCancel={cancelGeneration}
+  tokenInfo={tokenInfo}
 />
 
 <textarea

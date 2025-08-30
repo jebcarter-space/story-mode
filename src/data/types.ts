@@ -180,6 +180,9 @@ export interface LLMProfile {
   };
   includeSystemContent: boolean;
   maxContextEntries: number;
+  // Context size management
+  maxContextSize?: number; // Manual configuration for non-KoboldCPP providers
+  autoDetectContextSize?: boolean; // Auto-detect for KoboldCPP
   created: number;
   updated: number;
 }

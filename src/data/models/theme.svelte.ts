@@ -16,6 +16,9 @@ export const themeDefinitions = {
       buttonHover: '#a8a29e', // stone-400
       disabled: '#f5f5f4', // stone-100
       focus: '#a8a29e', // stone-400
+      success: '#22c55e', // green-500
+      warning: '#eab308', // yellow-500
+      danger: '#ef4444', // red-500
     }
   },
   dark: {
@@ -32,6 +35,9 @@ export const themeDefinitions = {
       buttonHover: '#292524', // stone-800
       disabled: '#a8a29e', // stone-400
       focus: '#292524', // stone-800
+      success: '#22c55e', // green-500
+      warning: '#eab308', // yellow-500
+      danger: '#ef4444', // red-500
     }
   },
   nord: {
@@ -51,6 +57,9 @@ export const themeDefinitions = {
       primary: '#81A1C1', // Frost 2
       secondary: '#8FBCBB', // Frost 0
       tertiary: '#BF616A', // Aurora 0
+      success: '#8FBCBB', // Frost 0 (greenish)
+      warning: '#EBCB8B', // Aurora 3 (yellow)
+      danger: '#BF616A', // Aurora 0 (red)
     }
   },
   dracula: {
@@ -70,6 +79,9 @@ export const themeDefinitions = {
       primary: '#8BE9FD', // Cyan
       secondary: '#50FA7B', // Green
       tertiary: '#FFB86C', // Orange
+      success: '#50FA7B', // Green
+      warning: '#F1FA8C', // Yellow
+      danger: '#FF5555', // Red
     }
   },
   gruvbox: {
@@ -89,6 +101,9 @@ export const themeDefinitions = {
       primary: '#83a598', // blue
       secondary: '#b8bb26', // green
       tertiary: '#fb4934', // red
+      success: '#b8bb26', // green
+      warning: '#fabd2f', // yellow
+      danger: '#fb4934', // red
     }
   },
   solarized: {
@@ -108,6 +123,9 @@ export const themeDefinitions = {
       primary: '#859900', // green
       secondary: '#b58900', // yellow
       tertiary: '#dc322f', // red
+      success: '#859900', // green
+      warning: '#b58900', // yellow
+      danger: '#dc322f', // red
     }
   }
 } as const;

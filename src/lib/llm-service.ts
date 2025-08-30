@@ -61,6 +61,17 @@ export interface LLMGenerationOptions {
   repositoryItems?: RepositoryItem[];
 }
 
+export interface TokenCountInfo {
+  tokens: number;
+  isEstimate: boolean;
+  maxContextSize?: number;
+}
+
+export interface KoboldCPPInfo {
+  max_context_length: number;
+  max_length: number;
+}
+
 export class LLMService {
   private resolver: PlaceholderResolver;
 
@@ -395,5 +406,105 @@ export class LLMService {
       console.warn('Connection test failed:', error);
       return false;
     }
+  }
+
+  // Get context size information for the current profile
+  async getContextSize(): Promise<number | null> {
+    if (this.profile.provider === 'koboldcpp' && this.profile.autoDetectContextSize !== false) {
+      try {
+        return await this.getKoboldCPPContextSize();
+      } catch (error) {
+        console.warn('Failed to auto-detect KoboldCPP context size:', error);
+        return this.profile.maxContextSize || null;
+      }
+    }
+    return this.profile.maxContextSize || null;
+  }
+
+  // Get context size from KoboldCPP info endpoint
+  private async getKoboldCPPContextSize(): Promise<number> {
+    const baseUrl = this.getKoboldCPPBaseUrl();
+    const response = await fetch(`${baseUrl}/api/v1/info`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get KoboldCPP info: ${response.status}`);
+    }
+
+    const info: KoboldCPPInfo = await response.json();
+    return info.max_context_length;
+  }
+
+  // Get token count for text content
+  async getTokenCount(text: string): Promise<TokenCountInfo> {
+    if (this.profile.provider === 'koboldcpp') {
+      try {
+        const tokens = await this.getKoboldCPPTokenCount(text);
+        const maxContextSize = await this.getContextSize();
+        return {
+          tokens,
+          isEstimate: false,
+          maxContextSize: maxContextSize || undefined
+        };
+      } catch (error) {
+        console.warn('Failed to get KoboldCPP token count, falling back to estimation:', error);
+        return this.estimateTokenCount(text);
+      }
+    }
+    return this.estimateTokenCount(text);
+  }
+
+  // Get exact token count from KoboldCPP
+  private async getKoboldCPPTokenCount(text: string): Promise<number> {
+    const baseUrl = this.getKoboldCPPBaseUrl();
+    const response = await fetch(`${baseUrl}/api/extra/tokencount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: text })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get token count: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.value || data.token_count || 0;
+  }
+
+  // Estimate token count using character-based method
+  private estimateTokenCount(text: string): TokenCountInfo {
+    // Rough estimation: ~4 characters per token on average
+    const estimatedTokens = Math.ceil(text.length / 4);
+    const maxContextSize = this.profile.maxContextSize;
+    
+    return {
+      tokens: estimatedTokens,
+      isEstimate: true,
+      maxContextSize
+    };
+  }
+
+  // Get base URL for KoboldCPP API calls
+  private getKoboldCPPBaseUrl(): string {
+    let endpoint = this.profile.endpoint || 'http://localhost:5001';
+    // Remove the '/v1/chat/completions' suffix if present
+    endpoint = endpoint.replace(/\/v1\/chat\/completions$/, '');
+    return endpoint;
+  }
+
+  // Get comprehensive token count for all context
+  async getContextTokenCount(options: LLMGenerationOptions): Promise<TokenCountInfo> {
+    const { context, maxContextEntries, includeSystemContent, repositoryItems } = options;
+    
+    // Limit context to specified number of entries
+    const limitedContext = context.slice(-maxContextEntries);
+    const messages = this.buildMessages(limitedContext, includeSystemContent, repositoryItems);
+    
+    // Convert messages to text for token counting
+    const fullText = messages.map(msg => msg.content).join('\n\n');
+    
+    return await this.getTokenCount(fullText);
   }
 }
