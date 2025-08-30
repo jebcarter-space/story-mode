@@ -79,7 +79,7 @@
   <h3 class="text-lg font-semibold mb-3">Export</h3>
   
   <!-- Export Stats -->
-  <div class="text-sm text-gray-600 space-y-1 mb-4">
+  <div class="text-sm theme-text-muted space-y-1 mb-4">
     <div>Total entries: {contentCount}</div>
     <div>Story entries: {storyEntries}</div>
   </div>
@@ -96,7 +96,7 @@
           class="text-blue-600"
         />
         <span class="text-sm">Story Only</span>
-        <span class="text-xs text-gray-500">(clean prose text)</span>
+        <span class="text-xs theme-text-muted">(clean prose text)</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer">
         <input
@@ -106,7 +106,7 @@
           class="text-blue-600"
         />
         <span class="text-sm">Complete History</span>
-        <span class="text-xs text-gray-500">(all messages & metadata)</span>
+        <span class="text-xs theme-text-muted">(all messages & metadata)</span>
       </label>
     </div>
   </div>
@@ -174,8 +174,8 @@
   </button>
 
   {#if showExportPanel}
-    <div class="border rounded p-3 bg-gray-50 dark:bg-gray-900">
-      <div class="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+    <div class="border rounded p-3 theme-bg-muted" style="border-color: var(--theme-border);">
+      <div class="text-xs font-mono theme-text-main whitespace-pre-wrap max-h-32 overflow-y-auto">
         {getPreview()}
       </div>
     </div>
@@ -192,7 +192,8 @@
     </button>
     <button
       onclick={handleCopyToClipboard}
-      class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+      class="px-3 py-2 rounded hover:opacity-80 text-sm"
+      style="background-color: var(--theme-button); color: var(--theme-foreground);"
       disabled={contentCount === 0}
     >
       Copy
@@ -200,6 +201,6 @@
   </div>
 
   {#if contentCount === 0}
-    <p class="text-sm text-gray-500 text-center">No content to export</p>
+    <p class="text-sm theme-text-muted text-center">No content to export</p>
   {/if}
 </div>

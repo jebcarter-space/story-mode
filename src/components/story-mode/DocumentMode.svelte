@@ -314,14 +314,14 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <div 
-  class="document-mode h-screen flex flex-col bg-white dark:bg-gray-900"
+  class="document-mode h-screen flex flex-col theme-bg-main"
   class:fullscreen={isFullscreen}
   class:focus-mode={focusMode}
 >
   <!-- Header Bar -->
   {#if !isFullscreen}
-    <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border-b">
-      <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+    <div class="flex items-center justify-between p-2 theme-bg-muted theme-border border-b">
+      <h2 class="text-sm font-medium theme-text-main">
         Document Mode
       </h2>
       <div class="flex items-center gap-2">
@@ -334,7 +334,8 @@
         </button>
         <div class="relative">
           <button
-            class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+            class="px-2 py-1 text-xs rounded"
+            style="background-color: var(--theme-button); color: var(--theme-foreground);"
             title="Panel position"
           >
             📍
@@ -343,7 +344,8 @@
         </div>
         <button
           onclick={toggleFullscreen}
-          class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+          class="px-2 py-1 text-xs rounded"
+          style="background-color: var(--theme-button); color: var(--theme-foreground);"
           title="Toggle fullscreen (ESC to exit)"
         >
           ⛶
@@ -369,7 +371,7 @@
         bind:value={documentText}
         oninput={handleDocumentInput}
         onkeydown={handleKeyDown}
-        class="document-editor w-full h-full p-8 border-0 resize-none focus:outline-none bg-transparent text-gray-900 dark:text-gray-100"
+        class="document-editor w-full h-full p-8 border-0 resize-none focus:outline-none bg-transparent theme-text-main"
         class:focus-mode={focusMode}
         class:typewriter-mode={typewriterMode}
         placeholder={selectedProfile 
@@ -382,7 +384,7 @@
 
     <!-- Status Bar -->
     {#if !isFullscreen}
-      <div class="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 text-sm border-t">
+      <div class="flex items-center justify-between p-2 theme-bg-muted text-sm theme-border border-t">
         <div class="flex items-center gap-4">
           {#if selectedProfile}
             <span class="text-green-600 dark:text-green-400">✓ {selectedProfile.name}</span>
@@ -390,19 +392,19 @@
             <span class="text-orange-600 dark:text-orange-400">⚠ No LLM Profile</span>
           {/if}
           
-          <span class="text-gray-600 dark:text-gray-400">
+          <span class="theme-text-muted">
             {wordCount} words • {characterCount} chars
           </span>
           
           {#if showSystemContent}
             <span class="text-blue-600 dark:text-blue-400">System Content Visible</span>
           {:else}
-            <span class="text-gray-500">Clean Document View</span>
+            <span class="theme-text-muted">Clean Document View</span>
           {/if}
         </div>
         
         <div class="flex gap-2">
-          <span class="text-xs text-gray-500">
+          <span class="text-xs theme-text-muted">
             Ctrl/Cmd+Enter: Generate • Ctrl/Cmd+1: System • Ctrl/Cmd+2: Focus • Ctrl/Cmd+3: Typewriter
           </span>
         </div>

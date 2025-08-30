@@ -129,7 +129,7 @@
   {/each}
 </div>
 
-<div class="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+<div class="mt-6 p-4 theme-bg-muted rounded-lg">
   <h5 class="font-semibold mb-2">Current Theme: {theme.getThemeDefinition(theme.value).name}</h5>
   <p class="text-sm opacity-75 mb-3">
     {theme.getThemeDefinition(theme.value).description}

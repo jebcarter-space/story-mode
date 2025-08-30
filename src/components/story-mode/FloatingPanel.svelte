@@ -98,28 +98,29 @@
 
 <div
   bind:this={panel}
-  class="floating-panel fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50"
+  class="floating-panel fixed theme-bg-main rounded-lg shadow-lg z-50"
+  style="border: 1px solid var(--theme-border); left: {position.x}px; top: {position.y}px; width: {size.width}px; height: {size.height}px;"
   class:dragging={isDragging}
   class:resizing={isResizing}
-  style="left: {position.x}px; top: {position.y}px; width: {size.width}px; height: {size.height}px;"
 >
   <!-- Header -->
   {#if title || draggable}
     <div
-      class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg cursor-move"
+      class="flex items-center justify-between p-3 theme-bg-muted rounded-t-lg cursor-move"
+      style="border-bottom: 1px solid var(--theme-border);"
       class:cursor-grab={draggable && !isDragging}
       class:cursor-grabbing={draggable && isDragging}
       onmousedown={handleMouseDown}
     >
       {#if title}
-        <h3 class="font-medium text-sm text-gray-900 dark:text-white select-none">{title}</h3>
+        <h3 class="font-medium text-sm theme-text-main select-none">{title}</h3>
       {:else}
         <div class="flex-1"></div>
       {/if}
       
       <!-- Drag handle indicator -->
       {#if draggable}
-        <div class="text-gray-400 text-xs select-none">
+        <div class="theme-text-muted text-xs select-none">
           ⋮⋮⋮
         </div>
       {/if}
@@ -134,10 +135,11 @@
   <!-- Resize handle -->
   {#if resizable}
     <div
-      class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500"
+      class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize hover:opacity-80"
+      style="background-color: var(--theme-button);"
       onmousedown={handleResizeStart}
     >
-      <div class="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2 border-gray-400 dark:border-gray-300"></div>
+      <div class="absolute bottom-1 right-1 w-2 h-2 border-r-2 border-b-2" style="border-color: var(--theme-border);"></div>
     </div>
   {/if}
 </div>

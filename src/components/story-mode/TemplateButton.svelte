@@ -74,7 +74,7 @@
         output: `<div class="template-result">
           <div class="template-header mb-2">
             <strong>${template.name}</strong>
-            <span class="text-xs text-gray-500 ml-2">[${template.category}]</span>
+            <span class="text-xs theme-text-muted ml-2">[${template.category}]</span>
             ${template.llmEnabled && defaultProfile ? '<span class="text-xs text-green-500 ml-2">✓ LLM Enhanced</span>' : ''}
             ${template.repositoryTarget && template.repositoryTarget !== 'None' ? `<span class="text-xs text-purple-500 ml-2">→ ${template.repositoryTarget}</span>` : ''}
           </div>
@@ -156,13 +156,14 @@
     <div class="absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-50 min-w-64 max-h-96 overflow-y-auto">
       {#each categories as category}
         <div class="border-b">
-          <div class="px-3 py-2 bg-gray-50 font-semibold text-sm text-gray-700">
+          <div class="px-3 py-2 theme-bg-muted font-semibold text-sm theme-text-main">
             {category}
           </div>
           {#each getTemplatesByCategory(category) as template}
             <button 
               onclick={() => executeTemplate(template)}
-              class="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0 disabled:opacity-50"
+              class="w-full text-left px-3 py-2 hover:opacity-80 border-b last:border-b-0 disabled:opacity-50"
+              style="hover:background-color: var(--theme-muted);"
               disabled={isProcessing}
             >
               <div class="font-medium text-sm flex items-center justify-between">
@@ -176,7 +177,7 @@
                   {/if}
                 </div>
               </div>
-              <div class="text-xs text-gray-600 truncate">{template.description}</div>
+              <div class="text-xs theme-text-muted truncate">{template.description}</div>
             </button>
           {/each}
         </div>

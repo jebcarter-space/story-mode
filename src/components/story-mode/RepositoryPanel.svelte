@@ -159,7 +159,7 @@
 
 <div class="border rounded-lg">
   <!-- Header -->
-  <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border-b">
+  <div class="flex items-center justify-between p-3 theme-bg-muted theme-border border-b">
     <h3 class="font-medium">{category} Repository</h3>
     <div class="flex gap-2">
       <button 
@@ -171,7 +171,8 @@
       </button>
       <button
         onclick={() => view = view === 'view' ? '' : 'view'}
-        class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+        class="text-xs px-2 py-1 rounded hover:opacity-80"
+        style="background-color: var(--theme-button); color: var(--theme-foreground);"
         title="Toggle view"
       >
         {view === 'view' ? '−' : '⋯'}
@@ -233,12 +234,12 @@
                   {/if}
                 </div>
                 {#if item.description}
-                  <p class="text-xs text-gray-600 dark:text-gray-400 truncate">{item.description}</p>
+                  <p class="text-xs theme-text-muted truncate">{item.description}</p>
                 {/if}
                 {#if item.keywords.length > 0}
                   <div class="flex gap-1 flex-wrap mt-1">
                     {#each item.keywords as keyword}
-                      <span class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">{keyword}</span>
+                      <span class="text-xs px-1 rounded" style="background-color: var(--theme-muted); color: var(--theme-foreground);">{keyword}</span>
                     {/each}
                   </div>
                 {/if}
@@ -246,7 +247,8 @@
               <div class="flex gap-1">
                 <button
                   onclick={() => toggleForceInContext(key, item)}
-                  class="text-xs px-1 py-1 {item.forceInContext ? 'bg-orange-200 text-orange-800' : 'bg-gray-200 text-gray-600'} rounded"
+                  class="text-xs px-1 py-1 rounded"
+                  style="background-color: {item.forceInContext ? '#fef3c7' : 'var(--theme-button)'}; color: {item.forceInContext ? '#92400e' : 'var(--theme-foreground)'};"
                   title="Toggle force in context"
                 >
                   !
@@ -269,7 +271,7 @@
             </div>
           </div>
         {:else}
-          <div class="text-xs text-gray-500 text-center py-4">
+          <div class="text-xs theme-text-muted text-center py-4">
             No {category.toLowerCase()}s found
             {#if searchTerm}
               for "{searchTerm}"
@@ -284,14 +286,14 @@
 <!-- Modal -->
 {#if showModal}
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 max-w-full m-4 max-h-screen overflow-y-auto">
+    <div class="theme-bg-main rounded-lg p-6 w-96 max-w-full m-4 max-h-screen overflow-y-auto" style="border: 1px solid var(--theme-border);">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">
           {editingItem ? 'Edit' : 'Add'} {category}
         </h3>
         <button
           onclick={closeModal}
-          class="text-gray-500 hover:text-gray-700"
+          class="theme-text-muted hover:opacity-70">
         >
           ×
         </button>
@@ -335,7 +337,7 @@
             class="w-full px-3 py-2 border rounded"
             placeholder="keyword1, keyword2, phrase with spaces"
           />
-          <p class="text-xs text-gray-500 mt-1">
+          <p class="text-xs theme-text-muted mt-1">
             Comma-separated keywords for pattern matching
           </p>
         </div>
@@ -348,7 +350,7 @@
             />
             <span class="text-sm">Force in LLM context</span>
           </label>
-          <p class="text-xs text-gray-500 mt-1">
+          <p class="text-xs theme-text-muted mt-1">
             Always include this item in LLM context regardless of keyword matches
           </p>
         </div>
@@ -363,7 +365,8 @@
           <button
             type="button"
             onclick={closeModal}
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+            class="px-4 py-2 rounded hover:opacity-80"
+            style="background-color: var(--theme-button); color: var(--theme-foreground);"
           >
             Cancel
           </button>
