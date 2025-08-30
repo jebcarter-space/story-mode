@@ -174,7 +174,7 @@
       {/each}
     </select>
     {#if selectedProfile}
-      <span class="text-xs text-gray-600">
+      <span class="text-xs theme-text-muted">
         Empty + Enter to generate
       </span>
     {/if}

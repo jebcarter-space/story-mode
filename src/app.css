@@ -211,6 +211,28 @@ dialog h2 {
   clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
 }
 
+/* Theme utility classes for common patterns */
+.theme-bg-main {
+  background-color: var(--theme-background);
+}
+
+.theme-bg-muted {
+  background-color: var(--theme-muted);
+}
+
+.theme-text-main {
+  color: var(--theme-foreground);
+}
+
+.theme-text-muted {
+  color: var(--theme-foreground);
+  opacity: 0.7;
+}
+
+.theme-border {
+  border-color: var(--theme-border);
+}
+
 /* Map Styles */
 .map {
 
