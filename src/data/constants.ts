@@ -1,5 +1,18 @@
 import type { RandomTable } from './types';
-import { creatureMotivations, creatureTypes, daysWeek, genre, moonPhases, season, timeDay, weather } from './tables';
+import { 
+  creatureMotivations, 
+  creatureTypes, 
+  daysWeek, 
+  genre, 
+  moonPhases, 
+  season, 
+  timeDay, 
+  weather,
+  colors,
+  gems,
+  treasureFinds,
+  locations
+} from './tables';
 
 /* Table Options */
 
@@ -12,6 +25,10 @@ export const moreTables: {[key: string]: RandomTable} = {
   [daysWeek.name]: daysWeek,
   [creatureTypes.name]: creatureTypes,
   [creatureMotivations.name]: creatureMotivations,
+  [colors.name]: colors,
+  [gems.name]: gems,
+  [treasureFinds.name]: treasureFinds,
+  [locations.name]: locations,
 };
 
 

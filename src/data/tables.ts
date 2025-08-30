@@ -4,6 +4,7 @@ export const emptyTable: RandomTable = {
   name: '',
   description: '',
   diceFormula: '',
+  consumable: false,
   table: [
     { min: 0, max: 0, description: '' },
   ],
@@ -194,5 +195,63 @@ export const creatureMotivations: RandomTable = {
     { min: 18, max: 18, description: 'Chaos' },
     { min: 19, max: 19, description: 'Love' },
     { min: 20, max: 20, description: 'Justice' }
+  ]
+};
+
+// Example tables to demonstrate placeholder functionality
+export const colors: RandomTable = {
+  name: 'Colors',
+  description: 'Random colors for testing placeholders',
+  diceFormula: '1d8',
+  consumable: true,
+  table: [
+    { min: 1, max: 1, description: 'red' },
+    { min: 2, max: 2, description: 'blue' },
+    { min: 3, max: 3, description: 'green' },
+    { min: 4, max: 4, description: 'yellow' },
+    { min: 5, max: 5, description: 'purple' },
+    { min: 6, max: 6, description: 'orange' },
+    { min: 7, max: 7, description: 'pink' },
+    { min: 8, max: 8, description: 'brown' }
+  ]
+};
+
+export const gems: RandomTable = {
+  name: 'Gems',
+  description: 'Random gems for testing placeholders',
+  diceFormula: '1d6',
+  table: [
+    { min: 1, max: 1, description: 'ruby' },
+    { min: 2, max: 2, description: 'sapphire' },
+    { min: 3, max: 3, description: 'emerald' },
+    { min: 4, max: 4, description: 'diamond' },
+    { min: 5, max: 5, description: 'amethyst' },
+    { min: 6, max: 6, description: 'topaz' }
+  ]
+};
+
+export const treasureFinds: RandomTable = {
+  name: 'Treasure Finds',
+  description: 'Random treasure discoveries with placeholder syntax',
+  diceFormula: '1d6',
+  table: [
+    { min: 1, max: 1, description: 'A {colors.capitalize} {gems} is found gleaming in the dirt!' },
+    { min: 2, max: 2, description: 'You discover {gems.article.capitalize} wrapped in {colors} cloth.' },
+    { min: 3, max: 3, description: 'A small pouch contains {gems.plural} of various sizes.' },
+    { min: 4, max: 4, description: 'The ancient chest holds {colors.the} {gems}.' },
+    { min: 5, max: 5, description: 'Embedded in the wall is {gems.article} of {colors.uppercase} color.' },
+    { min: 6, max: 6, description: 'A merchant\'s bag holds {colors.consumable} {gems.plural}.' }
+  ]
+};
+
+export const locations: RandomTable = {
+  name: 'Locations',
+  description: 'Random locations with weather',
+  diceFormula: '1d4',
+  table: [
+    { min: 1, max: 1, description: 'A mountain peak with {Weather} skies' },
+    { min: 2, max: 2, description: 'A forest clearing in {Weather.lowercase} conditions' },
+    { min: 3, max: 3, description: 'An ancient ruin under {Weather.the}' },
+    { min: 4, max: 4, description: 'A seaside cliff during {Weather.lowercase} weather' }
   ]
 };

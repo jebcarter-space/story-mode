@@ -66,6 +66,10 @@
         <input type="text" placeholder="Dice Formula" bind:value={table.diceFormula} />
       </div>
       <input type="text" placeholder="Description" bind:value={table.description} class="w-full mb-3"/>
+      <div class="flex items-center gap-2 mb-3">
+        <input type="checkbox" bind:checked={table.consumable} id="consumable"/>
+        <label for="consumable">Consumable (entries are removed after use)</label>
+      </div>
       {#each Array(rows) as _, i}
         <div class="flex gap-3 mb-3">
           <input type="number" placeholder="Min" bind:value={table.table[i].min} class="w-20"/>

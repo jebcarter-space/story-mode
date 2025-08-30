@@ -16,7 +16,12 @@
     let value: string = $state(moreTables[tables[0]].name);
 
   function getResult() {
-    const answer = rollOnTable(moreTables[value] ||userTables[value])
+    const table = moreTables[value] || userTables[value];
+    const answer = rollOnTable(table, {
+      customTables: userTables,
+      storyId: 'current', // Use a consistent story ID
+      maxDepth: 10
+    });
     result = `<strong>${value}</strong>: ${answer.description}<br/><small>(${answer.roll.output})</small>`;
   }
 

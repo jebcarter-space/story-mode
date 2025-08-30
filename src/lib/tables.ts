@@ -1,8 +1,9 @@
 import { DiceRoll } from '@dice-roller/rpg-dice-roller';
-import type { RandomTable } from '../data/types';
+import type { RandomTable, CustomTableList } from '../data/types';
 import { dcTable } from '../data/tables';
+import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
 
-export function rollOnTable(table: RandomTable) {
+export function rollOnTable(table: RandomTable, resolverOptions?: ResolverOptions) {
   const roll = new DiceRoll(table.diceFormula);
   const total = roll.total;
   let description = '';
@@ -17,6 +18,13 @@ export function rollOnTable(table: RandomTable) {
         else if (row.max === null && (row.min && total >= (row.min as number))) description = desc;
         else if ((row.min && total >= (row.min as number)) && (row.max && total <= (row.max as number))) description = desc;
   }
+
+  // If resolver options are provided, resolve placeholders in the description
+  if (resolverOptions) {
+    const resolver = new PlaceholderResolver(resolverOptions);
+    description = resolver.resolve(description);
+  }
+
   return { description, roll };
 }
 
