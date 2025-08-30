@@ -30,8 +30,8 @@
 
 <button
   onclick={generate} disabled={!hasQuestion ? true : undefined}
-  class="w-[48px] flex items-center justify-center"
+  class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   use:tooltip={'Generate Keywords'}
 >
-  <img src={KeywordsIcon} alt="Keywords" class="h-[24px]"/>
+  <img src={KeywordsIcon} alt="Keywords" class="h-[32px] w-[32px]"/>
 </button>

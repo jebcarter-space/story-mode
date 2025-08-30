@@ -34,9 +34,9 @@
 </script>
 
 <button
-  class="w-[48px] flex items-center justify-center"
+  class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   onclick={addStatus}
   use:tooltip={ {text: 'New Scene', position: 'right'} }
 >
-  <img src={SceneIcon} alt="New Scene" class="h-[24px]"/>
+  <img src={SceneIcon} alt="New Scene" class="h-[32px] w-[32px]"/>
 </button>

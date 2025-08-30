@@ -27,13 +27,13 @@
 </script>
 
 <div class="flex">
-  <input bind:value={notation} class="w-[96px]"/>
+  <input bind:value={notation} class="w-[96px] min-h-[44px] text-center"/>
   <button
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
     onclick={roll}
     disabled={!hasQuestion ? true : undefined}  
     use:tooltip={'Roll Dice'}
   >
-    <img src={RollIcon} alt="Roll" class="h-[24px]"/>
+    <img src={RollIcon} alt="Roll" class="h-[32px] w-[32px]"/>
   </button>
 </div>

@@ -72,34 +72,34 @@
 </script>
 
 <div class="flex">
-  <input type="text" bind:value={value} class="w-[48px]"/>
+  <input type="text" bind:value={value} class="w-[48px] min-h-[44px] text-center"/>
   <button 
     onclick={generate} 
     disabled={!hasQuestion ? true : undefined} 
     use:tooltip={'Generate Task'} 
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   >
-    <img src={CheckIcon} alt="Check" class="h-[24px]"/>
+    <img src={CheckIcon} alt="Check" class="h-[32px] w-[32px]"/>
   </button>
   <button 
     onclick={ease} 
     use:tooltip={'Ease Task'} 
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   >
-    <img src={EaseIcon} alt="Ease" class="h-[24px]"/>
+    <img src={EaseIcon} alt="Ease" class="h-[32px] w-[32px]"/>
   </button>
   <button 
     onclick={hinder} 
     use:tooltip={'Hinder Task'} 
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   >
-    <img src={HinderIcon} alt="Ease" class="h-[24px]"/>
+    <img src={HinderIcon} alt="Ease" class="h-[32px] w-[32px]"/>
   </button>
   <button 
     onclick={reset} 
     use:tooltip={'Reset'} 
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   >
-    <img src={ResetIcon} alt="Reset" class="h-[24px]"/>
+    <img src={ResetIcon} alt="Reset" class="h-[32px] w-[32px]"/>
   </button>
 </div>
