@@ -58,8 +58,6 @@
           scopeContext: {},
           workbookTags: []
         };
-          updated: Date.now()
-        };
         repositories.add(item);
       };
 
