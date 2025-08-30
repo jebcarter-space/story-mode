@@ -3,7 +3,7 @@ export interface AppConfig {
     enhancedTables: boolean;
     templates: boolean;
     llmIntegration: boolean;
-    writerMode: boolean;
+    documentMode: boolean;
   };
   version: string;
   lastUpdated: string;
@@ -14,7 +14,7 @@ const DEFAULT_CONFIG: AppConfig = {
     enhancedTables: true,
     templates: true,
     llmIntegration: true,
-    writerMode: true,
+    documentMode: true,
   },
   version: '1.0.0',
   lastUpdated: new Date().toISOString(),
@@ -26,6 +26,13 @@ export function createAppConfig() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        
+        // Migration: rename writerMode to documentMode
+        if (parsed.features && 'writerMode' in parsed.features && !('documentMode' in parsed.features)) {
+          parsed.features.documentMode = parsed.features.writerMode;
+          delete parsed.features.writerMode;
+        }
+        
         // Merge with defaults to handle missing properties
         return {
           ...DEFAULT_CONFIG,

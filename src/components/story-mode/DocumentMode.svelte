@@ -11,19 +11,21 @@
 
 <script lang="ts">
   import LLMIndicator from './LLMIndicator.svelte';
+  import FloatingPanel from './FloatingPanel.svelte';
+  import Sidebar from './Sidebar.svelte';
+  import ExportUtilities from './ExportUtilities.svelte';
   
-  // Props from parent WriterMode
-  let { 
-    showSystemContent = $bindable(),
-    focusMode = $bindable(),
-    typewriterMode = $bindable(),
-    isFullscreen = $bindable()
-  }: {
-    showSystemContent: boolean;
-    focusMode: boolean;
-    typewriterMode: boolean;
-    isFullscreen: boolean;
-  } = $props();
+  // Document mode settings - now managed internally
+  let showSystemContent = $state(localStorage.getItem('document-show-system') === 'true');
+  let focusMode = $state(false);
+  let typewriterMode = $state(false);
+  let isFullscreen = $state(false);
+  
+  // Floating panel state
+  let panelPosition = $state({ x: 20, y: 100 });
+  let panelSize = $state({ width: 320, height: 500 });
+  let currentPanel: 'controls' | 'export' = $state('controls');
+  let panelLocation: 'left' | 'right' | 'bottom' = $state('left');
   
   let documentArea: HTMLElement;
   let documentText = $state('');
@@ -93,6 +95,34 @@
       localStorage.setItem('selected-llm-profile', selectedProfileKey);
     }
   });
+
+  $effect(() => {
+    // Save system content visibility preference
+    localStorage.setItem('document-show-system', showSystemContent.toString());
+  });
+
+  function setPanelLocation(location: 'left' | 'right' | 'bottom') {
+    panelLocation = location;
+    
+    // Update panel position based on location
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    switch (location) {
+      case 'left':
+        panelPosition = { x: 20, y: 100 };
+        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        break;
+      case 'right':
+        panelPosition = { x: windowWidth - 340, y: 100 };
+        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        break;
+      case 'bottom':
+        panelPosition = { x: 20, y: windowHeight - 220 };
+        panelSize = { width: Math.min(600, windowWidth - 40), height: 200 };
+        break;
+    }
+  }
 
   function toggleFullscreen() {
     isFullscreen = !isFullscreen;
@@ -213,34 +243,39 @@
     isGenerating = false;
   }
 
-  function setPanelLocation(location: 'left' | 'right' | 'bottom') {
-    panelLocation = location;
-    
-    // Update panel position based on location
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    
-    switch (location) {
-      case 'left':
-        panelPosition = { x: 20, y: 100 };
-        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
-        break;
-      case 'right':
-        panelPosition = { x: windowWidth - 340, y: 100 };
-        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
-        break;
-      case 'bottom':
-        panelPosition = { x: 20, y: windowHeight - 220 };
-        panelSize = { width: Math.min(600, windowWidth - 40), height: 200 };
-        break;
-    }
-  }
-
   async function handleKeyDown(event: KeyboardEvent) {
     // CMD/CTRL + ENTER for LLM generation
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
       await generateLLMResponse();
+      return;
+    }
+    
+    // CMD/CTRL + 1 to toggle system content
+    if ((event.ctrlKey || event.metaKey) && event.key === '1') {
+      event.preventDefault();
+      showSystemContent = !showSystemContent;
+      return;
+    }
+    
+    // CMD/CTRL + 2 to toggle focus mode
+    if ((event.ctrlKey || event.metaKey) && event.key === '2') {
+      event.preventDefault();
+      focusMode = !focusMode;
+      return;
+    }
+    
+    // CMD/CTRL + 3 to toggle typewriter mode
+    if ((event.ctrlKey || event.metaKey) && event.key === '3') {
+      event.preventDefault();
+      typewriterMode = !typewriterMode;
+      return;
+    }
+
+    // ESC to exit fullscreen
+    if (event.key === 'Escape' && isFullscreen) {
+      event.preventDefault();
+      toggleFullscreen();
       return;
     }
   }
@@ -278,7 +313,46 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<!-- Main Document Area -->
+<div 
+  class="document-mode h-screen flex flex-col bg-white dark:bg-gray-900"
+  class:fullscreen={isFullscreen}
+  class:focus-mode={focusMode}
+>
+  <!-- Header Bar -->
+  {#if !isFullscreen}
+    <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 border-b">
+      <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Document Mode
+      </h2>
+      <div class="flex items-center gap-2">
+        <button
+          onclick={() => currentPanel = currentPanel === 'controls' ? 'export' : 'controls'}
+          class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          title="Toggle panel content"
+        >
+          {currentPanel === 'controls' ? 'Export' : 'Controls'}
+        </button>
+        <div class="relative">
+          <button
+            class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+            title="Panel position"
+          >
+            📍
+          </button>
+          <!-- TODO: Add position dropdown menu -->
+        </div>
+        <button
+          onclick={toggleFullscreen}
+          class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+          title="Toggle fullscreen (ESC to exit)"
+        >
+          ⛶
+        </button>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Main Document Area -->
   <div class="flex-1 flex flex-col relative">
     <!-- LLM Status -->
     <LLMIndicator 
@@ -336,7 +410,91 @@
     {/if}
   </div>
 
+  <!-- Floating Control Panel -->
+  <FloatingPanel
+    title={currentPanel === 'controls' ? 'Story Controls' : 'Export Tools'}
+    bind:position={panelPosition}
+    bind:size={panelSize}
+    minSize={{ width: 280, height: 400 }}
+    maxSize={{ width: 500, height: 700 }}
+  >
+    {#snippet children()}
+      <div class="h-full overflow-y-auto">
+        {#if currentPanel === 'controls'}
+          <!-- Profile Selection -->
+          {#if Object.keys(profiles.value).length > 0}
+            <div class="p-3 border-b">
+              <label class="block text-sm font-medium mb-2">LLM Profile</label>
+              <select bind:value={selectedProfileKey} class="w-full text-sm p-2 border rounded">
+                <option value="">No LLM Profile</option>
+                {#each Object.entries(profiles.value) as [key, profile]}
+                  <option value={key}>{profile.name}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
+          
+          <!-- Document Mode Settings -->
+          <div class="p-3 border-b">
+            <h4 class="text-sm font-medium mb-3">Document Settings</h4>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  bind:checked={showSystemContent}
+                  class="text-blue-600"
+                />
+                <span class="text-sm">Show system content</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  bind:checked={focusMode}
+                  class="text-blue-600"
+                />
+                <span class="text-sm">Focus mode</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  bind:checked={typewriterMode}
+                  class="text-blue-600"
+                />
+                <span class="text-sm">Typewriter mode</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Story Controls -->
+          <div class="p-3">
+            <Sidebar />
+          </div>
+        {:else}
+          <!-- Export Tools -->
+          <ExportUtilities />
+        {/if}
+      </div>
+    {/snippet}
+  </FloatingPanel>
+</div>
+
 <style>
+  .document-mode {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 16px;
+    line-height: 1.6;
+    transition: all 0.3s ease;
+  }
+  
+  .document-mode.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+  }
+  
   .document-editor {
     font-family: 'Georgia', 'Times New Roman', serif;
     font-size: 16px;
