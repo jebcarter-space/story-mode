@@ -21,6 +21,7 @@
   let panelPosition = $state({ x: 20, y: 100 });
   let panelSize = $state({ width: 320, height: 500 });
   let currentPanel: 'controls' | 'export' = $state('controls');
+  let panelLocation: 'left' | 'right' | 'bottom' = $state('left');
   
   let writingArea: HTMLElement;
   let writingText = $state('');
@@ -65,6 +66,29 @@
       document.documentElement.requestFullscreen?.();
     } else {
       document.exitFullscreen?.();
+    }
+  }
+
+  function setPanelLocation(location: 'left' | 'right' | 'bottom') {
+    panelLocation = location;
+    
+    // Update panel position based on location
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    switch (location) {
+      case 'left':
+        panelPosition = { x: 20, y: 100 };
+        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        break;
+      case 'right':
+        panelPosition = { x: windowWidth - 340, y: 100 };
+        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        break;
+      case 'bottom':
+        panelPosition = { x: 20, y: windowHeight - 220 };
+        panelSize = { width: Math.min(600, windowWidth - 40), height: 200 };
+        break;
     }
   }
 
@@ -240,6 +264,15 @@
         >
           {currentPanel === 'controls' ? 'Export' : 'Controls'}
         </button>
+        <div class="relative">
+          <button
+            class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+            title="Panel position"
+          >
+            📍
+          </button>
+          <!-- TODO: Add position dropdown menu -->
+        </div>
         <button
           onclick={toggleFullscreen}
           class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
