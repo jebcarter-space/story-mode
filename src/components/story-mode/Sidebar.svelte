@@ -6,6 +6,7 @@
   import KeywordsButton from '../story-mode/KeywordsButton.svelte';
   import OracleButton from '../story-mode/OracleButton.svelte';
   import TaskButton from '../story-mode/TaskButton.svelte';
+  import TemplateButton from '../story-mode/TemplateButton.svelte';
   import NewSceneButton from './NewSceneButton.svelte';
   import ClearButton from './ClearButton.svelte';
   import MoreButton from './MoreButton.svelte';
@@ -14,6 +15,7 @@
 <div class="flex gap-2 mt-2">
   <OracleButton />
   <TaskButton/>
+  <TemplateButton/>
   </div>
 <div class="flex gap-2">
   <DiceButton  />

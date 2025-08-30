@@ -29,7 +29,7 @@ export interface ContentData {
   input?: string;
 };
 
-export type ContentType = 'start' | 'task' | 'oracle' | 'keyword' | 'input'| 'roll' | 'table';
+export type ContentType = 'start' | 'task' | 'oracle' | 'keyword' | 'input'| 'roll' | 'table' | 'template';
 
 export interface SettingPage {
   name: string;
@@ -37,6 +37,21 @@ export interface SettingPage {
 };
 
 export type CustomTableViews = 'create' | 'import'| 'view' | ''
+
+export interface Template {
+  name: string;
+  description: string;
+  content: string;
+  category: string;
+  created: number;
+  updated: number;
+}
+
+export interface TemplateList {
+  [key: string]: Template;
+}
+
+export type TemplateViews = 'create' | 'import' | 'export' | 'view' | ''
 
 export interface MapData {
   start: string;
