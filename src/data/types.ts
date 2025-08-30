@@ -6,6 +6,7 @@ export interface RandomTable {
   description: string;
   diceFormula: string;
   table: MinMaxRow[];
+  consumable?: boolean;
 }
 
 export interface CustomTableList{
