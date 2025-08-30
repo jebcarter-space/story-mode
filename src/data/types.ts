@@ -31,6 +31,31 @@ export interface ContentData {
 
 export type ContentType = 'start' | 'task' | 'oracle' | 'keyword' | 'input'| 'roll' | 'table' | 'template' | 'llm';
 
+export type ThemeName = 'light' | 'dark' | 'nord' | 'dracula' | 'gruvbox' | 'solarized';
+
+export interface ThemeColors {
+  // Base colors
+  background: string;
+  foreground: string;
+  muted: string;
+  accent: string;
+  
+  // Element colors
+  border: string;
+  input: string;
+  button: string;
+  buttonHover: string;
+  
+  // State colors
+  disabled: string;
+  focus: string;
+  
+  // Additional colors for specific themes
+  primary?: string;
+  secondary?: string;
+  tertiary?: string;
+}
+
 export interface SettingPage {
   name: string;
   component: SvelteComponent;
