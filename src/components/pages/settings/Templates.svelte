@@ -38,7 +38,11 @@
       content: '',
       category: 'Custom',
       created: 0,
-      updated: 0
+      updated: 0,
+      llmInstructions: '',
+      llmEnabled: false,
+      appendMode: false,
+      repositoryTarget: 'None'
     };
     selectedKey = '';
     open = 'create';
@@ -57,7 +61,11 @@
         content: '',
         category: 'Custom',
         created: 0,
-        updated: 0
+        updated: 0,
+        llmInstructions: '',
+        llmEnabled: false,
+        appendMode: false,
+        repositoryTarget: 'None'
       };
       selectedKey = '';
       open = '';
@@ -170,6 +178,62 @@
             bind:value={template.content} 
             class="p-2 border rounded h-32"
           ></textarea>
+          
+          <!-- LLM Expansion Configuration -->
+          <div class="border-t pt-3 mt-3">
+            <h5 class="text-lg font-medium mb-3">LLM Expansion (Optional)</h5>
+            
+            <label class="flex items-center gap-2 mb-3">
+              <input 
+                type="checkbox" 
+                bind:checked={template.llmEnabled}
+                class="rounded"
+              />
+              <span>Enable LLM expansion after template execution</span>
+            </label>
+
+            {#if template.llmEnabled}
+              <div class="space-y-3 ml-6">
+                <textarea 
+                  placeholder="LLM Instructions (sent before template content to LLM, can use template variables)"
+                  bind:value={template.llmInstructions} 
+                  class="w-full p-2 border rounded h-24"
+                ></textarea>
+                
+                <div class="flex items-center gap-4">
+                  <label class="flex items-center gap-2">
+                    <input 
+                      type="radio" 
+                      bind:group={template.appendMode}
+                      value={false}
+                      name="append-mode-{selectedKey || 'new'}"
+                    />
+                    <span>Replace template output</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input 
+                      type="radio" 
+                      bind:group={template.appendMode}
+                      value={true}
+                      name="append-mode-{selectedKey || 'new'}"
+                    />
+                    <span>Append to template output</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-1">Save to Repository</label>
+                  <select bind:value={template.repositoryTarget} class="w-full p-2 border rounded">
+                    <option value="None">Don't save to repository</option>
+                    <option value="Character">Character Repository</option>
+                    <option value="Location">Location Repository</option>
+                    <option value="Object">Object Repository</option>
+                    <option value="Situation">Situation Repository</option>
+                  </select>
+                </div>
+              </div>
+            {/if}
+          </div>
           <div class="flex gap-2">
             <button onclick={saveTemplate} class="px-4 py-2 bg-green-500 text-white rounded">
               <img src={SaveIcon} alt="Save" class="h-4 w-4 inline mr-1"/>

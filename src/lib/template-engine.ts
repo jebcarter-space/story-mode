@@ -1,5 +1,6 @@
-import type { Template, TemplateList } from '../data/types';
+import type { Template, TemplateList, RepositoryItem, RepositoryCategory, LLMProfile } from '../data/types';
 import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
+import { LLMService } from './llm-service';
 
 export class TemplateEngine {
   private resolver: PlaceholderResolver;
@@ -14,6 +15,62 @@ export class TemplateEngine {
 
   public executeTemplateContent(content: string): string {
     return this.resolver.resolve(content);
+  }
+
+  public async executeTemplateWithLLM(
+    template: Template, 
+    llmProfile?: LLMProfile,
+    repositorySaveCallback?: (content: string, category: RepositoryCategory) => void
+  ): Promise<string> {
+    // First execute the template normally
+    const baseResult = this.resolver.resolve(template.content);
+    
+    // If LLM is not enabled or no profile provided, return base result
+    if (!template.llmEnabled || !llmProfile) {
+      return baseResult;
+    }
+
+    try {
+      // Create LLM service with the profile
+      const llmService = new LLMService(llmProfile);
+      
+      // Prepare the LLM instructions with template variables resolved
+      const resolvedInstructions = template.llmInstructions 
+        ? this.resolver.resolve(template.llmInstructions)
+        : '';
+      
+      // Build the prompt for LLM
+      const prompt = resolvedInstructions 
+        ? `${resolvedInstructions}\n\n${baseResult}`
+        : baseResult;
+      
+      // Generate LLM response
+      const llmResult = await llmService.generate({
+        context: [{ 
+          type: 'template', 
+          output: prompt,
+          input: template.llmInstructions 
+        }],
+        maxContextEntries: 1,
+        includeSystemContent: false
+      });
+
+      // Determine final result based on append mode
+      const finalResult = template.appendMode 
+        ? `${baseResult}\n\n${llmResult}`
+        : llmResult;
+
+      // Save to repository if configured
+      if (template.repositoryTarget && template.repositoryTarget !== 'None' && repositorySaveCallback) {
+        repositorySaveCallback(finalResult, template.repositoryTarget as RepositoryCategory);
+      }
+
+      return finalResult;
+    } catch (error) {
+      console.error('LLM processing failed:', error);
+      // Return base result if LLM processing fails
+      return baseResult;
+    }
   }
 
   public resetConsumption(tableName?: string): void {

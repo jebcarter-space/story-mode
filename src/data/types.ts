@@ -45,6 +45,11 @@ export interface Template {
   category: string;
   created: number;
   updated: number;
+  // LLM Template Expander fields
+  llmInstructions?: string;
+  llmEnabled?: boolean;
+  appendMode?: boolean;
+  repositoryTarget?: string;
 }
 
 export interface TemplateList {
