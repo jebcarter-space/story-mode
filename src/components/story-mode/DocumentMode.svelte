@@ -245,7 +245,11 @@
     }
   }
 
-  function handleDocumentInput() {
+  function handleDocumentInput(event: Event) {
+    // Update document text from input event
+    const target = event.target as HTMLTextAreaElement;
+    documentText = target.value;
+    
     // Update cursor position
     if (documentArea) {
       cursorPosition = documentArea.selectionStart || 0;
