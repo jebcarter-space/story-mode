@@ -175,6 +175,10 @@
             <span class="w-3 h-3 rounded-full" class:bg-green-500={appConfig.features.llmIntegration} class:bg-gray-400={!appConfig.features.llmIntegration}></span>
             LLM Integration: {appConfig.features.llmIntegration ? 'Enabled' : 'Disabled'}
           </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" class:bg-green-500={appConfig.features.writerMode} class:bg-gray-400={!appConfig.features.writerMode}></span>
+            Writer Mode: {appConfig.features.writerMode ? 'Enabled' : 'Disabled'}
+          </div>
         </div>
       </div>
     </div>
