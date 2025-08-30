@@ -114,6 +114,37 @@ export interface LLMProfile {
     topP: number;
     frequencyPenalty: number;
     presencePenalty: number;
+    // KoboldCPP Advanced Sampling
+    tfs?: number;
+    topA?: number;
+    topK?: number;
+    minP?: number;
+    typical?: number;
+    // KoboldCPP Repetition Control
+    repPen?: number;
+    repPenRange?: number;
+    samplerOrder?: number[];
+    // KoboldCPP Dynamic Temperature
+    dynatempRange?: number;
+    dynatempExponent?: number;
+    smoothingFactor?: number;
+    // KoboldCPP Mirostat
+    mirostat?: number;
+    mirostatTau?: number;
+    mirostatEta?: number;
+    // KoboldCPP DRY (Don't Repeat Yourself)
+    dryMultiplier?: number;
+    dryBase?: number;
+    dryAllowedLength?: number;
+    drySequenceBreakers?: string[];
+    // KoboldCPP XTC
+    xtcThreshold?: number;
+    xtcProbability?: number;
+    // KoboldCPP Grammar & Constraints
+    grammar?: string;
+    bannedTokens?: string[];
+    logitBias?: { [key: string]: number };
+    memory?: string;
   };
   includeSystemContent: boolean;
   maxContextEntries: number;
