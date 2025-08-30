@@ -14,6 +14,10 @@
   let exportData = $state('');
   let testingConnection = $state<string | null>(null);
   let testResults = $state<{ [key: string]: boolean }>({});
+  
+  // UI state for collapsible sections
+  let showAdvanced = $state(false);
+  let showExpert = $state(false);
 
   // Default profile template
   let profile: LLMProfile = $state({
@@ -27,7 +31,32 @@
       maxTokens: 500,
       topP: 1.0,
       frequencyPenalty: 0.0,
-      presencePenalty: 0.0
+      presencePenalty: 0.0,
+      // KoboldCPP parameters will be initialized when needed
+      tfs: undefined,
+      topA: undefined,
+      topK: undefined,
+      minP: undefined,
+      typical: undefined,
+      repPen: undefined,
+      repPenRange: undefined,
+      samplerOrder: undefined,
+      dynatempRange: undefined,
+      dynatempExponent: undefined,
+      smoothingFactor: undefined,
+      mirostat: undefined,
+      mirostatTau: undefined,
+      mirostatEta: undefined,
+      dryMultiplier: undefined,
+      dryBase: undefined,
+      dryAllowedLength: undefined,
+      drySequenceBreakers: undefined,
+      xtcThreshold: undefined,
+      xtcProbability: undefined,
+      grammar: undefined,
+      bannedTokens: undefined,
+      logitBias: undefined,
+      memory: undefined,
     },
     includeSystemContent: false,
     maxContextEntries: 10,
@@ -47,7 +76,32 @@
         maxTokens: 500,
         topP: 1.0,
         frequencyPenalty: 0.0,
-        presencePenalty: 0.0
+        presencePenalty: 0.0,
+        // KoboldCPP parameters will be initialized when needed
+        tfs: undefined,
+        topA: undefined,
+        topK: undefined,
+        minP: undefined,
+        typical: undefined,
+        repPen: undefined,
+        repPenRange: undefined,
+        samplerOrder: undefined,
+        dynatempRange: undefined,
+        dynatempExponent: undefined,
+        smoothingFactor: undefined,
+        mirostat: undefined,
+        mirostatTau: undefined,
+        mirostatEta: undefined,
+        dryMultiplier: undefined,
+        dryBase: undefined,
+        dryAllowedLength: undefined,
+        drySequenceBreakers: undefined,
+        xtcThreshold: undefined,
+        xtcProbability: undefined,
+        grammar: undefined,
+        bannedTokens: undefined,
+        logitBias: undefined,
+        memory: undefined,
       },
       includeSystemContent: false,
       maxContextEntries: 10,
@@ -248,9 +302,12 @@
             />
           </div>
 
+          <!-- Basic Settings -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium mb-1">Temperature ({profile.settings.temperature})</label>
+              <label class="block text-sm font-medium mb-1" title="Controls randomness in text generation. Higher values (1.0-2.0) make output more creative but less coherent.">
+                Temperature ({profile.settings.temperature})
+              </label>
               <input 
                 type="range" 
                 min="0" 
@@ -261,7 +318,9 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Max Tokens</label>
+              <label class="block text-sm font-medium mb-1" title="Maximum number of tokens (words/parts) to generate in the response.">
+                Max Tokens
+              </label>
               <input 
                 type="number" 
                 min="1" 
@@ -274,7 +333,9 @@
 
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="block text-sm font-medium mb-1">Top P ({profile.settings.topP})</label>
+              <label class="block text-sm font-medium mb-1" title="Nucleus sampling. Only considers tokens with cumulative probability up to this value. Lower values (0.1-0.9) make output more focused.">
+                Top P ({profile.settings.topP})
+              </label>
               <input 
                 type="range" 
                 min="0" 
@@ -285,7 +346,9 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Freq Penalty ({profile.settings.frequencyPenalty})</label>
+              <label class="block text-sm font-medium mb-1" title="Reduces likelihood of repeating the same words. Positive values discourage repetition.">
+                Freq Penalty ({profile.settings.frequencyPenalty})
+              </label>
               <input 
                 type="range" 
                 min="-2" 
@@ -296,7 +359,9 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Pres Penalty ({profile.settings.presencePenalty})</label>
+              <label class="block text-sm font-medium mb-1" title="Encourages model to talk about new topics. Positive values promote diverse content.">
+                Pres Penalty ({profile.settings.presencePenalty})
+              </label>
               <input 
                 type="range" 
                 min="-2" 
@@ -307,6 +372,341 @@
               />
             </div>
           </div>
+
+          <!-- KoboldCPP Advanced Settings -->
+          {#if profile.provider === 'koboldcpp'}
+            <div class="mt-4 border-t pt-4">
+              <button 
+                type="button"
+                onclick={() => showAdvanced = !showAdvanced}
+                class="flex items-center justify-between w-full p-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                <span class="font-medium">Advanced Sampling & Repetition Control</span>
+                <span class="transform transition-transform {showAdvanced ? 'rotate-180' : ''}">▼</span>
+              </button>
+              
+              {#if showAdvanced}
+                <div class="mt-3 space-y-3 p-3 bg-gray-50 rounded">
+                  <!-- Advanced Sampling -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">Advanced Sampling</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Tail Free Sampling: Removes tokens from the low probability tail. Lower values make output more focused.">
+                          TFS ({profile.settings.tfs ?? 1.0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.05"
+                          bind:value={profile.settings.tfs} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Top-A sampling: Removes tokens below a certain probability threshold. 0 = disabled.">
+                          Top A ({profile.settings.topA ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.05"
+                          bind:value={profile.settings.topA} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Top-K sampling: Only considers the K most likely tokens. 0 = disabled.">
+                          Top K ({profile.settings.topK ?? 0})
+                        </label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="200" 
+                          bind:value={profile.settings.topK} 
+                          class="w-full p-1 border rounded text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Minimum probability threshold. Tokens below this are removed.">
+                          Min P ({profile.settings.minP ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.05"
+                          bind:value={profile.settings.minP} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Typical sampling: Prefers tokens close to average information density.">
+                          Typical ({profile.settings.typical ?? 1.0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.05"
+                          bind:value={profile.settings.typical} 
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Repetition Control -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">Repetition Control</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Base repetition penalty. Values > 1.0 discourage repetition.">
+                          Rep Penalty ({profile.settings.repPen ?? 1.0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="1" 
+                          max="2" 
+                          step="0.01"
+                          bind:value={profile.settings.repPen} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Number of recent tokens to apply repetition penalty to.">
+                          Rep Range ({profile.settings.repPenRange ?? 256})
+                        </label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="2048" 
+                          bind:value={profile.settings.repPenRange} 
+                          class="w-full p-1 border rounded text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Dynamic Temperature -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">Dynamic Temperature</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Temperature varies between (temp-range) and (temp+range). 0 = static temperature.">
+                          Range ({profile.settings.dynatempRange ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="2" 
+                          step="0.1"
+                          bind:value={profile.settings.dynatempRange} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Exponent for dynamic temperature calculation.">
+                          Exponent ({profile.settings.dynatempExponent ?? 1.0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0.1" 
+                          max="5" 
+                          step="0.1"
+                          bind:value={profile.settings.dynatempExponent} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Temperature smoothing factor. Higher values smooth temperature changes.">
+                          Smoothing ({profile.settings.smoothingFactor ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="2" 
+                          step="0.1"
+                          bind:value={profile.settings.smoothingFactor} 
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Expert Settings -->
+            <div class="mt-4 border-t pt-4">
+              <button 
+                type="button"
+                onclick={() => showExpert = !showExpert}
+                class="flex items-center justify-between w-full p-2 bg-red-50 hover:bg-red-100 rounded transition-colors border border-red-200"
+              >
+                <span class="font-medium text-red-800">Expert Settings (Advanced Users Only)</span>
+                <span class="transform transition-transform {showExpert ? 'rotate-180' : ''} text-red-600">▼</span>
+              </button>
+              
+              {#if showExpert}
+                <div class="mt-3 space-y-3 p-3 bg-red-50 rounded border border-red-200">
+                  <!-- Mirostat -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">Mirostat</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Mirostat mode: 0=disabled, 1=v1, 2=v2. Controls perplexity during generation.">
+                          Mode ({profile.settings.mirostat ?? 0})
+                        </label>
+                        <select bind:value={profile.settings.mirostat} class="w-full p-1 border rounded text-xs">
+                          <option value={0}>Disabled</option>
+                          <option value={1}>Mirostat v1</option>
+                          <option value={2}>Mirostat v2</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Target cross-entropy (perplexity). Higher values allow more variation.">
+                          Tau ({profile.settings.mirostatTau ?? 5.0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="10" 
+                          step="0.1"
+                          bind:value={profile.settings.mirostatTau} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Learning rate for mirostat adjustments.">
+                          Eta ({profile.settings.mirostatEta ?? 0.1})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.01"
+                          bind:value={profile.settings.mirostatEta} 
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- DRY (Don't Repeat Yourself) -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">DRY (Don't Repeat Yourself)</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="DRY multiplier. 0 = disabled. Higher values penalize repetition more.">
+                          Multiplier ({profile.settings.dryMultiplier ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="5" 
+                          step="0.1"
+                          bind:value={profile.settings.dryMultiplier} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Base DRY value.">
+                          Base ({profile.settings.dryBase ?? 1.75})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="5" 
+                          step="0.1"
+                          bind:value={profile.settings.dryBase} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Minimum sequence length before DRY applies.">
+                          Allowed Length ({profile.settings.dryAllowedLength ?? 2})
+                        </label>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="20" 
+                          bind:value={profile.settings.dryAllowedLength} 
+                          class="w-full p-1 border rounded text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- XTC -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">XTC (Exclude Top Choices)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="XTC threshold value.">
+                          Threshold ({profile.settings.xtcThreshold ?? 0.1})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.01"
+                          bind:value={profile.settings.xtcThreshold} 
+                          class="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="XTC probability. Set above 0 to enable XTC sampling.">
+                          Probability ({profile.settings.xtcProbability ?? 0})
+                        </label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.01"
+                          bind:value={profile.settings.xtcProbability} 
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Grammar & Constraints -->
+                  <div>
+                    <h4 class="text-sm font-semibold mb-2 text-gray-700">Grammar & Constraints</h4>
+                    <div class="grid grid-cols-1 gap-3">
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="GBNF grammar string to constrain output format.">
+                          Grammar (GBNF)
+                        </label>
+                        <textarea 
+                          bind:value={profile.settings.grammar} 
+                          placeholder="Enter GBNF grammar rules..."
+                          class="w-full p-2 border rounded text-xs resize-vertical"
+                          rows="3"
+                        ></textarea>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium mb-1" title="Forced memory insertion at the beginning of prompts.">
+                          Memory
+                        </label>
+                        <textarea 
+                          bind:value={profile.settings.memory} 
+                          placeholder="Forced memory content..."
+                          class="w-full p-2 border rounded text-xs resize-vertical"
+                          rows="2"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {/if}
+            </div>
+          {/if}
 
           <div class="grid grid-cols-2 gap-3">
             <div>

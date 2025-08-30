@@ -12,6 +12,31 @@ export interface LLMRequest {
   frequency_penalty: number;
   presence_penalty: number;
   stream: boolean;
+  // KoboldCPP specific parameters
+  tfs?: number;
+  top_a?: number;
+  top_k?: number;
+  min_p?: number;
+  typical?: number;
+  rep_pen?: number;
+  rep_pen_range?: number;
+  sampler_order?: number[];
+  dynatemp_range?: number;
+  dynatemp_exponent?: number;
+  smoothing_factor?: number;
+  mirostat?: number;
+  mirostat_tau?: number;
+  mirostat_eta?: number;
+  dry_multiplier?: number;
+  dry_base?: number;
+  dry_allowed_length?: number;
+  dry_sequence_breakers?: string[];
+  xtc_threshold?: number;
+  xtc_probability?: number;
+  grammar?: string;
+  banned_tokens?: string[];
+  logit_bias?: { [key: string]: number };
+  memory?: string;
 }
 
 export interface LLMResponse {
@@ -113,13 +138,7 @@ export class LLMService {
     return headers;
   }
 
-  async *generateStream(options: LLMGenerationOptions): AsyncGenerator<string, void, unknown> {
-    const { context, maxContextEntries, includeSystemContent, signal } = options;
-    
-    // Limit context to specified number of entries
-    const limitedContext = context.slice(-maxContextEntries);
-    const messages = this.buildMessages(limitedContext, includeSystemContent);
-
+  private buildRequest(messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }>, stream: boolean = true): LLMRequest {
     const request: LLMRequest = {
       messages,
       model: this.profile.model,
@@ -128,8 +147,63 @@ export class LLMService {
       top_p: this.profile.settings.topP,
       frequency_penalty: this.profile.settings.frequencyPenalty,
       presence_penalty: this.profile.settings.presencePenalty,
-      stream: true
+      stream
     };
+
+    // Add KoboldCPP specific parameters when provider is koboldcpp
+    if (this.profile.provider === 'koboldcpp') {
+      const settings = this.profile.settings;
+      
+      // Advanced Sampling
+      if (settings.tfs !== undefined) request.tfs = settings.tfs;
+      if (settings.topA !== undefined) request.top_a = settings.topA;
+      if (settings.topK !== undefined) request.top_k = settings.topK;
+      if (settings.minP !== undefined) request.min_p = settings.minP;
+      if (settings.typical !== undefined) request.typical = settings.typical;
+      
+      // Repetition Control
+      if (settings.repPen !== undefined) request.rep_pen = settings.repPen;
+      if (settings.repPenRange !== undefined) request.rep_pen_range = settings.repPenRange;
+      if (settings.samplerOrder !== undefined) request.sampler_order = settings.samplerOrder;
+      
+      // Dynamic Temperature
+      if (settings.dynatempRange !== undefined) request.dynatemp_range = settings.dynatempRange;
+      if (settings.dynatempExponent !== undefined) request.dynatemp_exponent = settings.dynatempExponent;
+      if (settings.smoothingFactor !== undefined) request.smoothing_factor = settings.smoothingFactor;
+      
+      // Mirostat
+      if (settings.mirostat !== undefined) request.mirostat = settings.mirostat;
+      if (settings.mirostatTau !== undefined) request.mirostat_tau = settings.mirostatTau;
+      if (settings.mirostatEta !== undefined) request.mirostat_eta = settings.mirostatEta;
+      
+      // DRY
+      if (settings.dryMultiplier !== undefined) request.dry_multiplier = settings.dryMultiplier;
+      if (settings.dryBase !== undefined) request.dry_base = settings.dryBase;
+      if (settings.dryAllowedLength !== undefined) request.dry_allowed_length = settings.dryAllowedLength;
+      if (settings.drySequenceBreakers !== undefined) request.dry_sequence_breakers = settings.drySequenceBreakers;
+      
+      // XTC
+      if (settings.xtcThreshold !== undefined) request.xtc_threshold = settings.xtcThreshold;
+      if (settings.xtcProbability !== undefined) request.xtc_probability = settings.xtcProbability;
+      
+      // Grammar & Constraints
+      if (settings.grammar !== undefined) request.grammar = settings.grammar;
+      if (settings.bannedTokens !== undefined) request.banned_tokens = settings.bannedTokens;
+      if (settings.logitBias !== undefined) request.logit_bias = settings.logitBias;
+      if (settings.memory !== undefined) request.memory = settings.memory;
+    }
+
+    return request;
+  }
+
+  async *generateStream(options: LLMGenerationOptions): AsyncGenerator<string, void, unknown> {
+    const { context, maxContextEntries, includeSystemContent, signal } = options;
+    
+    // Limit context to specified number of entries
+    const limitedContext = context.slice(-maxContextEntries);
+    const messages = this.buildMessages(limitedContext, includeSystemContent);
+
+    const request = this.buildRequest(messages, true);
 
     let retries = 0;
     const maxRetries = 3;
@@ -216,16 +290,7 @@ export class LLMService {
     const limitedContext = context.slice(-maxContextEntries);
     const messages = this.buildMessages(limitedContext, includeSystemContent);
 
-    const request: Omit<LLMRequest, 'stream'> & { stream: false } = {
-      messages,
-      model: this.profile.model,
-      temperature: this.profile.settings.temperature,
-      max_tokens: this.profile.settings.maxTokens,
-      top_p: this.profile.settings.topP,
-      frequency_penalty: this.profile.settings.frequencyPenalty,
-      presence_penalty: this.profile.settings.presencePenalty,
-      stream: false
-    };
+    const request = this.buildRequest(messages, false);
 
     let retries = 0;
     const maxRetries = 3;
@@ -283,11 +348,9 @@ export class LLMService {
       }];
 
       const request = {
-        messages: testMessages,
-        model: this.profile.model,
+        ...this.buildRequest(testMessages, false),
         temperature: 0.1,
-        max_tokens: 5,
-        stream: false
+        max_tokens: 5
       };
 
       const response = await fetch(this.getEndpoint(), {
