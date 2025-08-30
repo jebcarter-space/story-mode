@@ -12,8 +12,8 @@
 <button
   onclick={addInput}
   disabled={!hasQuestion ? true : undefined}
-  class="w-[48px] flex items-center justify-center"
+  class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   use:tooltip={'Add Text'}
 >
-  <img src={TextIcon} alt="Add Text"  class="h-[24px]"/>
+  <img src={TextIcon} alt="Add Text"  class="h-[32px] w-[32px]"/>
 </button>

@@ -11,9 +11,9 @@
 <div class="relative">
   <button
     onclick={openMore}
-    class="w-[48px] flex items-center justify-center"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
     use:tooltip={'More Options'}
   >
-    <img src={MoreIcon} alt="More Options"  class="h-[24px]"/>
+    <img src={MoreIcon} alt="More Options"  class="h-[32px] w-[32px]"/>
   </button>
 </div>

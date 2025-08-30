@@ -9,10 +9,10 @@
 </script>
 
 <button
-  class="w-[48px] flex items-center justify-center"
+  class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2"
   onclick={getAnswer}
   disabled={!hasQuestion ? true : undefined}
   use:tooltip={'Ask the Oracle'}
 >
-  <img src={OracleIcon} alt="Yes/No" class="h-[24px]"/>
+  <img src={OracleIcon} alt="Yes/No" class="h-[32px] w-[32px]"/>
 </button>

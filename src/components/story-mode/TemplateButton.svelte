@@ -138,11 +138,11 @@
   <button 
     onclick={toggleDropdown}
     use:tooltip={'Execute Template'}
-    class="w-[48px] flex items-center justify-center relative"
+    class="min-w-[48px] min-h-[44px] flex items-center justify-center p-2 relative"
     disabled={templateList.length === 0 || isProcessing}
     class:opacity-50={isProcessing}
   >
-    <img src={TemplateIcon} alt="Template" class="h-[24px]"/>
+    <img src={TemplateIcon} alt="Template" class="h-[32px] w-[32px]"/>
     {#if isProcessing}
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
