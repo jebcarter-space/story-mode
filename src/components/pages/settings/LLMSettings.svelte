@@ -218,14 +218,24 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">Endpoint URL</label>
+            <label class="block text-sm font-medium mb-1">
+              Endpoint URL
+              {#if profile.provider === 'koboldcpp'}
+                <span class="text-xs text-gray-500">(editable for tunnel/remote access)</span>
+              {/if}
+            </label>
             <input 
               type="url" 
-              placeholder="API endpoint URL"
+              placeholder={profile.provider === 'koboldcpp' ? 'e.g., http://localhost:5001/v1/chat/completions or tunnel URL' : 'API endpoint URL'}
               bind:value={profile.endpoint} 
-              readonly={profile.provider !== 'custom'}
-              class="w-full p-2 border rounded {profile.provider !== 'custom' ? 'bg-gray-100' : ''}"
+              readonly={profile.provider !== 'custom' && profile.provider !== 'koboldcpp'}
+              class="w-full p-2 border rounded {profile.provider !== 'custom' && profile.provider !== 'koboldcpp' ? 'bg-gray-100' : ''}"
             />
+            {#if profile.provider === 'koboldcpp'}
+              <div class="text-xs text-gray-600 mt-1">
+                For tunnel access, use your tunnel URL (e.g., https://abc123.ngrok.io/v1/chat/completions)
+              </div>
+            {/if}
           </div>
 
           <div>

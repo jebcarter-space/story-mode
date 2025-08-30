@@ -77,7 +77,7 @@ export function getDefaultLLMProfiles(): LLMProfileList {
       updated: now
     },
     koboldcpp_local: {
-      name: "KoboldCPP Local",
+      name: "KoboldCPP (Local/Tunnel)",
       provider: 'koboldcpp',
       apiKey: '',
       endpoint: 'http://localhost:5001/v1/chat/completions',
