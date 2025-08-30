@@ -209,3 +209,43 @@ export type RepositoryCategory = 'Character' | 'Location' | 'Object' | 'Situatio
 
 export type RepositoryViews = 'create' | 'import' | 'export' | 'view' | ''
 
+// Library System Types
+export interface Library {
+  shelves: Record<string, Shelf>;
+  settings: LibrarySettings;
+}
+
+export interface LibrarySettings {
+  lastAccessedShelf?: string;
+  lastAccessedBook?: string;
+  created: number;
+  updated: number;
+}
+
+export interface Shelf {
+  id: string;
+  name: string;
+  bannerImage?: string;
+  books: Record<string, Book>;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Book {
+  id: string;
+  name: string;
+  coverImage?: string;
+  chapters: Record<string, Chapter>;
+  lastAccessedChapter?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Chapter {
+  id: string;
+  name: string;
+  content: Content; // Using existing Content type
+  createdAt: number;
+  updatedAt: number;
+}
+
