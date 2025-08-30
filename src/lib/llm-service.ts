@@ -1,4 +1,6 @@
 import type { LLMProfile, ContentData } from '../data/types';
+import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
+import { DEFAULT_SYSTEM_PROMPT } from './system-prompt-presets';
 
 export interface LLMRequest {
   messages: Array<{
@@ -59,15 +61,22 @@ export interface LLMGenerationOptions {
 }
 
 export class LLMService {
-  constructor(private profile: LLMProfile) {}
+  private resolver: PlaceholderResolver;
+
+  constructor(private profile: LLMProfile, resolverOptions?: ResolverOptions) {
+    this.resolver = new PlaceholderResolver(resolverOptions);
+  }
 
   private buildMessages(context: ContentData[], includeSystemContent: boolean): Array<{ role: 'system' | 'user' | 'assistant', content: string }> {
     const messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }> = [];
     
-    // Add system message
+    // Use custom system prompt from profile or default
+    const systemPrompt = this.profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    const resolvedSystemPrompt = this.resolver.resolve(systemPrompt);
+    
     messages.push({
       role: 'system',
-      content: 'You are a creative storytelling assistant helping to continue an interactive story. Continue the narrative naturally based on the context provided. Be descriptive and engaging while maintaining consistency with the established tone and setting.'
+      content: resolvedSystemPrompt
     });
 
     // Add context from story history
@@ -92,6 +101,15 @@ export class LLMService {
         // Other types (roll, table, template, etc.) as user context
         messages.push({ role: 'user', content });
       }
+    }
+
+    // Add author note if provided
+    if (this.profile.authorNote) {
+      const resolvedAuthorNote = this.resolver.resolve(this.profile.authorNote);
+      messages.push({
+        role: 'user',
+        content: resolvedAuthorNote
+      });
     }
 
     return messages;

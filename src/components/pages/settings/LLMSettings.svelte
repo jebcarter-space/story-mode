@@ -3,6 +3,7 @@
   import { createLLMProfiles } from "../../../data/models/llm-profiles.svelte.ts";
   import { LLMService } from "../../../lib/llm-service";
   import { loadDefaultLLMProfiles } from "../../../lib/default-llm-profiles";
+  import { SYSTEM_PROMPT_PRESETS, DEFAULT_SYSTEM_PROMPT, DEFAULT_AUTHOR_NOTE, type SystemPromptPreset } from "../../../lib/system-prompt-presets";
   import SettingPage from "../../ui/SettingPage.svelte";
 
   let profiles = createLLMProfiles();
@@ -26,6 +27,8 @@
     apiKey: '',
     endpoint: '',
     model: 'gpt-3.5-turbo',
+    systemPrompt: '',
+    authorNote: '',
     settings: {
       temperature: 0.7,
       maxTokens: 500,
@@ -71,6 +74,8 @@
       apiKey: '',
       endpoint: '',
       model: 'gpt-3.5-turbo',
+      systemPrompt: '',
+      authorNote: '',
       settings: {
         temperature: 0.7,
         maxTokens: 500,
@@ -108,6 +113,11 @@
       created: 0,
       updated: 0
     };
+  }
+
+  function applyPreset(preset: SystemPromptPreset) {
+    profile.systemPrompt = preset.systemPrompt;
+    profile.authorNote = preset.authorNote;
   }
 
   function saveProfile() {
@@ -300,6 +310,60 @@
               bind:value={profile.model} 
               class="w-full p-2 border rounded"
             />
+          </div>
+
+          <!-- System Prompt & Author Note Configuration -->
+          <div class="mt-4 border-t pt-4">
+            <h4 class="text-lg font-medium mb-3">Prompt Configuration</h4>
+            
+            <!-- Preset Selection -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Quick Presets</label>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {#each SYSTEM_PROMPT_PRESETS as preset}
+                  <button 
+                    type="button"
+                    onclick={() => applyPreset(preset)} 
+                    class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded text-sm transition-colors"
+                    title={preset.description}
+                  >
+                    {preset.name}
+                  </button>
+                {/each}
+              </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1" title="Custom system prompt sent at the beginning of every conversation. Supports template variables.">
+                System Prompt
+              </label>
+              <textarea 
+                bind:value={profile.systemPrompt} 
+                placeholder="Leave empty to use default storytelling prompt..."
+                class="w-full p-2 border rounded text-sm resize-vertical"
+                rows="4"
+              ></textarea>
+              <div class="text-xs text-gray-600 mt-1">
+                Supports template variables. Leave empty to use the default system prompt.
+              </div>
+            </div>
+
+            <!-- Author Note -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1" title="Additional instructions sent after the story context but before generation. Supports template variables.">
+                Author Note
+              </label>
+              <textarea 
+                bind:value={profile.authorNote} 
+                placeholder="Optional additional instructions for the AI..."
+                class="w-full p-2 border rounded text-sm resize-vertical"
+                rows="2"
+              ></textarea>
+              <div class="text-xs text-gray-600 mt-1">
+                Sent after story content but before AI generation. Supports template variables.
+              </div>
+            </div>
           </div>
 
           <!-- Basic Settings -->

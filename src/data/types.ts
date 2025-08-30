@@ -108,6 +108,8 @@ export interface LLMProfile {
   apiKey: string;
   endpoint: string;
   model: string;
+  systemPrompt?: string;
+  authorNote?: string;
   settings: {
     temperature: number;
     maxTokens: number;
