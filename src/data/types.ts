@@ -29,7 +29,7 @@ export interface ContentData {
   input?: string;
 };
 
-export type ContentType = 'start' | 'task' | 'oracle' | 'keyword' | 'input'| 'roll' | 'table' | 'template';
+export type ContentType = 'start' | 'task' | 'oracle' | 'keyword' | 'input'| 'roll' | 'table' | 'template' | 'llm';
 
 export interface SettingPage {
   name: string;
@@ -101,4 +101,29 @@ export interface Creature {
   type: string;
   motivation: string;
 }
+
+export interface LLMProfile {
+  name: string;
+  provider: 'openai' | 'mistral' | 'openrouter' | 'koboldcpp' | 'custom';
+  apiKey: string;
+  endpoint: string;
+  model: string;
+  settings: {
+    temperature: number;
+    maxTokens: number;
+    topP: number;
+    frequencyPenalty: number;
+    presencePenalty: number;
+  };
+  includeSystemContent: boolean;
+  maxContextEntries: number;
+  created: number;
+  updated: number;
+}
+
+export interface LLMProfileList {
+  [key: string]: LLMProfile;
+}
+
+export type LLMViews = 'create' | 'import' | 'export' | 'view' | ''
 
