@@ -10,13 +10,18 @@
   import NewSceneButton from './NewSceneButton.svelte';
   import ClearButton from './ClearButton.svelte';
   import MoreButton from './MoreButton.svelte';
+  import { createAppConfig } from '../../data/models/app-config.svelte';
+
+  const appConfig = createAppConfig();
 </script>
 
 <div class="flex gap-2 mt-2">
   <OracleButton />
   <TaskButton/>
-  <TemplateButton/>
-  </div>
+  {#if appConfig.features.templates}
+    <TemplateButton/>
+  {/if}
+</div>
 <div class="flex gap-2">
   <DiceButton  />
   <Divider />
