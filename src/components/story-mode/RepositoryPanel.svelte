@@ -23,7 +23,9 @@
 
   let categoryItems = $derived(repositories.getByCategory(category));
   let filteredItems = $derived(() => {
-    const items = Object.entries(categoryItems);
+    // Force reactivity by accessing value directly
+    const allItems = repositories.value;
+    const items = Object.entries(allItems).filter(([key, item]) => item.category === category);
     if (!searchTerm) return items;
     return items.filter(([key, item]) => 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
