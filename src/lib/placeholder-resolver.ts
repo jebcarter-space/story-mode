@@ -189,7 +189,7 @@ export class PlaceholderResolver {
     return text.replace(placeholderRegex, (match, placeholder) => {
       const parts = placeholder.split('.');
       const tableName = parts[0];
-      const modifier = parts[1];
+      const modifiers = parts.slice(1); // Get all modifiers after the table name
       
       const table = this.findTable(tableName);
       if (!table) {
@@ -201,7 +201,7 @@ export class PlaceholderResolver {
       let isConsumable = false;
 
       // Check if consumable modifier is used or table has consumable flag
-      if (modifier === 'consumable' || table.consumable) {
+      if (modifiers.includes('consumable') || table.consumable) {
         isConsumable = true;
         tableToUse = this.getAvailableEntries(table, tableName);
       }
@@ -215,8 +215,9 @@ export class PlaceholderResolver {
         this.markAsConsumed(tableName, resultText);
       }
 
-      // Apply modifier if present and not 'consumable'
-      if (modifier && modifier !== 'consumable') {
+      // Apply modifiers in order (excluding 'consumable')
+      const textModifiers = modifiers.filter((mod: string) => mod !== 'consumable');
+      for (const modifier of textModifiers) {
         resultText = this.applyModifier(resultText, modifier);
       }
 
