@@ -1,6 +1,7 @@
 import type { Library, LibrarySettings, Shelf, Book, Chapter, Content } from '../types';
 import { createStorage, migrateLegacyData } from '../../lib/storage';
 import type { StorageInterface } from '../../lib/storage/storage-interface';
+import { createWorkbooks } from './workbooks.svelte';
 
 export function createLibrary() {
   const storage: StorageInterface = createStorage('library');
@@ -117,6 +118,10 @@ export function createLibrary() {
       library.shelves[id] = shelf;
       library.settings.updated = now;
       await storage.set('library', JSON.parse(JSON.stringify(library)));
+      
+      // Auto-create a default workbook for this shelf
+      const workbooks = createWorkbooks();
+      workbooks.createDefaultWorkbook(id, name);
     }
 
     return id;

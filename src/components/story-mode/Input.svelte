@@ -7,6 +7,11 @@
   import { addInput, getAnswer } from "./functions";
   import { LLMService, type TokenCountInfo } from "../../lib/llm-service";
   import LLMIndicator from "./LLMIndicator.svelte";
+  import { createWorkbooks } from "../../data/models/workbooks.svelte";
+  import { createRepositoryResolver } from "../../lib/repository-resolver.ts";
+  import type { RepositoryContext } from "../../data/types";
+  import ContextIndicator from "../ui/ContextIndicator.svelte";
+  import { getRepositoryContext } from "../../lib/repository-context";
 
   export let input = createInput();
 </script>
@@ -17,11 +22,16 @@
   
   let profiles = createLLMProfiles();
   let repositories = createRepositories();
+  let workbooks = createWorkbooks();
   let selectedProfileKey = $state(localStorage.getItem('selected-llm-profile') || '');
+  
+  // Repository context from provider (library navigation)
+  let repositoryContext = $derived(getRepositoryContext());
   let isGenerating = $state(false);
   let llmError = $state('');
   let abortController: AbortController | null = null;
   let tokenInfo = $state<TokenCountInfo | undefined>(undefined);
+  let conflictWarnings = $state<string[]>([]);
 
   // Get the currently selected profile
   let selectedProfile = $derived(
@@ -66,12 +76,43 @@
     try {
       const service = new LLMService(selectedProfile);
       
-      // Gather repository items
+      // Create repository resolver with current context and workbooks
+      const resolver = createRepositoryResolver(
+        repositories.value, 
+        workbooks.getAllWorkbooks(),
+        repositoryContext
+      );
+      
+      // Gather repository items with conflict resolution
       const forcedItems = repositories.getForced();
-      const keywordMatches = repositories.getMatchingKeywords(question + ' ' + contentArray.map(c => c.input + ' ' + c.output).join(' '));
+      const queryText = question + ' ' + contentArray.map(c => c.input + ' ' + c.output).join(' ');
+      const keywordResolutions = resolver.getMatchingKeywords(queryText);
+      
+      // Extract items from resolutions and show conflict warnings
+      const keywordMatchItems: RepositoryItem[] = [];
+      const newConflictWarnings: string[] = [];
+      
+      for (const resolution of keywordResolutions) {
+        keywordMatchItems.push(...resolution.items.map(r => r.item));
+        
+        if (resolution.hasConflicts) {
+          const sourceLabels = resolution.items.map(r => `${r.source}: ${r.item.name}`).join(', ');
+          newConflictWarnings.push(`Keyword "${resolution.keyword}" found in multiple sources: ${sourceLabels}. Content will be concatenated.`);
+        }
+      }
+      
+      // Update conflict warnings state
+      conflictWarnings = newConflictWarnings;
+      if (conflictWarnings.length > 0) {
+        console.warn('Repository keyword conflicts detected:', conflictWarnings);
+        // Clear warnings after 5 seconds
+        setTimeout(() => {
+          conflictWarnings = [];
+        }, 5000);
+      }
       
       // Combine and deduplicate repository items
-      const repositoryItems = Array.from(new Set([...forcedItems, ...keywordMatches]));
+      const repositoryItems = Array.from(new Set([...forcedItems, ...keywordMatchItems]));
       
       // Prepare context from story content
       const options = {
@@ -174,10 +215,16 @@
     try {
       const service = new LLMService(selectedProfile);
       
-      // Get forced repository items
-      const allRepoItems = Object.entries(repositories.value)
-        .map(([key, item]) => item)
-        .filter(item => item.forceInContext);
+      // Create repository resolver and get forced items with scoping
+      const resolver = createRepositoryResolver(
+        repositories.value, 
+        workbooks.getAllWorkbooks(),
+        repositoryContext
+      );
+      
+      const allRepoItems = resolver.getItemsInScope()
+        .filter(resolved => resolved.item.forceInContext)
+        .map(resolved => resolved.item);
 
       const options = {
         context: contentArray,
@@ -201,6 +248,11 @@
   });
 </script>
 
+<!-- Repository Context Indicator -->
+<div class="mb-2">
+  <ContextIndicator context={repositoryContext} compact={true} />
+</div>
+
 <!-- Profile Selection and Status -->
 {#if Object.keys(profiles.value).length > 0}
   <div class="mb-2 flex items-center gap-2">
@@ -215,6 +267,18 @@
         Empty + Enter to generate
       </span>
     {/if}
+  </div>
+{/if}
+
+<!-- Conflict Warnings -->
+{#if conflictWarnings.length > 0}
+  <div class="mb-2 p-2 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded text-sm">
+    <div class="font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+      ⚠️ Repository Keyword Conflicts
+    </div>
+    {#each conflictWarnings as warning}
+      <div class="text-yellow-700 dark:text-yellow-300 text-xs">{warning}</div>
+    {/each}
   </div>
 {/if}
 

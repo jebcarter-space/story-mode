@@ -2,6 +2,8 @@
   import type { RepositoryItem, RepositoryCategory, RepositoryList, RepositoryViews } from '../../data/types';
   import { createRepositories } from '../../data/models/repositories.svelte.ts';
   import { RepositoryImporter } from '../../lib/repository-importer';
+  import ContextIndicator from '../ui/ContextIndicator.svelte';
+  import { getRepositoryContext } from '../../lib/repository-context';
 
   let { category }: { category: RepositoryCategory } = $props();
 
@@ -26,6 +28,9 @@
   let formWorkbookTags = $state('');
   let conflictWarning = $state('');
   let acknowledgeConflict = $state(false);
+
+  // Get repository context for scoping
+  let repositoryContext = $derived(getRepositoryContext());
 
   let categoryItems = $derived(repositories.getByCategory(category));
   let filteredItems = $derived(() => {
@@ -76,9 +81,32 @@
     formContent = '';
     formKeywords = '';
     formForceInContext = false;
-    // Reset scoping fields
-    formScope = 'library';
-    formScopeContext = { chapterId: '', bookId: '', shelfId: '' };
+    // Reset scoping fields with current context defaults
+    if (repositoryContext.chapterId) {
+      formScope = 'chapter';
+      formScopeContext = {
+        chapterId: repositoryContext.chapterId,
+        bookId: repositoryContext.bookId || '',
+        shelfId: repositoryContext.shelfId || ''
+      };
+    } else if (repositoryContext.bookId) {
+      formScope = 'book';
+      formScopeContext = {
+        chapterId: '',
+        bookId: repositoryContext.bookId,
+        shelfId: repositoryContext.shelfId || ''
+      };
+    } else if (repositoryContext.shelfId) {
+      formScope = 'shelf';
+      formScopeContext = {
+        chapterId: '',
+        bookId: '',
+        shelfId: repositoryContext.shelfId
+      };
+    } else {
+      formScope = 'library';
+      formScopeContext = { chapterId: '', bookId: '', shelfId: '' };
+    }
     formWorkbookTags = '';
     conflictWarning = '';
     acknowledgeConflict = false;
@@ -208,6 +236,11 @@
         {view === 'view' ? '−' : '⋯'}
       </button>
     </div>
+  </div>
+
+  <!-- Context Indicator -->
+  <div class="p-2 border-b theme-border">
+    <ContextIndicator context={repositoryContext} compact={true} />
   </div>
 
   <!-- Content -->
