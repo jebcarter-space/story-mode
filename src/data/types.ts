@@ -160,3 +160,22 @@ export interface LLMProfileList {
 
 export type LLMViews = 'create' | 'import' | 'export' | 'view' | ''
 
+export interface RepositoryItem {
+  name: string;
+  description: string;
+  keywords: string[];
+  content: string;
+  forceInContext: boolean;
+  category: RepositoryCategory;
+  created: number;
+  updated: number;
+}
+
+export interface RepositoryList {
+  [key: string]: RepositoryItem;
+}
+
+export type RepositoryCategory = 'Character' | 'Location' | 'Object' | 'Situation'
+
+export type RepositoryViews = 'create' | 'import' | 'export' | 'view' | ''
+

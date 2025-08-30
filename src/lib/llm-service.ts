@@ -1,4 +1,4 @@
-import type { LLMProfile, ContentData } from '../data/types';
+import type { LLMProfile, ContentData, RepositoryItem } from '../data/types';
 import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
 import { DEFAULT_SYSTEM_PROMPT } from './system-prompt-presets';
 
@@ -58,6 +58,7 @@ export interface LLMGenerationOptions {
   maxContextEntries: number;
   includeSystemContent: boolean;
   signal?: AbortSignal;
+  repositoryItems?: RepositoryItem[];
 }
 
 export class LLMService {
@@ -67,7 +68,7 @@ export class LLMService {
     this.resolver = new PlaceholderResolver(resolverOptions);
   }
 
-  private buildMessages(context: ContentData[], includeSystemContent: boolean): Array<{ role: 'system' | 'user' | 'assistant', content: string }> {
+  private buildMessages(context: ContentData[], includeSystemContent: boolean, repositoryItems?: RepositoryItem[]): Array<{ role: 'system' | 'user' | 'assistant', content: string }> {
     const messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }> = [];
     
     // Use custom system prompt from profile or default
@@ -78,6 +79,18 @@ export class LLMService {
       role: 'system',
       content: resolvedSystemPrompt
     });
+
+    // Add repository items if provided
+    if (repositoryItems && repositoryItems.length > 0) {
+      const repositoryContext = repositoryItems.map(item => 
+        `${item.category}: ${item.name}\n${item.content}`
+      ).join('\n\n');
+      
+      messages.push({
+        role: 'system',
+        content: `Repository Context:\n\n${repositoryContext}`
+      });
+    }
 
     // Add context from story history
     for (const entry of context) {
@@ -215,11 +228,11 @@ export class LLMService {
   }
 
   async *generateStream(options: LLMGenerationOptions): AsyncGenerator<string, void, unknown> {
-    const { context, maxContextEntries, includeSystemContent, signal } = options;
+    const { context, maxContextEntries, includeSystemContent, signal, repositoryItems } = options;
     
     // Limit context to specified number of entries
     const limitedContext = context.slice(-maxContextEntries);
-    const messages = this.buildMessages(limitedContext, includeSystemContent);
+    const messages = this.buildMessages(limitedContext, includeSystemContent, repositoryItems);
 
     const request = this.buildRequest(messages, true);
 

@@ -10,6 +10,7 @@
   import NewSceneButton from './NewSceneButton.svelte';
   import ClearButton from './ClearButton.svelte';
   import MoreButton from './MoreButton.svelte';
+  import RepositorySidebar from './RepositorySidebar.svelte';
   import { createAppConfig } from '../../data/models/app-config.svelte';
 
   const appConfig = createAppConfig();
@@ -27,5 +28,6 @@
   <Divider />
   <InputButton  />
   <KeywordsButton />
+  <RepositorySidebar />
   <MoreButton />
 </div>
