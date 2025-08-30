@@ -63,6 +63,9 @@
     },
     includeSystemContent: false,
     maxContextEntries: 10,
+    // Context size management
+    maxContextSize: undefined,
+    autoDetectContextSize: true,
     created: 0,
     updated: 0
   });
@@ -110,6 +113,9 @@
       },
       includeSystemContent: false,
       maxContextEntries: 10,
+      // Context size management
+      maxContextSize: undefined,
+      autoDetectContextSize: true,
       created: 0,
       updated: 0
     };
@@ -793,6 +799,56 @@
                 Include System Content
               </label>
             </div>
+          </div>
+
+          <!-- Context Size Configuration -->
+          <div class="mt-4 border-t pt-4">
+            <h4 class="text-sm font-medium mb-3">Context Size Management</h4>
+            
+            {#if profile.provider === 'koboldcpp'}
+              <div class="space-y-3">
+                <label class="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    bind:checked={profile.autoDetectContextSize}
+                    class="mr-2"
+                  />
+                  Auto-detect context size from KoboldCPP API
+                </label>
+                
+                {#if !profile.autoDetectContextSize}
+                  <div>
+                    <label class="block text-sm font-medium mb-1">Manual Context Size</label>
+                    <input 
+                      type="number" 
+                      min="512" 
+                      max="32768"
+                      bind:value={profile.maxContextSize} 
+                      placeholder="e.g., 2048"
+                      class="w-full p-2 border rounded"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                      Override auto-detection with manual value
+                    </p>
+                  </div>
+                {/if}
+              </div>
+            {:else}
+              <div>
+                <label class="block text-sm font-medium mb-1">Max Context Size (tokens)</label>
+                <input 
+                  type="number" 
+                  min="512" 
+                  max="200000"
+                  bind:value={profile.maxContextSize} 
+                  placeholder="e.g., 4096 for GPT-3.5, 128000 for GPT-4"
+                  class="w-full p-2 border rounded"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  Set the maximum context size for this model. Token counting will use character-based estimation.
+                </p>
+              </div>
+            {/if}
           </div>
         </div>
         

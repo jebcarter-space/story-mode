@@ -1,12 +1,23 @@
 <script lang="ts">
+  import type { TokenCountInfo } from '../../lib/llm-service';
+
   interface LLMIndicatorProps {
     isGenerating?: boolean;
     profileName?: string;
     error?: string;
     onCancel?: () => void;
+    tokenInfo?: TokenCountInfo;
   }
 
-  let { isGenerating = false, profileName = '', error = '', onCancel }: LLMIndicatorProps = $props();
+  let { isGenerating = false, profileName = '', error = '', onCancel, tokenInfo }: LLMIndicatorProps = $props();
+
+  // Calculate usage percentage
+  let usagePercent = $derived(tokenInfo?.maxContextSize 
+    ? Math.min((tokenInfo.tokens / tokenInfo.maxContextSize) * 100, 100)
+    : 0);
+
+  // Determine progress bar color based on usage
+  let progressColor = $derived(usagePercent > 90 ? 'bg-red-500' : usagePercent > 75 ? 'bg-yellow-500' : 'bg-green-500');
 </script>
 
 {#if isGenerating}
@@ -34,5 +45,33 @@
         LLM Error: {error}
       </span>
     </div>
+  </div>
+{/if}
+
+<!-- Token Usage Indicator -->
+{#if tokenInfo && tokenInfo.maxContextSize}
+  <div class="p-2 bg-gray-50 border border-gray-200 rounded mb-2">
+    <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+      <span>Context Usage</span>
+      <span>
+        {tokenInfo.tokens.toLocaleString()} / {tokenInfo.maxContextSize.toLocaleString()} tokens 
+        ({usagePercent.toFixed(1)}%)
+        {#if tokenInfo.isEstimate}
+          <span class="text-gray-500">(estimated)</span>
+        {/if}
+      </span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2">
+      <div 
+        class="h-2 rounded-full transition-all duration-300 {progressColor}"
+        style="width: {usagePercent}%"
+        title="Context usage: {tokenInfo.tokens} / {tokenInfo.maxContextSize} tokens"
+      ></div>
+    </div>
+    {#if usagePercent > 90}
+      <div class="text-xs text-red-600 mt-1">
+        ⚠️ Approaching context limit
+      </div>
+    {/if}
   </div>
 {/if}
