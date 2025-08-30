@@ -1,6 +1,7 @@
 import type { RandomTable, CustomTableList } from '../data/types';
 import { rollOnTable } from './tables';
 import { moreTables } from '../data/constants';
+import { DiceRoll } from '@dice-roller/rpg-dice-roller';
 
 export interface ResolverOptions {
   customTables?: CustomTableList;
@@ -177,6 +178,70 @@ export class PlaceholderResolver {
     return 'aeiou'.includes(char.toLowerCase());
   }
 
+  private handleRandomRange(rangeStr: string): string {
+    const match = rangeStr.match(/^(\d+)-(\d+)$/);
+    if (!match) {
+      console.warn(`Invalid range format: ${rangeStr}. Expected format: min-max`);
+      return rangeStr;
+    }
+    
+    const min = parseInt(match[1]);
+    const max = parseInt(match[2]);
+    if (min > max) {
+      console.warn(`Invalid range: ${rangeStr}. Min should be less than or equal to max`);
+      return rangeStr;
+    }
+    
+    return Math.floor(Math.random() * (max - min + 1) + min).toString();
+  }
+
+  private handleDiceRoll(diceStr: string): string {
+    try {
+      const roll = new DiceRoll(diceStr);
+      return roll.total.toString();
+    } catch (error) {
+      console.warn(`Invalid dice formula: ${diceStr}`, error);
+      return diceStr;
+    }
+  }
+
+  private handleMultiplePicks(tableName: string, pickCount: number, isConsumable: boolean = false): string {
+    const table = this.findTable(tableName);
+    if (!table) {
+      console.warn(`Table '${tableName}' not found`);
+      return `{${tableName}.pick ${pickCount}}`;
+    }
+
+    const results: string[] = [];
+    let tableToUse = isConsumable ? this.getAvailableEntries(table, tableName) : table;
+    
+    for (let i = 0; i < pickCount; i++) {
+      // If table is exhausted and consumable, reset it
+      if (isConsumable && tableToUse.table.length === 0) {
+        this.resetConsumption(tableName);
+        tableToUse = table;
+      }
+      
+      if (tableToUse.table.length === 0) {
+        break; // No more entries available
+      }
+
+      const result = rollOnTable(tableToUse);
+      let resultText = result.description;
+
+      // Mark as consumed if needed
+      if (isConsumable) {
+        this.markAsConsumed(tableName, resultText);
+        // Update available entries for next pick
+        tableToUse = this.getAvailableEntries(table, tableName);
+      }
+
+      results.push(resultText);
+    }
+
+    return results.join(', ');
+  }
+
   public resolve(text: string, depth: number = 0): string {
     if (depth >= this.maxDepth) {
       console.warn('Maximum placeholder resolution depth reached');
@@ -187,6 +252,36 @@ export class PlaceholderResolver {
     const placeholderRegex = /\{([^}]+)\}/g;
     
     return text.replace(placeholderRegex, (match, placeholder) => {
+      // Handle special syntax cases first
+      
+      // Handle random range: {rand min-max}
+      if (placeholder.startsWith('rand ')) {
+        const rangeStr = placeholder.substring(5);
+        return this.handleRandomRange(rangeStr);
+      }
+      
+      // Handle dice roll: {roll XdY+Z}
+      if (placeholder.startsWith('roll ')) {
+        const diceStr = placeholder.substring(5);
+        return this.handleDiceRoll(diceStr);
+      }
+      
+      // Handle table with pick modifier: {tableName.pick N} or {tableName.consumable.pick N}
+      const pickMatch = placeholder.match(/^(.+)\.pick\s+(\d+)$/);
+      if (pickMatch) {
+        const tableWithModifiers = pickMatch[1];
+        const pickCount = parseInt(pickMatch[2]);
+        const parts = tableWithModifiers.split('.');
+        const tableName = parts[0];
+        const modifiers = parts.slice(1);
+        const isConsumable = modifiers.includes('consumable');
+        
+        const result = this.handleMultiplePicks(tableName, pickCount, isConsumable);
+        // Recursively resolve any placeholders in the result
+        return this.resolve(result, depth + 1);
+      }
+      
+      // Handle standard table lookup with modifiers
       const parts = placeholder.split('.');
       const tableName = parts[0];
       const modifiers = parts.slice(1); // Get all modifiers after the table name
