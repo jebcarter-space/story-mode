@@ -168,7 +168,11 @@ export class RepositoryImporter {
       keywords: Array.isArray(data.keywords) ? data.keywords.filter((k: any) => typeof k === 'string') : [],
       forceInContext: typeof data.forceInContext === 'boolean' ? data.forceInContext : false,
       created: (typeof data.created === 'number' && data.created > 0) ? data.created : now,
-      updated: (typeof data.updated === 'number' && data.updated > 0) ? data.updated : now
+      updated: (typeof data.updated === 'number' && data.updated > 0) ? data.updated : now,
+      // Handle scoping fields with defaults
+      scope: data.scope || 'library',
+      scopeContext: data.scopeContext || {},
+      workbookTags: Array.isArray(data.workbookTags) ? data.workbookTags.filter((t: any) => typeof t === 'string') : []
     };
   }
 }

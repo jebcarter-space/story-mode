@@ -2,6 +2,7 @@
   import { link } from 'svelte-routing';
   import { createLibrary } from '../../data/models/library.svelte';
   import Breadcrumb from '../ui/Breadcrumb.svelte';
+  import { setRepositoryContext } from '../../lib/repository-context';
 
   let { shelfId }: { shelfId: string } = $props();
 
@@ -31,6 +32,15 @@
     newBookCover = '';
     showCreateBook = false;
   }
+
+  // Set repository context for scoping
+  $effect(() => {
+    setRepositoryContext({
+      shelfId,
+      bookId: undefined,
+      chapterId: undefined
+    });
+  });
 </script>
 
 {#if !library.isLoaded}

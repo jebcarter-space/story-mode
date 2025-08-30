@@ -8,6 +8,7 @@
   import Header from '../ui/Header.svelte';
   import { content as globalContent } from '../../App.svelte';
   import type { Content as ContentType } from '../../data/types';
+  import { setRepositoryContext } from '../../lib/repository-context';
 
   let { shelfId, bookId, chapterId }: { shelfId: string; bookId: string; chapterId?: string } = $props();
 
@@ -43,6 +44,15 @@
       // Replace global content with chapter content
       globalContent.value = { ...currentChapter.content };
     }
+  });
+
+  // Set repository context for scoping
+  $effect(() => {
+    setRepositoryContext({
+      shelfId,
+      bookId,
+      chapterId: currentChapterId
+    });
   });
 
   // Save chapter content when global content changes

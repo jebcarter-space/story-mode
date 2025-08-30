@@ -2,6 +2,7 @@
   import { link } from 'svelte-routing';
   import { createLibrary } from '../../data/models/library.svelte';
   import Breadcrumb from '../ui/Breadcrumb.svelte';
+  import { setRepositoryContext } from '../../lib/repository-context';
 
   const library = createLibrary();
 
@@ -27,6 +28,15 @@
     newShelfBanner = '';
     showCreateShelf = false;
   }
+
+  // Set repository context for library level
+  $effect(() => {
+    setRepositoryContext({
+      shelfId: undefined,
+      bookId: undefined,
+      chapterId: undefined
+    });
+  });
 </script>
 
 <div class="library-page p-4">
