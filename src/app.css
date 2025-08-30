@@ -1,17 +1,42 @@
 @import "tailwindcss";
 
+/* CSS Custom Properties for Theme System */
+:root {
+  /* Default (light) theme colors - will be overridden by theme.svelte.ts */
+  --theme-background: #f5f5f4;
+  --theme-foreground: #44403c;
+  --theme-muted: #d6d3d1;
+  --theme-accent: #0c0a09;
+  --theme-border: #0c0a09;
+  --theme-input: #f5f5f4;
+  --theme-button: #d6d3d1;
+  --theme-buttonHover: #a8a29e;
+  --theme-disabled: #f5f5f4;
+  --theme-focus: #a8a29e;
+  --theme-primary: #0c0a09;
+  --theme-secondary: #44403c;
+  --theme-tertiary: #78716c;
+}
 
+/* Base styles using CSS custom properties */
 html, body, #app {
-  @apply h-full text-stone-700 bg-stone-300 relative;
-}
-#app {
-  @apply bg-stone-100;
-}
-#app.dark {
-  @apply text-stone-100 bg-stone-900;
+  @apply h-full relative;
+  background-color: var(--theme-muted);
+  color: var(--theme-foreground);
 }
 
-.dark img {
+#app {
+  background-color: var(--theme-background);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Legacy dark class support for backward compatibility */
+#app.dark {
+  /* Colors will be set by CSS custom properties */
+}
+
+/* Image inversion for dark themes */
+.dark img, .nord img, .dracula img, .gruvbox img, .solarized img {
   filter: invert(1);
 } 
 
@@ -19,26 +44,47 @@ html, body, #app {
   @apply py-2 px-3;
 }
 
+/* Button styles using theme variables */
 button {
-  @apply py-2 px-3 ;
-  @apply border bg-stone-300 border-stone-900 text-stone-900 ;
-  @apply hover:bg-stone-400 focus:bg-stone-400;
-  @apply disabled:bg-stone-100 disabled:cursor-not-allowed cursor-pointer;
+  @apply py-2 px-3 cursor-pointer;
+  background-color: var(--theme-button);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-foreground);
+  transition: all 0.2s ease;
 }
-.dark button {
-  @apply bg-stone-600 text-stone-600 border-stone-600;
-  @apply hover:bg-stone-800 focus:bg-stone-800;
-  @apply disabled:bg-stone-400;
+
+button:hover:not(:disabled) {
+  background-color: var(--theme-buttonHover);
 }
+
+button:focus {
+  background-color: var(--theme-focus);
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  background-color: var(--theme-disabled);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 button.transparent {
   @apply bg-transparent border-0;
 }
 
+/* Form input styles using theme variables */
 input, select, textarea {
-  @apply py-2 px-3 border border-stone-900 text-stone-900 bg-stone-100;
+  @apply py-2 px-3;
+  background-color: var(--theme-input);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-foreground);
+  transition: all 0.2s ease;
 }
-input.dark, select.dark, textarea.dark {
-  @apply border-stone-100;
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
 }
 
 h4 {
@@ -50,10 +96,12 @@ p, table {
 }
 
 table {
-  @apply border;
+  border: 1px solid var(--theme-border);
 }
+
 th, td {
-  @apply p-2 border;
+  @apply p-2;
+  border: 1px solid var(--theme-border);
 }
 
 ul {
@@ -65,10 +113,13 @@ ul {
 }
 
 .disable {
-  @apply disabled:bg-stone-100 disabled:border-stone-700 disabled:text-stone-700 disabled:cursor-not-allowed;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
+
 .entry {
-  @apply pb-3 mb-2 border-b;
+  @apply pb-3 mb-2;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 small {
@@ -78,10 +129,13 @@ small {
 /* Modal Styles */
 dialog {
   @apply mx-auto lg:w-1/2 p-3 rounded;
+  background-color: var(--theme-background);
+  color: var(--theme-foreground);
+  border: 1px solid var(--theme-border);
 }
 
 ::backdrop {
-  @apply bg-stone-900/75;
+  background-color: rgba(0, 0, 0, 0.75);
 }
 
 dialog h2 {
@@ -94,9 +148,9 @@ dialog h2 {
 }
 
 #tooltip {
-  @apply bg-stone-900 text-stone-100 p-1 rounded text-sm w-max;
-  @apply drop-shadow-md;
-  @apply absolute z-10;
+  @apply p-1 rounded text-sm w-max drop-shadow-md absolute z-10;
+  background-color: var(--theme-accent);
+  color: var(--theme-background);
 }
 #tooltip.top {  
   bottom: 100%;
@@ -155,9 +209,6 @@ dialog h2 {
   width: 0.25em;
   transform: translateY(-50%);
   clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
-}
-.dark #tooltip {
-  @apply bg-stone-100 text-stone-900;
 }
 
 /* Map Styles */

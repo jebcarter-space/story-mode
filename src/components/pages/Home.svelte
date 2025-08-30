@@ -1,8 +1,3 @@
-<script module lang="ts">
-  import { createDarkMode } from "../../data/models/dark-mode.svelte";
-  export let isDarkMode = createDarkMode();
-</script>
-
 <script lang="ts">
   import { link, Link } from "svelte-routing";
   import Logo from "../../assets/logo.svg";
@@ -15,8 +10,11 @@
   import { content } from "../../App.svelte";
   import { tooltip } from "../../lib/tooltip.svelte";
 
+  // Accept theme as prop
+  let { theme } = $props();
+
   function toggleTheme() {
-    isDarkMode.toggle();
+    theme.toggle();
   }
 
   let game = $state('Start a Game');
@@ -46,7 +44,7 @@
       <img src={GearIcon} alt="Settings" class="h-6 w-6"/>
     </a>
     <button onclick={toggleTheme} class="transparent" use:tooltip={`Theme`}>
-      <img src={!isDarkMode.value ? SunIcon : MoonIcon} alt="Theme" class="h-6 w-6"/>
+      <img src={!theme.isDark ? SunIcon : MoonIcon} alt="Theme" class="h-6 w-6"/>
     </button>
     <a href="/about" use:link use:tooltip={`About`}>
       <img src={InfoIcon} alt="About" class="h-6 w-6"/>

@@ -11,18 +11,21 @@
   import About from './components/pages/About.svelte';
   import More from './components/pages/More.svelte';
   import Settings from './components/pages/Settings.svelte';
-  import Home, { isDarkMode } from './components/pages/Home.svelte';
+  import Home from './components/pages/Home.svelte';
+  import { createTheme } from './data/models/theme.svelte';
 
+  // Initialize theme system
+  let theme = createTheme();
 
   let url = $state('');
-  let dark = $derived(isDarkMode.value);
+  let dark = $derived(theme.isDark);
 </script>
 
 <div id="app" class="mx-auto lg:w-1/2" class:dark={dark}>
   <Router {url}>
     <div class="layout p-3 border h-full">
       <section class="">
-        <Route path="/"><Home /></Route>
+        <Route path="/"><Home {theme} /></Route>
         <Route path="/story"><Story /></Route>
         <Route path="/change-log"><ChangeLog /></Route>
         <Route path="/about"><About /></Route>
