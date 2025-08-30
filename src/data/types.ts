@@ -202,6 +202,14 @@ export interface RepositoryItem {
   category: RepositoryCategory;
   created: number;
   updated: number;
+  // Repository Scoping System fields
+  scope: 'chapter' | 'book' | 'shelf' | 'library';
+  scopeContext: {
+    chapterId?: string;
+    bookId?: string; 
+    shelfId?: string;
+  };
+  workbookTags: string[]; // Multiple workbook membership
 }
 
 export interface RepositoryList {
@@ -250,5 +258,53 @@ export interface Chapter {
   content: Content; // Using existing Content type
   createdAt: number;
   updatedAt: number;
+}
+
+// Workbook System Types
+export interface Workbook {
+  id: string;
+  name: string;
+  description?: string;
+  stackId: string; // Which stack contains this workbook
+  masterScope?: 'chapter' | 'book' | 'shelf' | 'library';
+  masterScopeContext?: {
+    chapterId?: string;
+    bookId?: string;
+    shelfId?: string;
+  };
+  tags: string[]; // Tags this workbook represents
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Stack {
+  id: string;
+  name: string;
+  workbooks: Record<string, Workbook>;
+}
+
+export interface WorkbookSystem {
+  stacks: Record<string, Stack>;
+}
+
+// Repository Context for resolution
+export interface RepositoryContext {
+  chapterId?: string;
+  bookId?: string;
+  shelfId?: string;
+}
+
+// Repository resolution result
+export interface ResolvedRepositoryItem {
+  item: RepositoryItem;
+  key: string;
+  source: 'library' | 'shelf' | 'book' | 'chapter';
+}
+
+export interface KeywordResolution {
+  keyword: string;
+  items: ResolvedRepositoryItem[];
+  concatenatedContent: string;
+  hasConflicts: boolean;
 }
 

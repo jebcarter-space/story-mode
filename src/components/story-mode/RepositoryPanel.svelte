@@ -20,6 +20,12 @@
   let formContent = $state('');
   let formKeywords = $state('');
   let formForceInContext = $state(false);
+  // New scoping form fields
+  let formScope = $state<'chapter' | 'book' | 'shelf' | 'library'>('library');
+  let formScopeContext = $state({ chapterId: '', bookId: '', shelfId: '' });
+  let formWorkbookTags = $state('');
+  let conflictWarning = $state('');
+  let acknowledgeConflict = $state(false);
 
   let categoryItems = $derived(repositories.getByCategory(category));
   let filteredItems = $derived(() => {
@@ -50,6 +56,16 @@
     formContent = item.content;
     formKeywords = item.keywords.join(', ');
     formForceInContext = item.forceInContext;
+    // Load scoping fields
+    formScope = item.scope || 'library';
+    formScopeContext = {
+      chapterId: item.scopeContext?.chapterId || '',
+      bookId: item.scopeContext?.bookId || '',
+      shelfId: item.scopeContext?.shelfId || ''
+    };
+    formWorkbookTags = item.workbookTags?.join(', ') || '';
+    conflictWarning = '';
+    acknowledgeConflict = false;
     view = 'create';
     showModal = true;
   }
@@ -60,6 +76,12 @@
     formContent = '';
     formKeywords = '';
     formForceInContext = false;
+    // Reset scoping fields
+    formScope = 'library';
+    formScopeContext = { chapterId: '', bookId: '', shelfId: '' };
+    formWorkbookTags = '';
+    conflictWarning = '';
+    acknowledgeConflict = false;
   }
 
   function closeModal() {
@@ -81,7 +103,15 @@
       forceInContext: formForceInContext,
       category,
       created: editingItem?.created || Date.now(),
-      updated: Date.now()
+      updated: Date.now(),
+      // Add scoping fields
+      scope: formScope,
+      scopeContext: {
+        chapterId: formScopeContext.chapterId || undefined,
+        bookId: formScopeContext.bookId || undefined,
+        shelfId: formScopeContext.shelfId || undefined
+      },
+      workbookTags: formWorkbookTags.split(',').map(t => t.trim()).filter(t => t.length > 0)
     };
 
     if (editingItem && editingKey) {
@@ -353,6 +383,93 @@
           <p class="text-xs theme-text-muted mt-1">
             Always include this item in LLM context regardless of keyword matches
           </p>
+        </div>
+
+        <!-- Repository Scoping Controls -->
+        <div class="border-t pt-4 mt-4">
+          <h4 class="text-sm font-medium mb-3">Repository Scope</h4>
+          
+          <div>
+            <label class="block text-sm font-medium mb-1">Scope Level</label>
+            <select
+              bind:value={formScope}
+              class="w-full px-3 py-2 border rounded"
+            >
+              <option value="library">Library-level (available everywhere)</option>
+              <option value="shelf">Shelf-level (available in all books on shelf)</option>
+              <option value="book">Book-level (available in all chapters of book)</option>
+              <option value="chapter">Chapter-level (available only in specific chapter)</option>
+            </select>
+          </div>
+
+          {#if formScope !== 'library'}
+            <div class="mt-3 space-y-2">
+              {#if formScope === 'shelf' || formScope === 'book' || formScope === 'chapter'}
+                <div>
+                  <label class="block text-sm font-medium mb-1">Shelf ID</label>
+                  <input
+                    bind:value={formScopeContext.shelfId}
+                    class="w-full px-3 py-2 border rounded text-sm"
+                    placeholder="Enter shelf identifier"
+                  />
+                </div>
+              {/if}
+              
+              {#if formScope === 'book' || formScope === 'chapter'}
+                <div>
+                  <label class="block text-sm font-medium mb-1">Book ID</label>
+                  <input
+                    bind:value={formScopeContext.bookId}
+                    class="w-full px-3 py-2 border rounded text-sm"
+                    placeholder="Enter book identifier"
+                  />
+                </div>
+              {/if}
+              
+              {#if formScope === 'chapter'}
+                <div>
+                  <label class="block text-sm font-medium mb-1">Chapter ID</label>
+                  <input
+                    bind:value={formScopeContext.chapterId}
+                    class="w-full px-3 py-2 border rounded text-sm"
+                    placeholder="Enter chapter identifier"
+                  />
+                </div>
+              {/if}
+            </div>
+          {/if}
+
+          <div class="mt-3">
+            <label class="block text-sm font-medium mb-1">Workbook Tags</label>
+            <input
+              bind:value={formWorkbookTags}
+              class="w-full px-3 py-2 border rounded"
+              placeholder="tag1, tag2, locations"
+            />
+            <p class="text-xs theme-text-muted mt-1">
+              Comma-separated tags for workbook organization
+            </p>
+          </div>
+
+          {#if conflictWarning}
+            <div class="mt-3 p-3 bg-orange-50 dark:bg-orange-900 border border-orange-200 dark:border-orange-700 rounded">
+              <div class="flex items-start gap-2">
+                <span class="text-orange-600 dark:text-orange-400">⚠️</span>
+                <div class="flex-1">
+                  <p class="text-sm text-orange-800 dark:text-orange-200 font-medium">Keyword collision detected</p>
+                  <p class="text-xs text-orange-700 dark:text-orange-300 mt-1">{conflictWarning}</p>
+                  <label class="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      bind:checked={acknowledgeConflict}
+                      class="text-orange-600"
+                    />
+                    <span class="text-xs text-orange-800 dark:text-orange-200">I understand (silence this warning)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          {/if}
         </div>
 
         <div class="flex gap-2 pt-4">

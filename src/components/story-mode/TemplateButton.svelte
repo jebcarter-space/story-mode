@@ -53,6 +53,11 @@
           forceInContext: false,
           category: category,
           created: Date.now(),
+          updated: Date.now(),
+          scope: 'library', // Default to library scope for template-generated items
+          scopeContext: {},
+          workbookTags: []
+        };
           updated: Date.now()
         };
         repositories.add(item);
