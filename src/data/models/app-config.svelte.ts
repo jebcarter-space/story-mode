@@ -3,7 +3,7 @@ export interface AppConfig {
     enhancedTables: boolean;
     templates: boolean;
     llmIntegration: boolean;
-    writerMode: boolean;
+    documentMode: boolean;
   };
   version: string;
   lastUpdated: string;
@@ -14,7 +14,7 @@ const DEFAULT_CONFIG: AppConfig = {
     enhancedTables: true,
     templates: true,
     llmIntegration: true,
-    writerMode: true,
+    documentMode: true,
   },
   version: '1.0.0',
   lastUpdated: new Date().toISOString(),

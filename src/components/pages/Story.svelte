@@ -2,36 +2,36 @@
 	import Sidebar from './../story-mode/Sidebar.svelte';
   import Content from '../story-mode/Content.svelte';
   import Input from '../story-mode/Input.svelte';
-  import WriterMode from '../story-mode/WriterMode.svelte';
+  import DocumentMode from '../story-mode/DocumentMode.svelte';
   import Header from '../ui/Header.svelte';
   import { createAppConfig } from '../../data/models/app-config.svelte';
 
   const appConfig = createAppConfig();
-  let isWriterMode = $state(localStorage.getItem('story-writer-mode') === 'true');
+  let isDocumentMode = $state(localStorage.getItem('story-document-mode') === 'true');
 
-  // Save writer mode preference to localStorage
+  // Save document mode preference to localStorage
   $effect(() => {
-    localStorage.setItem('story-writer-mode', isWriterMode.toString());
+    localStorage.setItem('story-document-mode', isDocumentMode.toString());
   });
 </script>
 
 <Header />
 
-{#if appConfig.features.writerMode}
+{#if appConfig.features.documentMode}
   <div class="mb-2 flex items-center justify-between">
     <div></div>
     <button
-      onclick={() => isWriterMode = !isWriterMode}
-      class="px-3 py-1 text-xs {isWriterMode ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'} rounded hover:opacity-80"
-      title="Toggle Writer Mode"
+      onclick={() => isDocumentMode = !isDocumentMode}
+      class="px-3 py-1 text-xs {isDocumentMode ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'} rounded hover:opacity-80"
+      title="Toggle Document Mode"
     >
-      {isWriterMode ? '✍️ Writer Mode' : '📝 Standard Mode'}
+      {isDocumentMode ? '📄 Document Mode' : '🎮 Game Mode'}
     </button>
   </div>
 {/if}
 
-{#if appConfig.features.writerMode && isWriterMode}
-  <WriterMode />
+{#if appConfig.features.documentMode && isDocumentMode}
+  <DocumentMode />
 {:else}
   <Content />
   <div class="flex flex-col gap-2">
