@@ -9,6 +9,7 @@
   const library = createLibrary();
 
   const breadcrumbItems = [
+    { label: 'Home', path: '/' },
     { label: 'Library', path: '/library' }
   ];
 
@@ -50,6 +51,11 @@
       chapterId: undefined
     });
   });
+
+  // Function to populate test data (for testing/development)
+  async function populateWithTestData() {
+    await library.populateTestData();
+  }
 </script>
 
 <div class="library-page p-4">
@@ -62,7 +68,8 @@
         <a
           href={continueBookPath}
           use:link
-          class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md flex items-center gap-2"
+          style="background-color: var(--theme-primary, #22c55e); color: white;"
+          class="px-6 py-3 rounded-lg transition-colors font-medium shadow-md flex items-center gap-2 hover:opacity-90"
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
@@ -70,9 +77,21 @@
           Continue Reading
         </a>
       {/if}
+      
+      <!-- Temporary test data button -->
+      {#if Object.keys(library.value?.shelves || {}).length <= 1}
+        <button
+          onclick={populateWithTestData}
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+        >
+          Add Test Data
+        </button>
+      {/if}
+      
       <button
         onclick={() => showCreateShelf = true}
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+        class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2 hover:opacity-90"
       >
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -100,8 +119,8 @@
               <img src={shelf.bannerImage} alt={shelf.name} class="w-full h-full object-cover" />
             </div>
           {:else}
-            <div class="w-full h-32 mb-4 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded flex items-center justify-center">
-              <svg class="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <div class="w-full h-32 mb-4 rounded flex items-center justify-center" style="background: var(--theme-tertiary, linear-gradient(to bottom right, #dbeafe, #bfdbfe)); color: var(--theme-tertiary, #2563eb);">
+              <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 100 2h14a1 1 0 100-2V8a1 1 0 00.496-1.868l-7-4zM6 9a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd" />
               </svg>
             </div>
@@ -131,7 +150,8 @@
         <p class="text-gray-600 dark:text-gray-400 mb-4">Create your first shelf to organize your stories</p>
         <button
           onclick={() => showCreateShelf = true}
-          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+          class="px-6 py-3 rounded-lg transition-colors hover:opacity-90"
         >
           Create Your First Shelf
         </button>
@@ -190,7 +210,8 @@
           <button
             onclick={createShelf}
             disabled={!newShelfName.trim()}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+            class="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
           >
             Create Shelf
           </button>

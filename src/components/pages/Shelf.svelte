@@ -14,6 +14,7 @@
 
   let shelf = $derived(library.value?.shelves[shelfId]);
   let breadcrumbItems = $derived([
+    { label: 'Home', path: '/' },
     { label: 'Library', path: '/library' },
     { label: shelf?.name || 'Shelf', path: `/library/${shelfId}` }
   ]);
@@ -64,7 +65,8 @@
           <svelte:fragment slot="actions">
             <button
               onclick={() => showCreateBook = true}
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md"
+              style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+              class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-md hover:opacity-90"
             >
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -84,7 +86,8 @@
           
           <button
             onclick={() => showCreateBook = true}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+            class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2 hover:opacity-90"
           >
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -144,7 +147,7 @@
                   {Object.keys(book.chapters).length} chapter{Object.keys(book.chapters).length !== 1 ? 's' : ''}
                 </span>
                 {#if book.lastAccessedChapter}
-                  <span class="text-green-600 dark:text-green-400 text-xs">
+                  <span style="color: var(--theme-primary, #22c55e);" class="text-xs">
                     Recently read
                   </span>
                 {/if}
@@ -163,7 +166,8 @@
         <p class="text-gray-600 dark:text-gray-400 mb-4">Create your first book to start writing your story</p>
         <button
           onclick={() => showCreateBook = true}
-          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+          class="px-6 py-3 rounded-lg transition-colors hover:opacity-90"
         >
           Create Your First Book
         </button>
@@ -221,7 +225,8 @@
             <button
               onclick={createBook}
               disabled={!newBookName.trim()}
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+              class="px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
             >
               Create Book
             </button>
@@ -233,14 +238,15 @@
 {:else}
   <!-- Shelf not found -->
   <div class="p-4">
-    <Breadcrumb items={[{ label: 'Library', path: '/library' }, { label: 'Not Found', path: '#' }]} />
+    <Breadcrumb items={[{ label: 'Home', path: '/' }, { label: 'Library', path: '/library' }, { label: 'Not Found', path: '#' }]} />
     <div class="text-center py-12">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Shelf Not Found</h2>
       <p class="text-gray-600 dark:text-gray-400 mb-6">The shelf you're looking for doesn't exist.</p>
       <a 
         href="/library" 
         use:link
-        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        style="background-color: var(--theme-secondary, #3b82f6); color: white;"
+        class="px-6 py-3 rounded-lg transition-colors hover:opacity-90"
       >
         Back to Library
       </a>
