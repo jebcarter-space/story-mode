@@ -4,6 +4,10 @@
   "description": "AI-powered interactive storytelling and solo RPG tools for VSCode",
   "version": "0.1.0",
   "publisher": "jebcarter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jebcarter-space/story-mode.git"
+  },
   "engines": {
     "vscode": "^1.74.0"
   },
