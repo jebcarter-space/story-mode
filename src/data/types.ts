@@ -544,6 +544,42 @@ export interface ParserNodeConfig {
   schema?: Record<string, any>;
 }
 
+// Creative Assistant Types
+export interface CreativeSession {
+  id: string;
+  contextId: string; // Chapter/Book/Shelf ID
+  mode: 'creative' | 'secretary' | 'gm' | 'brainstorm';
+  conversation: CreativeMessage[];
+  ideas: SavedIdea[];
+  reminders: Reminder[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreativeMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  mood?: 'encouraging' | 'questioning' | 'enthusiastic' | 'thoughtful';
+  references?: string[]; // References to story elements
+}
+
+export interface SavedIdea {
+  id: string;
+  content: string;
+  category: 'character' | 'plot' | 'world' | 'theme';
+  status: 'new' | 'developing' | 'used' | 'discarded';
+  relatedElements: string[];
+}
+
+export interface Reminder {
+  id: string;
+  content: string;
+  importance: 'low' | 'medium' | 'high';
+  context: string;
+  dueContext?: string; // Show reminder when in specific context
+}
+
 export interface RetrieverNodeConfig {
   source: 'repository' | 'content' | 'external';
   query: string;
