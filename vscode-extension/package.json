@@ -55,6 +55,11 @@
         "category": "Story Mode"
       },
       {
+        "command": "story-mode.continueWithTemplate",
+        "title": "Continue with Template",
+        "category": "Story Mode"
+      },
+      {
         "command": "story-mode.openRepository",
         "title": "Open Repository Manager",
         "category": "Story Mode"
@@ -82,6 +87,12 @@
         "command": "story-mode.rollDice",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.continueWithTemplate",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
         "when": "editorTextFocus"
       }
     ],
