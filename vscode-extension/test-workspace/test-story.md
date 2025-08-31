@@ -1,1 +1,0 @@
-This is a test story. The brave knight walked through the dark forest.
