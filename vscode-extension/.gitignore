@@ -1,0 +1,6 @@
+# VSCode Extension Build Artifacts
+dist/
+node_modules/
+
+# Test files
+test-workspace/
