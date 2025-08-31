@@ -1,4 +1,5 @@
 import type { RandomTable } from '../types';
+import { SparkTableManager } from './spark-table-manager';
 
 // Ported from main app oracle tables
 const oracleTable: RandomTable = {
@@ -95,6 +96,8 @@ export interface OracleHistory {
 
 export class OracleService {
   private history: OracleHistory[] = [];
+
+  constructor(private sparkTableManager?: SparkTableManager) {}
 
   queryOracle(question?: string): OracleResult {
     const roll = this.rollDice(20);
@@ -231,6 +234,12 @@ export class OracleService {
   }
 
   private getRandomKeywords(count: number = 2): string[] {
+    // Use SparkTableManager if available, otherwise fallback to hardcoded keywords
+    if (this.sparkTableManager) {
+      return this.sparkTableManager.generateKeywords(count, 'oracle');
+    }
+
+    // Fallback to hardcoded keywords
     const result: string[] = [];
     const availableKeywords = [...keywords];
     
