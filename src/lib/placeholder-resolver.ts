@@ -1,10 +1,11 @@
-import type { RandomTable, CustomTableList } from '../data/types';
+import type { RandomTable, CustomTableList, SparkTableList } from '../data/types';
 import { rollOnTable } from './tables';
 import { moreTables } from '../data/constants';
 import { DiceRoll } from '@dice-roller/rpg-dice-roller';
 
 export interface ResolverOptions {
   customTables?: CustomTableList;
+  sparkTables?: SparkTableList;
   storyId?: string;
   maxDepth?: number;
 }
@@ -17,12 +18,14 @@ export interface ConsumedEntry {
 
 export class PlaceholderResolver {
   private customTables: CustomTableList;
+  private sparkTables: SparkTableList;
   private storyId: string;
   private maxDepth: number;
   private consumedStorage: { [key: string]: ConsumedEntry } = {};
 
   constructor(options: ResolverOptions = {}) {
     this.customTables = options.customTables || {};
+    this.sparkTables = options.sparkTables || {};
     this.storyId = options.storyId || 'default';
     this.maxDepth = options.maxDepth || 10;
     this.loadConsumedEntries();
@@ -266,6 +269,11 @@ export class PlaceholderResolver {
         return this.handleDiceRoll(diceStr);
       }
       
+      // Handle spark keywords: {spark:tableName} or {sparks:tableName1,tableName2:count}
+      if (placeholder.startsWith('spark:') || placeholder.startsWith('sparks:')) {
+        return this.handleSparkKeywords(placeholder);
+      }
+      
       // Handle table with pick modifier: {tableName.pick N} or {tableName.consumable.pick N}
       const pickMatch = placeholder.match(/^(.+)\.pick\s+(\d+)$/);
       if (pickMatch) {
@@ -339,5 +347,85 @@ export class PlaceholderResolver {
   public getConsumedItems(tableName: string): string[] {
     const key = this.getConsumedKey(tableName);
     return this.consumedStorage[key]?.consumedItems || [];
+  }
+
+  private handleSparkKeywords(placeholder: string): string {
+    // Parse spark syntax: spark:tableName or sparks:table1,table2:count
+    if (placeholder.startsWith('spark:')) {
+      // Single keyword from specific table
+      const tableName = placeholder.substring(6);
+      return this.generateSparkKeywords(1, tableName ? [tableName] : undefined);
+    } else if (placeholder.startsWith('sparks:')) {
+      // Multiple keywords, parse tables and count
+      const params = placeholder.substring(7);
+      const parts = params.split(':');
+      
+      let tableNames: string[] | undefined;
+      let count = 2; // default
+      
+      if (parts.length === 1) {
+        // Just table names: sparks:table1,table2
+        tableNames = parts[0] ? parts[0].split(',').map(t => t.trim()).filter(t => t.length > 0) : undefined;
+      } else if (parts.length === 2) {
+        // Table names and count: sparks:table1,table2:3
+        tableNames = parts[0] ? parts[0].split(',').map(t => t.trim()).filter(t => t.length > 0) : undefined;
+        const countNum = parseInt(parts[1]);
+        if (!isNaN(countNum) && countNum > 0) {
+          count = countNum;
+        }
+      }
+      
+      return this.generateSparkKeywords(count, tableNames);
+    }
+    
+    return placeholder; // fallback
+  }
+
+  private generateSparkKeywords(count: number = 2, tableNames?: string[]): string {
+    // Get available spark tables
+    let availableTables = Object.values(this.sparkTables).filter(table => 
+      table.enabled && table.sparksEnabled
+    );
+    
+    // Filter by specific table names if provided
+    if (tableNames && tableNames.length > 0) {
+      availableTables = availableTables.filter(table => 
+        tableNames.includes(table.name) || tableNames.includes(table.name.toLowerCase())
+      );
+    }
+    
+    if (availableTables.length === 0) {
+      console.warn('No available spark tables found');
+      return '[no spark tables]';
+    }
+    
+    // Create weighted pool of keywords
+    const weightedKeywords: string[] = [];
+    for (const table of availableTables) {
+      const weight = table.weight || 1;
+      for (let w = 0; w < weight; w++) {
+        weightedKeywords.push(...table.entries);
+      }
+    }
+    
+    if (weightedKeywords.length === 0) {
+      return '[no keywords available]';
+    }
+    
+    // Select random keywords without duplicates
+    const selected = new Set<string>();
+    const keywords: string[] = [];
+    
+    while (keywords.length < count && selected.size < weightedKeywords.length) {
+      const randomIndex = Math.floor(Math.random() * weightedKeywords.length);
+      const keyword = weightedKeywords[randomIndex];
+      
+      if (!selected.has(keyword.toLowerCase())) {
+        selected.add(keyword.toLowerCase());
+        keywords.push(keyword);
+      }
+    }
+    
+    return keywords.join(', ');
   }
 }
