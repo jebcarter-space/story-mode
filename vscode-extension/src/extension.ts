@@ -79,9 +79,10 @@ export function activate(context: vscode.ExtensionContext) {
         await handleInsertTemplate(templateManager, llmService);
     });
 
-    // Open Repository Manager
+    // Open Repository Manager - focus on tree view
     const openRepositoryCommand = vscode.commands.registerCommand('story-mode.openRepository', async () => {
-        await repositoryManager.openRepositoryPanel();
+        vscode.commands.executeCommand('storyModeExplorer.focus');
+        vscode.window.showInformationMessage('Repository items are available in the Story Mode tree view');
     });
 
     // Create Library Structure
