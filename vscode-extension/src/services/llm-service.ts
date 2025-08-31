@@ -146,7 +146,7 @@ export class LLMService {
         throw new Error(`LLM API request failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       
       if (data.choices && data.choices.length > 0) {
         return data.choices[0].message?.content || '';
