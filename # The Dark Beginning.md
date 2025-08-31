@@ -188,3 +188,21 @@ This template demonstrates how to:
 5. Generate character and environmental details simultaneously
 
 **Usage:** Use this template to quickly generate atmospheric scenes that blend Gothic and Steampunk elements with personality-driven details.
+
+**Sparks:** A sharp snap,Bound with straps,Growing paranoia,Musty old books,Uncanny art appears,, Employment, Precious
+**Sparks:** cunning, Pilgrim, Woven
+**Sparks:** cursed, Brother, Tunnel
+**Sparks:** Creaking and groaning,A blackened skull,A phlegmy cough,Curious incense,Family trouble,Clocktower, Heavy breathing,Storm clouds,,Fresh dung,Odd weather,Bridge, Gossip
+... is a careful distinction," he said. "And a dangerous one."
+
+You nodded slowly, fingers finally closing around the bottle. The glass was cool against your palm, but the liquid inside—black as ink, thick as oil—seemed to pulse slightly, shifting in some way that wasn't quite natural.
+
+You unscrewed the cap, the faint click echoing in the silence between you. The smell hit you then—metallic and sweet, like blood mixed with honey. It made your stomach tighten.
+
+"You don't have to," he said, but he didn't stop you.
+
+You didn't look at him as you brought the bottle to your lips. The first sip burned, like swallowing fire, and you knew instantly—this wasn't alcohol. This was something else entirely.
+
+You swallowed again, bracing for the change, for the thing inside you to take hold. A slow heat spread through your veins, tendrils of it curling outward from your core. Your vision
+
+**Sparks:** Impish giggling,Lurid colors,Eyes watching you,Strangely alluring scent,A tainted gift,Gated community, Express, Structure
