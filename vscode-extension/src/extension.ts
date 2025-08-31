@@ -5,6 +5,7 @@ import { StoryModeExplorer } from './providers/story-mode-explorer';
 import { TemplateManager } from './services/template-manager';
 import { OracleService } from './services/oracle-service';
 import { DiceService } from './services/dice-service';
+import { FileWatcher } from './services/file-watcher';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,11 +18,37 @@ export function activate(context: vscode.ExtensionContext) {
     const oracleService = new OracleService();
     const diceService = new DiceService();
 
+    // Initialize file watcher
+    const fileWatcher = new FileWatcher(context);
+    fileWatcher.startWatching();
+
     // Initialize tree data provider
     const storyModeExplorer = new StoryModeExplorer(context, repositoryManager);
     vscode.window.createTreeView('storyModeExplorer', {
         treeDataProvider: storyModeExplorer,
         showCollapseAll: true
+    });
+
+    // Connect file watcher to refresh tree view and repository cache
+    fileWatcher.onDidChangeFiles((changedFiles) => {
+        let shouldRefreshRepo = false;
+        let shouldRefreshTree = false;
+
+        for (const uri of changedFiles) {
+            if (fileWatcher.isRepositoryFile(uri)) {
+                shouldRefreshRepo = true;
+                shouldRefreshTree = true;
+            } else if (fileWatcher.isTemplateFile(uri) || fileWatcher.isLLMProfileFile(uri)) {
+                shouldRefreshTree = true;
+            }
+        }
+
+        if (shouldRefreshRepo) {
+            repositoryManager.refreshRepository();
+        }
+        if (shouldRefreshTree) {
+            storyModeExplorer.refresh();
+        }
     });
 
     // Set context for when Story Mode is enabled
@@ -52,9 +79,10 @@ export function activate(context: vscode.ExtensionContext) {
         await handleInsertTemplate(templateManager, llmService);
     });
 
-    // Open Repository Manager
+    // Open Repository Manager - focus on tree view
     const openRepositoryCommand = vscode.commands.registerCommand('story-mode.openRepository', async () => {
-        await repositoryManager.openRepositoryPanel();
+        vscode.commands.executeCommand('storyModeExplorer.focus');
+        vscode.window.showInformationMessage('Repository items are available in the Story Mode tree view');
     });
 
     // Create Library Structure
@@ -312,6 +340,96 @@ Born in a small village, they left home to seek their destiny...
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'example-hero.md'),
             Buffer.from(exampleCharacter)
+        );
+
+        // Create example location
+        const exampleLocation = `---
+type: location
+tags: [tavern, social, cozy]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# The Prancing Pony Tavern
+
+A warm, welcoming tavern that serves as a gathering place for travelers and locals alike.
+
+## Description
+The tavern features a large common room with wooden tables, a stone fireplace, and oil lamps that cast dancing shadows on the walls. The air is filled with the aroma of hearty stews and fresh bread.
+
+## Notable Features
+- Friendly bartender who knows all the local gossip
+- Private rooms upstairs for rent
+- Stable out back for horses
+- Notice board with job postings and news
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'prancing-pony-tavern.md'),
+            Buffer.from(exampleLocation)
+        );
+
+        // Create example template
+        const exampleTemplate = `---
+name: "Character Introduction"
+description: "Template for introducing a new character"
+category: "character"
+llmEnabled: true
+llmInstructions: "Generate a vivid character introduction based on the provided details"
+---
+
+**[Character Name]** approaches, their [distinctive feature] catching your attention immediately.
+
+*Appearance:* [Physical description]
+
+*Demeanor:* [How they carry themselves, mood, attitude]
+
+*First Impression:* [What stands out about them]
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-introduction.md'),
+            Buffer.from(exampleTemplate)
+        );
+
+        // Create default LLM profile
+        const defaultProfile = {
+            name: "Default Creative Writer",
+            provider: "openai",
+            apiKey: "",
+            endpoint: "",
+            model: "gpt-4",
+            systemPrompt: "You are a creative writing assistant helping with interactive storytelling. Continue the narrative in a vivid, engaging style that matches the tone and genre of the existing text.",
+            settings: {
+                temperature: 0.7,
+                maxTokens: 500,
+                topP: 1.0,
+                frequencyPenalty: 0.0,
+                presencePenalty: 0.0
+            },
+            includeSystemContent: true,
+            maxContextEntries: 10,
+            created: Date.now(),
+            updated: Date.now()
+        };
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'llm-profiles', 'default.json'),
+            Buffer.from(JSON.stringify(defaultProfile, null, 2))
+        );
+
+        // Create metadata files for repository categories
+        const categoriesMetadata = {
+            characters: { count: 1, lastUpdated: Date.now() },
+            locations: { count: 1, lastUpdated: Date.now() },
+            objects: { count: 0, lastUpdated: Date.now() },
+            situations: { count: 0, lastUpdated: Date.now() }
+        };
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'metadata.json'),
+            Buffer.from(JSON.stringify(categoriesMetadata, null, 2))
         );
 
         vscode.window.showInformationMessage('Story Mode library structure created! Check the .story-mode folder.');
