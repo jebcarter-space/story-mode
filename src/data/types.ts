@@ -598,3 +598,30 @@ export interface CustomNodeConfig {
   parameters: Record<string, any>;
 }
 
+// Auto-extraction types
+export interface ExtractedEntity {
+  name: string;
+  description: string;
+  category: RepositoryCategory;
+  keywords: string[];
+  confidence: number;
+  sourceText: string;
+}
+
+export interface ExtractionSuggestion {
+  id: string;
+  entity: ExtractedEntity;
+  approved: boolean;
+  rejected: boolean;
+  timestamp: number;
+}
+
+export interface AutoExtractionSettings {
+  enabled: boolean;
+  minConfidence: number;
+  maxSuggestionsPerSession: number;
+  categories: RepositoryCategory[];
+  autoApproveHighConfidence: boolean;
+  highConfidenceThreshold: number;
+}
+

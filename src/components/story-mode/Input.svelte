@@ -12,6 +12,8 @@
   import type { RepositoryContext } from "../../data/types";
   import ContextIndicator from "../ui/ContextIndicator.svelte";
   import { getRepositoryContext } from "../../lib/repository-context";
+  import { AutoExtractionService, type ExtractionSuggestion, type AutoExtractionSettings } from "../../lib/auto-extraction-service";
+  import AutoExtractionPanel from "./AutoExtractionPanel.svelte";
 
   export let input = createInput();
 </script>
@@ -32,6 +34,19 @@
   let abortController: AbortController | null = null;
   let tokenInfo = $state<TokenCountInfo | undefined>(undefined);
   let conflictWarnings = $state<string[]>([]);
+
+  // Auto-extraction state
+  let extractionService = $state<AutoExtractionService | null>(null);
+  let extractionSuggestions = $state<ExtractionSuggestion[]>([]);
+  let extractionSettings = $state<AutoExtractionSettings>({
+    enabled: true,
+    minConfidence: 0.6,
+    maxSuggestionsPerSession: 10,
+    categories: ['Character', 'Location', 'Object', 'Situation'],
+    autoApproveHighConfidence: false,
+    highConfidenceThreshold: 0.9,
+  });
+  let showExtractionPanel = $state(false);
 
   // Get the currently selected profile
   let selectedProfile = $derived(
@@ -56,6 +71,15 @@
     // Save selected profile to localStorage when it changes
     if (selectedProfileKey) {
       localStorage.setItem('selected-llm-profile', selectedProfileKey);
+    }
+  });
+
+  $effect(() => {
+    // Initialize extraction service when profile changes
+    if (selectedProfile) {
+      extractionService = new AutoExtractionService(selectedProfile, extractionSettings);
+    } else {
+      extractionService = null;
     }
   });
 
@@ -152,6 +176,9 @@
       if (!responseText.trim()) {
         llmError = 'No response generated from LLM';
         content.remove(addedTimestamp);
+      } else {
+        // Trigger auto-extraction on LLM-generated content
+        performAutoExtraction(responseText);
       }
 
     } catch (error) {
@@ -198,7 +225,7 @@
           await generateLLMResponse();
           event.preventDefault();
         } else {
-          addInput();
+          addInputWithExtraction();
           event.preventDefault();
         }
       }
@@ -246,6 +273,70 @@
       updateTokenCount();
     }
   });
+
+  // Auto-extraction functions
+  async function performAutoExtraction(content: string) {
+    if (!extractionService || !extractionSettings.enabled) {
+      return;
+    }
+
+    try {
+      const entities = await extractionService.extractEntities(content, repositoryContext);
+      const newSuggestions = extractionService.createSuggestions(entities);
+      
+      if (newSuggestions.length > 0) {
+        extractionSuggestions = [...extractionSuggestions, ...newSuggestions];
+        showExtractionPanel = true;
+      }
+    } catch (error) {
+      console.warn('Auto-extraction failed:', error);
+    }
+  }
+
+  function handleApproveSuggestion(suggestionId: string, scope: 'chapter' | 'book' | 'shelf' | 'library') {
+    if (!extractionService) return;
+    
+    const repositoryItem = extractionService.approveSuggestion(suggestionId, scope, repositoryContext);
+    if (repositoryItem) {
+      // Add to repositories
+      repositories.add(repositoryItem);
+      
+      // Remove from suggestions list
+      extractionSuggestions = extractionSuggestions.filter(s => s.id !== suggestionId);
+    }
+  }
+
+  function handleRejectSuggestion(suggestionId: string) {
+    if (!extractionService) return;
+    
+    extractionService.rejectSuggestion(suggestionId);
+    extractionSuggestions = extractionSuggestions.filter(s => s.id !== suggestionId);
+  }
+
+  function handleClearProcessed() {
+    if (!extractionService) return;
+    
+    extractionService.clearProcessedSuggestions();
+    extractionSuggestions = extractionService.getPendingSuggestions();
+  }
+
+  function handleUpdateExtractionSettings(newSettings: Partial<AutoExtractionSettings>) {
+    extractionSettings = { ...extractionSettings, ...newSettings };
+    if (extractionService) {
+      extractionService.updateSettings(extractionSettings);
+    }
+  }
+
+  // Override addInput to trigger extraction
+  function addInputWithExtraction() {
+    // Call the original addInput function
+    addInput();
+    
+    // Trigger auto-extraction on the input text
+    if (question.trim()) {
+      performAutoExtraction(question.trim());
+    }
+  }
 </script>
 
 <!-- Repository Context Indicator -->
@@ -290,6 +381,40 @@
   onCancel={cancelGeneration}
   tokenInfo={tokenInfo}
 />
+
+<!-- Auto-Extraction Panel -->
+{#if extractionSuggestions.length > 0 || showExtractionPanel}
+  <div class="mb-3">
+    <AutoExtractionPanel
+      suggestions={extractionSuggestions}
+      settings={extractionSettings}
+      context={repositoryContext}
+      extractionService={extractionService}
+      onApproveSuggestion={handleApproveSuggestion}
+      onRejectSuggestion={handleRejectSuggestion}
+      onClearProcessed={handleClearProcessed}
+      onUpdateSettings={handleUpdateExtractionSettings}
+    />
+  </div>
+{/if}
+
+<!-- Extraction Toggle Button -->
+{#if selectedProfile}
+  <div class="mb-2 flex items-center justify-between">
+    <button
+      onclick={() => showExtractionPanel = !showExtractionPanel}
+      class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded flex items-center gap-1"
+      title="Toggle auto-extraction panel"
+    >
+      🤖 Auto-Extract
+      {#if extractionSuggestions.length > 0}
+        <span class="text-xs bg-blue-500 text-white rounded px-1">
+          {extractionSuggestions.length}
+        </span>
+      {/if}
+    </button>
+  </div>
+{/if}
 
 <textarea
   id="question"
