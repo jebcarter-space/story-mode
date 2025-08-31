@@ -203,56 +203,74 @@ export class StreamingLLMService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const reader = (response.body as any)?.getReader();
-      if (!reader) {
+      if (!response.body) {
         throw new Error('No response stream available');
       }
 
-      const decoder = new TextDecoder();
+      // Use Node.js stream instead of browser ReadableStream
+      const stream = response.body as any; // Cast to any to handle both browser and Node.js stream types
+      let buffer = '';
       
-      while (true) {
-        if (cancellationToken?.isCancellationRequested) {
-          reader.cancel();
-          throw new Error('Request cancelled');
-        }
-
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            
-            if (data === '[DONE]') {
-              break;
+      return new Promise<string>((resolve, reject) => {
+        stream.on('data', (chunk: Buffer) => {
+          if (cancellationToken?.isCancellationRequested) {
+            if (stream.destroy) {
+              stream.destroy();
             }
-            
-            try {
-              const parsed = JSON.parse(data);
-              const token = this.extractTokenFromResponse(parsed, profile.provider);
+            reject(new Error('Request cancelled'));
+            return;
+          }
+
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || '';
+          
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              const data = line.slice(6).trim();
               
-              if (token) {
-                fullResponse += token;
-                if (streamingOptions.onToken) {
-                  streamingOptions.onToken(token);
+              if (data === '[DONE]') {
+                if (streamingOptions.onComplete) {
+                  streamingOptions.onComplete(fullResponse);
                 }
+                resolve(fullResponse);
+                return;
               }
-            } catch (e) {
-              // Ignore JSON parse errors for incomplete chunks
+              
+              try {
+                const parsed = JSON.parse(data);
+                const token = this.extractTokenFromResponse(parsed, profile.provider);
+                
+                if (token) {
+                  fullResponse += token;
+                  if (streamingOptions.onToken) {
+                    streamingOptions.onToken(token);
+                  }
+                }
+              } catch (e) {
+                // Ignore JSON parse errors for incomplete chunks
+                console.warn('Failed to parse streaming chunk:', data);
+              }
             }
           }
-        }
-      }
+        });
 
-      if (streamingOptions.onComplete) {
-        streamingOptions.onComplete(fullResponse);
-      }
+        stream.on('end', () => {
+          if (streamingOptions.onComplete) {
+            streamingOptions.onComplete(fullResponse);
+          }
+          resolve(fullResponse);
+        });
 
-      return fullResponse;
+        stream.on('error', (error: Error) => {
+          if (streamingOptions.onError) {
+            streamingOptions.onError(error);
+          }
+          reject(error);
+        });
+      });
 
     } catch (error) {
       if (streamingOptions.onError) {

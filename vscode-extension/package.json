@@ -224,7 +224,7 @@
           "type": "array", 
           "default": ["default"],
           "description": "Tables enabled for Sparks generation (uses all enabled tables if empty)"
-
+        },
         "storyMode.enableStreaming": {
           "type": "boolean",
           "default": true,

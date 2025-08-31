@@ -79,4 +79,40 @@ He reached for his cigarette again, took a long drag, and exhaled slowly. The sm
 
 You waited, feeling the weight of his words, the significance of his gaze.
 
-"You're strong," he continued. "Not just physically—though I suspect you are that too—but mentally. You didn't flinch when I showed you that passage. You didn't recoil when I called what you seek
+"You're strong," he continued. "Not just physically—though I suspect you are that too—but mentally. You didn't flinch when I showed you that passage. You didn't recoil when I called what you seek 
+**Sparks:** Sentimental, Persecute, Route
+
+
+
+**Oracle:** He reveals the Eldritch Truth
+**Answer:** No, but... *(7)*
+**Keywords:** Disease, Wary
+**Interpretation:** This involves Disease elements with Wary undertones.
+
+"twisted." He leaned forward slightly, his fingers drumming once against the desk. "That means you're ready to face what you find."
+
+A long pause stretched between you. You could hear the distant hum of the street outside, the creak of old wood as someone moved in another room. But in here, it was silent.
+
+He leaned back again, stretching his legs out slightly. "I could tell you what you want to know. But I think you already know the kind of knowledge I deal in. You wouldn't be here if you didn't."
+
+You nodded. "I wouldn't."
+
+His lips curled slightly, but it wasn't quite a smile. "Then I won't waste your time with pleasantries." He reached into his desk drawer and pulled out a small glass bottle stoppered with dark wax. Inside, something thick and viscous sloshed—a dark liquid, almost black in the dim light. He held it up between you, turning it slightly so the dim**Sparks:** Fluttering, Performance, Fair
+
+**Sparks:** Express, Motive, Witness
+
+
+**Sparks:** Unthinking, Woven, Instrument
+light caught the edges. "This is what you came for."
+
+You stared at it, feeling a strange pull deep in your chest. It was beautiful in a way, like a piece of art—except that you knew better. This was no simple object.
+
+"You want to know what it does," he said, not a question. He set it down between you carefully, as if handling something fragile. "But I think you already have some idea."
+
+You did. The book had hinted at it, the way he spoke of it, the way the air in the room seemed to tighten when he placed it on the desk. This wasn't just some potion or poison. This was something else entirely.
+
+You swallowed, speaking quietly. "It changes people."
+
+His eyes flickered with something unreadable. "It does."
+
+You let that settle between you, the quiet acknowledgment of what neither of you needed to say aloud. This wasn't just a drink. This was a

@@ -862,8 +862,66 @@ async function handleContinueWithSparks(
             const document = editor.document;
             const newPosition = new vscode.Position(position.line + 2, 0); // After sparks insertion
             
-            // Continue with AI (this will automatically use streaming if enabled)
-            await handleContinueText(llmService, streamingLLMService, repositoryManager);
+            // Get text from start to cursor (including sparks)
+            const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), newPosition));
+            
+            // Get repository context for current file
+            const context = await repositoryManager.getContextForFile(document.uri);
+            
+            // Get relevant repository items
+            const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
+            
+            // Generate continuation inline (no separate progress modal)
+            const config = vscode.workspace.getConfiguration('storyMode');
+            const enableStreaming = config.get('enableStreaming', true);
+            
+            let continuation: string;
+            
+            if (enableStreaming) {
+                // Use streaming service - need to get profile manually since getLLMProfile is private
+                const profileKey = config.get('defaultLLMProfile', '');
+                if (!profileKey) {
+                    throw new Error('No LLM profile configured. Please set up an LLM profile in settings.');
+                }
+                
+                // For now, fallback to non-streaming since we can't easily access the profile
+                // TODO: Refactor LLMService to expose profile access or make streaming work with generateContinuation
+                continuation = await llmService.generateContinuation(textBeforeCursor, {
+                    repositoryItems,
+                    maxContextLength: config.get('maxContextLength', 4000),
+                    includeRepositoryContext: true
+                }, token);
+                
+                if (token.isCancellationRequested) {
+                    return;
+                }
+
+                // Insert continuation at cursor
+                await editor.edit(editBuilder => {
+                    editBuilder.insert(newPosition, continuation);
+                });
+            } else {
+                // Use non-streaming service
+                continuation = await llmService.generateContinuation(textBeforeCursor, {
+                    repositoryItems,
+                    maxContextLength: config.get('maxContextLength', 4000),
+                    includeRepositoryContext: true
+                }, token);
+                
+                if (token.isCancellationRequested) {
+                    return;
+                }
+
+                // Insert continuation at cursor (non-streaming)
+                await editor.edit(editBuilder => {
+                    editBuilder.insert(newPosition, continuation);
+                });
+            }
+
+            // Auto-save if enabled
+            if (config.get('autoSave', true)) {
+                await document.save();
+            }
         });
         
     } catch (error) {
