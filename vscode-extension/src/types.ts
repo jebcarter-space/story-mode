@@ -271,3 +271,102 @@ export interface StreamingStatus {
   retryCount?: number;
   lastError?: string;
 }
+
+// LangChain Workflow Orchestration Types (Foundation)
+export interface StoryModeChain {
+  id: string;
+  name: string;
+  description: string;
+  category: 'character' | 'world' | 'plot' | 'gaming' | 'analysis';
+  nodes: ChainNode[];
+  triggers: ChainTrigger[];
+  outputs: ChainOutput[];
+  created: number;
+  updated: number;
+  enabled: boolean;
+  version?: string;
+}
+
+export interface ChainNode {
+  id: string;
+  type: 'llm' | 'prompt' | 'parser' | 'retriever' | 'memory' | 'custom';
+  config: Record<string, any>;
+  connections: string[]; // Connected node IDs
+  position?: { x: number; y: number }; // For visual workflow builder
+  label?: string;
+  description?: string;
+}
+
+export interface ChainTrigger {
+  event: 'manual' | 'content_added' | 'chapter_start' | 'oracle_roll' | 'template_expansion';
+  conditions?: Record<string, any>;
+  enabled: boolean;
+}
+
+export interface ChainOutput {
+  id: string;
+  type: 'text' | 'repository_item' | 'template' | 'metadata';
+  target?: string; // Where to output (repository category, template name, etc.)
+  format?: string;
+}
+
+export interface WorkflowExecution {
+  id: string;
+  chainId: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  startTime: number;
+  endTime?: number;
+  currentNode?: string;
+  results: Record<string, any>;
+  errors: WorkflowError[];
+  progress: number; // 0-100
+}
+
+export interface WorkflowError {
+  nodeId: string;
+  error: string;
+  timestamp: number;
+  recoverable: boolean;
+}
+
+export interface ChainLibrary {
+  [chainId: string]: StoryModeChain;
+}
+
+// Workflow Node Configurations
+export interface LLMNodeConfig {
+  profileId: string;
+  prompt: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemMessage?: string;
+}
+
+export interface PromptNodeConfig {
+  template: string;
+  variables: Record<string, string>;
+}
+
+export interface ParserNodeConfig {
+  type: 'json' | 'yaml' | 'regex' | 'custom';
+  pattern?: string;
+  schema?: Record<string, any>;
+}
+
+export interface RetrieverNodeConfig {
+  source: 'repository' | 'content' | 'external';
+  query: string;
+  filters?: Record<string, any>;
+  maxResults?: number;
+}
+
+export interface MemoryNodeConfig {
+  type: 'buffer' | 'summary' | 'vector';
+  capacity?: number;
+  key?: string;
+}
+
+export interface CustomNodeConfig {
+  scriptPath: string;
+  parameters: Record<string, any>;
+}
