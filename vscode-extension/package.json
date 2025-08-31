@@ -34,6 +34,7 @@
     "onCommand:story-mode.continueWithSparks",
     "onCommand:story-mode.continueWithSparksCustom",
     "onCommand:story-mode.configureSparkTables",
+    "onCommand:story-mode.openTableManager",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -113,6 +114,11 @@
         "command": "story-mode.configureSparkTables",
         "title": "Configure Spark Tables",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "title": "Visual Spark Table Manager",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -157,6 +163,11 @@
         "key": "ctrl+shift+alt+k",
         "mac": "cmd+shift+alt+k",
         "when": "editorTextFocus || (editorFocus && !inputFocus)"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "key": "ctrl+shift+alt+t",
+        "mac": "cmd+shift+alt+t"
       }
     ],
     "views": {
@@ -234,6 +245,31 @@
           "type": "number",
           "default": 50,
           "description": "Delay between token updates in milliseconds"
+        },
+        "storyMode.streamingFallback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fallback to non-streaming on persistent failures"
+        },
+        "storyMode.streamingMaxRetries": {
+          "type": "number",
+          "default": 2,
+          "description": "Maximum retry attempts for streaming requests"
+        },
+        "storyMode.streamingTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout for streaming requests in milliseconds"
+        },
+        "storyMode.streamingRetryDelayMs": {
+          "type": "number",
+          "default": 1000,
+          "description": "Base delay between retry attempts in milliseconds"
+        },
+        "storyMode.streamingShowStatus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show streaming status in the status bar"
         }
       }
     }

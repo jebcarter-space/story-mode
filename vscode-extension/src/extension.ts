@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { LLMService } from './services/llm-service';
-import { StreamingLLMService } from './services/streaming-llm-service';
 import { RepositoryManager } from './services/repository-manager';
 import { StoryModeExplorer } from './providers/story-mode-explorer';
 import { TemplateManager } from './services/template-manager';
@@ -15,7 +14,12 @@ import { ErrorHandlingService } from './services/error-handling';
 import { SparkTableManager } from './services/spark-table-manager';
 import { SparksService } from './services/sparks-service';
 import { TableConfigurationPicker } from './ui/table-configuration-picker';
+import { TableManagerWebview } from './ui/table-manager-webview';
+import { TableAnalyticsService } from './services/table-analytics-service';
 import type { InlineContinuationOptions } from './types';
+
+// Global reference to context indicator for streaming status
+let globalContextIndicator: ContextIndicator | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
@@ -27,16 +31,18 @@ export function activate(context: vscode.ExtensionContext) {
     const repositoryManager = new RepositoryManager(context);
     const templateManager = new TemplateManager(context);
     const llmService = new LLMService(context);
-    const streamingLLMService = new StreamingLLMService(context);
     const sparkTableManager = new SparkTableManager(context);
+    const analyticsService = new TableAnalyticsService(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
     const templatePicker = new TemplatePicker(context);
     const tableConfigurationPicker = new TableConfigurationPicker(context, sparkTableManager);
+    const tableManagerWebview = new TableManagerWebview(context, sparkTableManager, analyticsService);
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
+    globalContextIndicator = contextIndicator;
 
     // Initialize smart suggestions
     const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
@@ -85,12 +91,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // CORE COMMAND: Continue Text with AI
     const continueTextCommand = vscode.commands.registerCommand('story-mode.continueText', async () => {
-        await handleContinueText(llmService, streamingLLMService, repositoryManager);
+        await handleContinueText(llmService, repositoryManager);
     });
 
     // Continue with Oracle consultation
     const continueWithOracleCommand = vscode.commands.registerCommand('story-mode.continueWithOracle', async () => {
-        await handleContinueWithOracle(llmService, streamingLLMService, repositoryManager, oracleService);
+        await handleContinueWithOracle(llmService, repositoryManager, oracleService);
     });
 
     // Query Oracle (standalone)
@@ -110,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Continue with Template
     const continueWithTemplateCommand = vscode.commands.registerCommand('story-mode.continueWithTemplate', async () => {
-        await handleContinueWithTemplate(templateManager, llmService, streamingLLMService, repositoryManager, templatePicker);
+        await handleContinueWithTemplate(templateManager, llmService, repositoryManager, templatePicker);
     });
 
     // Open Repository Manager - focus on tree view
@@ -136,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Continue with Sparks
     const continueWithSparksCommand = vscode.commands.registerCommand('story-mode.continueWithSparks', async () => {
-        await handleContinueWithSparks(sparksService, llmService, streamingLLMService, repositoryManager);
+        await handleContinueWithSparks(sparksService, llmService, repositoryManager);
     });
 
     // Generate Sparks with Custom Table Selection
@@ -159,6 +165,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleConfigureSparkTables(tableConfigurationPicker);
     });
 
+    // Open Visual Table Manager
+    const openTableManagerCommand = vscode.commands.registerCommand('story-mode.openTableManager', async () => {
+        await handleOpenTableManager(tableManagerWebview);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -175,14 +186,14 @@ export function activate(context: vscode.ExtensionContext) {
         generateSparksCustomCommand,
         continueWithSparksCustomCommand,
         queryOracleCustomCommand,
-        configureSparkTablesCommand
+        configureSparkTablesCommand,
+        openTableManagerCommand
     );
 }
 
 // CORE FUNCTIONALITY: Continue text with AI
 async function handleContinueText(
     llmService: LLMService, 
-    streamingLLMService: StreamingLLMService, 
     repositoryManager: RepositoryManager
 ) {
     const editor = vscode.window.activeTextEditor;
@@ -196,7 +207,7 @@ async function handleContinueText(
     const streamingDelay = vscode.workspace.getConfiguration('storyMode').get('streamingDelay', 50);
 
     if (streamingEnabled) {
-        return await handleStreamingContinueText(streamingLLMService, repositoryManager, streamingDelay);
+        return await handleStreamingContinueText(llmService, repositoryManager, streamingDelay, globalContextIndicator!);
     } else {
         return await handleNonStreamingContinueText(llmService, repositoryManager);
     }
@@ -204,9 +215,10 @@ async function handleContinueText(
 
 // Streaming implementation
 async function handleStreamingContinueText(
-    streamingLLMService: StreamingLLMService,
+    llmService: LLMService,
     repositoryManager: RepositoryManager,
-    streamingDelay: number
+    streamingDelay: number,
+    contextIndicator: ContextIndicator
 ) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
@@ -238,25 +250,20 @@ async function handleStreamingContinueText(
             // Get relevant repository items
             const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
             
-            // Get LLM profile
-            const profileKey = vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
-            const profile = await getLLMProfile(profileKey);
+            // Start streaming status indicator
+            contextIndicator?.startStreamingStatus();
             
-            if (!profile) {
-                vscode.window.showErrorMessage('No LLM profile configured. Please set up an LLM profile in settings.');
-                return;
-            }
-
-            // Stream the response with real-time insertion
-            return await streamingLLMService.generateStreamingContinuation(
+            // Stream the response with real-time insertion using unified service
+            return await llmService.generateStreamingContinuation(
                 textBeforeCursor,
-                profile,
-                repositoryItems,
                 {
                     onToken: async (token: string) => {
                         if (cancellationTokenSource.token.isCancellationRequested) return;
                         
                         insertedText += token;
+                        
+                        // Update streaming status
+                        contextIndicator?.updateStreamingToken();
                         
                         // Insert token in editor with delay for smoother experience
                         await editor.edit(editBuilder => {
@@ -277,10 +284,22 @@ async function handleStreamingContinueText(
                     },
                     onComplete: (fullText: string) => {
                         progress.report({ message: "Streaming complete" });
+                        contextIndicator?.stopStreamingStatus();
                     },
                     onError: (error: Error) => {
-                        vscode.window.showErrorMessage(`Streaming failed: ${error.message}`);
+                        const friendlyMessage = error.message.includes('using standard mode') 
+                            ? error.message 
+                            : `Streaming failed: ${error.message}`;
+                        vscode.window.showErrorMessage(friendlyMessage);
+                        contextIndicator?.updateStreamingError(error.message);
+                        // Stop status after a delay to show the error
+                        setTimeout(() => contextIndicator?.stopStreamingStatus(), 3000);
                     }
+                },
+                {
+                    repositoryItems,
+                    maxContextLength: 4000,
+                    includeRepositoryContext: true
                 },
                 cancellationTokenSource.token
             );
@@ -292,6 +311,9 @@ async function handleStreamingContinueText(
         }
 
     } catch (error) {
+        // Ensure streaming status is stopped on any error
+        contextIndicator?.stopStreamingStatus();
+        
         if (error instanceof Error && error.message.includes('cancelled')) {
             vscode.window.showInformationMessage('Text generation cancelled');
         } else {
@@ -397,7 +419,6 @@ async function handleShowSuggestions(smartSuggestions: SmartSuggestionsService) 
 // Continue with Oracle consultation
 async function handleContinueWithOracle(
     llmService: LLMService, 
-    streamingLLMService: StreamingLLMService, 
     repositoryManager: RepositoryManager, 
     oracleService: OracleService
 ) {
@@ -426,7 +447,7 @@ async function handleContinueWithOracle(
     });
 
     // Now continue with AI using the oracle result as context
-    await handleContinueText(llmService, streamingLLMService, repositoryManager);
+    await handleContinueText(llmService, repositoryManager);
 }
 
 // Query Oracle (standalone)
@@ -546,7 +567,6 @@ async function handleInsertTemplate(
 async function handleContinueWithTemplate(
     templateManager: TemplateManager, 
     llmService: LLMService, 
-    streamingLLMService: StreamingLLMService,
     repositoryManager: RepositoryManager, 
     templatePicker: TemplatePicker
 ) {
@@ -595,7 +615,7 @@ async function handleContinueWithTemplate(
 
         // Now continue with AI using the template result as context
         vscode.window.showInformationMessage(`Template "${template.name}" applied, continuing with AI...`);
-        await handleContinueText(llmService, streamingLLMService, repositoryManager);
+        await handleContinueText(llmService, repositoryManager);
 
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to process template: ${error}`);
@@ -605,7 +625,7 @@ async function handleContinueWithTemplate(
             editBuilder.insert(position, `\n\n${template.content}\n\n`);
         });
         
-        await handleContinueText(llmService, streamingLLMService, repositoryManager);
+        await handleContinueText(llmService, repositoryManager);
     }
 }
 
@@ -830,7 +850,6 @@ async function handleGenerateSparks(sparksService: SparksService) {
 async function handleContinueWithSparks(
     sparksService: SparksService, 
     llmService: LLMService, 
-    streamingLLMService: StreamingLLMService,
     repositoryManager: RepositoryManager
 ) {
     const editor = vscode.window.activeTextEditor;
@@ -878,15 +897,16 @@ async function handleContinueWithSparks(
             let continuation: string;
             
             if (enableStreaming) {
-                // Use streaming service - need to get profile manually since getLLMProfile is private
-                const profileKey = config.get('defaultLLMProfile', '');
-                if (!profileKey) {
-                    throw new Error('No LLM profile configured. Please set up an LLM profile in settings.');
-                }
-                
-                // For now, fallback to non-streaming since we can't easily access the profile
-                // TODO: Refactor LLMService to expose profile access or make streaming work with generateContinuation
-                continuation = await llmService.generateContinuation(textBeforeCursor, {
+                // Use unified LLM service with streaming
+                continuation = await llmService.generateStreamingContinuation(textBeforeCursor, {
+                    onToken: (token: string) => {
+                        // For inline continuation, we don't need real-time streaming
+                        // but we could add it later if needed
+                    },
+                    onError: (error: Error) => {
+                        console.error('Streaming error:', error);
+                    }
+                }, {
                     repositoryItems,
                     maxContextLength: config.get('maxContextLength', 4000),
                     includeRepositoryContext: true
@@ -1055,6 +1075,15 @@ async function handleConfigureSparkTables(tableConfigurationPicker: TableConfigu
         await tableConfigurationPicker.showTableConfiguration();
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to configure spark tables: ${error}`);
+    }
+}
+
+// Open Visual Table Manager
+async function handleOpenTableManager(tableManagerWebview: TableManagerWebview) {
+    try {
+        tableManagerWebview.show();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to open table manager: ${error}`);
     }
 }
 

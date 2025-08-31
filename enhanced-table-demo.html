@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Table System Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .demo-section {
+            margin-bottom: 3rem;
+            padding: 2rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .feature-item {
+            padding: 1rem;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
+        .code-example {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-complete {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-partial {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 Enhanced Table System Demo</h1>
+    <p>This demonstrates the advanced table system with modifiers, relationships, and performance optimizations.</p>
+
+    <div class="demo-section">
+        <h2>📋 Implementation Status</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>Phase 1: Enhanced Data Model <span class="status-badge status-complete">✅ Complete</span></h3>
+                <ul>
+                    <li>Extended RandomTable interface with modifiers and metadata</li>
+                    <li>TableModifier interface (conditional, weighted, linked, unique)</li>
+                    <li>EnhancedTableEntry with tags, category, rarity</li>
+                    <li>Table relationship definitions</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Phase 2: Advanced Rolling Engine <span class="status-badge status-complete">✅ Complete</span></h3>
+                <ul>
+                    <li>AdvancedTableRoller with conditional logic</li>
+                    <li>Weighted and sequential roll types</li>
+                    <li>Linked table resolution system</li>
+                    <li>Cascading roll engine</li>
+                    <li>Advanced roll options (advantage, disadvantage, exploding, reroll)</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Phase 3: Performance Optimizations <span class="status-badge status-complete">✅ Complete</span></h3>
+                <ul>
+                    <li>Table indexing and caching</li>
+                    <li>Large table loading optimization</li>
+                    <li>Lazy loading for linked tables</li>
+                    <li>Efficient roll result caching</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>Phase 4: UI Enhancements <span class="status-badge status-complete">✅ Complete</span></h3>
+                <ul>
+                    <li>ConditionalBuilder component</li>
+                    <li>AdvancedTableEditor component</li>
+                    <li>Integration with CustomTables.svelte</li>
+                    <li>Performance monitoring dashboard</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔮 Key Features Implemented</h2>
+        
+        <h3>1. Conditional Logic System</h3>
+        <p>Safe JavaScript expression evaluation with security controls and visual condition builder.</p>
+        <div class="code-example">
+{
+  "min": 15,
+  "max": 16,
+  "description": "Ancient sword",
+  "modifiers": [{
+    "type": "conditional",
+    "condition": "character_level >= 5",
+    "description": "Magical ancient sword +2"
+  }]
+}
+        </div>
+
+        <h3>2. Table Relationships</h3>
+        <p>Hierarchical tables, cross-references, and conditional cascading.</p>
+        <div class="code-example">
+{
+  "min": 20,
+  "max": 20,
+  "description": "Weather affects the scene",
+  "modifiers": [{
+    "type": "linked", 
+    "dependency": "weather_conditions",
+    "parameters": {"season": "current_season"}
+  }]
+}
+        </div>
+
+        <h3>3. Advanced Roll Mechanics</h3>
+        <p>Advantage, disadvantage, exploding dice, and conditional rerolls.</p>
+        <div class="code-example">
+const rollOptions = {
+  rollType: 'advantage',
+  advantageCount: 2,
+  modifiers: {
+    bonus: 5,
+    multiplier: 1.5,
+    threshold: 10
+  },
+  rerollCondition: "roll_value <= 5"
+};
+        </div>
+
+        <h3>4. Weighted Probability System</h3>
+        <p>Dynamic weights based on context conditions.</p>
+        <div class="code-example">
+{
+  "description": "Rare artifact",
+  "modifiers": [{
+    "type": "weighted",
+    "weight": 1,
+    "parameters": {
+      "conditionalWeights": [{
+        "condition": "character_level >= 10",
+        "weight": 5
+      }]
+    }
+  }]
+}
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🛡️ Security Features</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>Sandboxed Evaluation</h3>
+                <p>Conditional expressions run in a controlled environment with limited scope and forbidden pattern detection.</p>
+            </div>
+            <div class="feature-item">
+                <h3>Safe Error Handling</h3>
+                <p>Graceful fallbacks when conditions fail, with detailed error messages for debugging.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>⚡ Performance Features</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>Intelligent Caching</h3>
+                <p>LRU cache for tables and results with configurable TTL and automatic cleanup.</p>
+            </div>
+            <div class="feature-item">
+                <h3>Table Indexing</h3>
+                <p>Fast searching by tags, category, rarity, and full text content.</p>
+            </div>
+            <div class="feature-item">
+                <h3>Optimized Rolling</h3>
+                <p>Tables optimized for large datasets with lazy loading and efficient memory usage.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎨 User Interface</h2>
+        <p>The enhanced table system includes:</p>
+        <ul>
+            <li><strong>Visual Condition Builder:</strong> Simple and advanced modes for creating conditional logic</li>
+            <li><strong>Advanced Table Editor:</strong> Tabbed interface for managing all enhanced features</li>
+            <li><strong>Relationship Editor:</strong> Visual management of table relationships</li>
+            <li><strong>Performance Dashboard:</strong> Monitoring and optimization tools</li>
+        </ul>
+        
+        <h3>Access the Enhanced Editor</h3>
+        <p>In the Custom Tables settings page, look for:</p>
+        <ul>
+            <li>✨ <strong>Enhanced Table</strong> button in the toolbar to create new enhanced tables</li>
+            <li>✨ <strong>Advanced Edit</strong> button on existing tables to upgrade them</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔄 Backward Compatibility</h2>
+        <p>All existing functionality is preserved:</p>
+        <ul>
+            <li>Existing tables continue to work unchanged</li>
+            <li>Enhanced features are opt-in via <code>enhanced: true</code> flag</li>
+            <li>Original <code>rollOnTable</code> function preserved</li>
+            <li>Progressive enhancement approach</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>📝 Example Use Cases</h2>
+        
+        <h3>1. Level-Gated Magic Items</h3>
+        <div class="code-example">
+// Only appears for high-level characters
+"condition": "character_level >= 10 && party_size > 2"
+        </div>
+
+        <h3>2. Seasonal Content</h3>
+        <div class="code-example">
+// Different results based on season
+"condition": "current_season === 'winter'"
+        </div>
+
+        <h3>3. Story Progress Gates</h3>
+        <div class="code-example">
+// Unlocks as story progresses
+"condition": "story_progress >= 50"
+        </div>
+
+        <h3>4. Cascading Tables</h3>
+        <div class="code-example">
+// Weather table triggers environment effects table
+"type": "parent-child",
+"sourceTable": "weather_conditions", 
+"targetTable": "environmental_effects"
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🚀 Getting Started</h2>
+        <ol>
+            <li>Navigate to <strong>Settings → Custom Tables</strong></li>
+            <li>Click the <strong>✨ Enhanced Table</strong> button</li>
+            <li>Use the tabbed interface to configure:
+                <ul>
+                    <li><strong>Basic Info:</strong> Name, description, dice formula</li>
+                    <li><strong>Entries:</strong> Add table entries with modifiers and metadata</li>
+                    <li><strong>Relationships:</strong> Link to other tables</li>
+                    <li><strong>Roll Options:</strong> Configure advanced rolling mechanics</li>
+                    <li><strong>Performance:</strong> Monitor optimization status</li>
+                </ul>
+            </li>
+            <li>Save and test your enhanced table!</li>
+        </ol>
+    </div>
+</body>
+</html>

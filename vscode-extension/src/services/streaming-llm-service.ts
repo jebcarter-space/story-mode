@@ -2,6 +2,14 @@ import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import type { LLMProfile, RepositoryItem } from '../types';
 
+/**
+ * @deprecated This service has been merged into LLMService for unified streaming/non-streaming functionality.
+ * Use LLMService.generateStreamingContinuation() instead of this separate service.
+ * 
+ * This file is kept for reference and will be removed in a future version.
+ * See LLMService for the unified implementation with full profile access.
+ */
+
 export interface StreamingOptions {
   onToken?: (token: string) => void;
   onComplete?: (fullText: string) => void;

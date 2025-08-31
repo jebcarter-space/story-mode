@@ -5,6 +5,7 @@ import CustomTables from "../components/pages/settings/CustomTables.svelte";
 import SparkTables from "../components/pages/settings/SparkTables.svelte";
 import Templates from "../components/pages/settings/Templates.svelte";
 import LLMSettings from "../components/pages/settings/LLMSettings.svelte";
+import HelpSettings from "../components/pages/settings/HelpSettings.svelte";
 
 export const settingPages = [
   { name: 'Settings', component: Settings },
@@ -14,4 +15,5 @@ export const settingPages = [
   { name: 'Spark Tables', component: SparkTables},
   { name: 'Templates', component: Templates},
   { name: 'LLM Settings', component: LLMSettings},
+  { name: 'Help & Documentation', component: HelpSettings},
 ];
