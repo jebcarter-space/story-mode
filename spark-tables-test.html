@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spark Tables Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        button { padding: 8px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Spark Tables System Test</h1>
+    
+    <div class="test-section">
+        <h2>Available Tables</h2>
+        <div id="tables-list"></div>
+        <button onclick="loadTables()">Reload Tables</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Template Resolution Test</h2>
+        <textarea id="template-input" style="width: 100%; height: 100px;">
+# Test Scene
+**Atmosphere:** {{spark:gothic-atmosphere}}
+**Elements:** {{sparks:steampunk-elements:2}}
+**Character:** {{spark:character-personality}}
+**Mix:** {{sparks:gothic-atmosphere,steampunk-elements:3}}
+        </textarea>
+        <button onclick="resolveTemplate()">Resolve Template</button>
+        <div id="template-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Direct Generation Test</h2>
+        <button onclick="testSingleSpark()">Single Gothic Spark</button>
+        <button onclick="testMultipleSparks()">Multiple Mixed Sparks</button>
+        <button onclick="testDefaultSparks()">Default Table Sparks</button>
+        <div id="generation-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>System Status</h2>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Mock Spark Tables System for testing
+        const mockSparkTables = {
+            'default': {
+                name: 'default',
+                entries: ['mysterious', 'ancient', 'forbidden', 'hidden', 'sacred'],
+                enabled: true,
+                weight: 1,
+                sparksEnabled: true,
+                oracleEnabled: true,
+                isDefault: true
+            },
+            'gothic-atmosphere': {
+                name: 'gothic-atmosphere',
+                entries: ['shadowy', 'haunted', 'eerie', 'spectral', 'ominous'],
+                enabled: true,
+                weight: 2,
+                sparksEnabled: true,
+                oracleEnabled: true,
+                isDefault: false
+            },
+            'steampunk-elements': {
+                name: 'steampunk-elements', 
+                entries: ['clockwork', 'brass', 'steam', 'gears', 'mechanical'],
+                enabled: true,
+                weight: 1,
+                sparksEnabled: true,
+                oracleEnabled: true,
+                isDefault: false
+            },
+            'character-personality': {
+                name: 'character-personality',
+                entries: ['brave', 'cunning', 'wise', 'reckless', 'ambitious'],
+                enabled: true,
+                weight: 1,
+                sparksEnabled: true,
+                oracleEnabled: true,
+                isDefault: false
+            }
+        };
+        
+        function loadTables() {
+            const tablesList = document.getElementById('tables-list');
+            tablesList.innerHTML = '';
+            
+            Object.values(mockSparkTables).forEach(table => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <strong>${table.name}</strong> 
+                    (${table.entries.length} keywords, weight: ${table.weight}, 
+                    ${table.enabled ? 'enabled' : 'disabled'})
+                    <br><small>Sample: ${table.entries.slice(0, 3).join(', ')}...</small>
+                `;
+                tablesList.appendChild(div);
+            });
+        }
+        
+        function generateSparkKeywords(count = 2, tableNames = null) {
+            let availableTables = Object.values(mockSparkTables)
+                .filter(table => table.enabled && table.sparksEnabled);
+            
+            if (tableNames && tableNames.length > 0) {
+                availableTables = availableTables.filter(table => 
+                    tableNames.includes(table.name)
+                );
+            }
+            
+            if (availableTables.length === 0) return [];
+            
+            // Create weighted pool
+            const weightedEntries = [];
+            availableTables.forEach(table => {
+                for (let w = 0; w < table.weight; w++) {
+                    weightedEntries.push(...table.entries);
+                }
+            });
+            
+            // Select random keywords
+            const selected = new Set();
+            const keywords = [];
+            
+            while (keywords.length < count && selected.size < weightedEntries.length) {
+                const randomIndex = Math.floor(Math.random() * weightedEntries.length);
+                const keyword = weightedEntries[randomIndex];
+                
+                if (!selected.has(keyword)) {
+                    selected.add(keyword);
+                    keywords.push(keyword);
+                }
+            }
+            
+            return keywords;
+        }
+        
+        function resolveSparkPlaceholder(placeholder) {
+            if (placeholder.startsWith('spark:')) {
+                const tableName = placeholder.substring(6);
+                return generateSparkKeywords(1, tableName ? [tableName] : undefined)[0] || '[no keyword]';
+            } else if (placeholder.startsWith('sparks:')) {
+                const params = placeholder.substring(7);
+                const parts = params.split(':');
+                
+                let tableNames = null;
+                let count = 2;
+                
+                if (parts.length === 1) {
+                    tableNames = parts[0] ? parts[0].split(',').map(t => t.trim()) : null;
+                } else if (parts.length === 2) {
+                    tableNames = parts[0] ? parts[0].split(',').map(t => t.trim()) : null;
+                    count = parseInt(parts[1]) || 2;
+                }
+                
+                return generateSparkKeywords(count, tableNames).join(', ');
+            }
+            
+            return placeholder;
+        }
+        
+        function resolveTemplate() {
+            const input = document.getElementById('template-input').value;
+            const result = input.replace(/\{\{([^}]+)\}\}/g, (match, placeholder) => {
+                return resolveSparkPlaceholder(placeholder);
+            });
+            
+            document.getElementById('template-result').innerHTML = `
+                <h4>Resolved Template:</h4>
+                <pre>${result}</pre>
+            `;
+        }
+        
+        function testSingleSpark() {
+            const keyword = generateSparkKeywords(1, ['gothic-atmosphere'])[0];
+            document.getElementById('generation-result').innerHTML = `
+                <strong>Single Gothic Spark:</strong> ${keyword}
+            `;
+        }
+        
+        function testMultipleSparks() {
+            const keywords = generateSparkKeywords(3, ['gothic-atmosphere', 'steampunk-elements']);
+            document.getElementById('generation-result').innerHTML = `
+                <strong>Multiple Mixed Sparks:</strong> ${keywords.join(', ')}
+            `;
+        }
+        
+        function testDefaultSparks() {
+            const keywords = generateSparkKeywords(2, ['default']);
+            document.getElementById('generation-result').innerHTML = `
+                <strong>Default Table Sparks:</strong> ${keywords.join(', ')}
+            `;
+        }
+        
+        function updateStatus() {
+            const totalTables = Object.keys(mockSparkTables).length;
+            const enabledTables = Object.values(mockSparkTables).filter(t => t.enabled).length;
+            const totalKeywords = Object.values(mockSparkTables)
+                .reduce((sum, table) => sum + table.entries.length, 0);
+            
+            document.getElementById('status').innerHTML = `
+                <strong>System Status:</strong><br>
+                Total Tables: ${totalTables}<br>
+                Enabled Tables: ${enabledTables}<br>
+                Total Keywords: ${totalKeywords}<br>
+                <em>Mock system active - demonstrates functionality</em>
+            `;
+        }
+        
+        // Initialize
+        loadTables();
+        updateStatus();
+    </script>
+</body>
+</html>

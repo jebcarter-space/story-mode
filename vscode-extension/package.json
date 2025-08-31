@@ -28,6 +28,8 @@
     "onCommand:story-mode.continueText",
     "onCommand:story-mode.queryOracle",
     "onCommand:story-mode.rollDice",
+    "onCommand:story-mode.generateSparks",
+    "onCommand:story-mode.continueWithSparks",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -77,6 +79,16 @@
         "command": "story-mode.createLibrary",
         "title": "Create Story Library",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.generateSparks",
+        "title": "Sparks",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.continueWithSparks",
+        "title": "Continue with Sparks",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -108,6 +120,18 @@
         "command": "story-mode.showSuggestions",
         "key": "ctrl+shift+s",
         "mac": "cmd+shift+s",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.generateSparks",
+        "key": "ctrl+shift+k",
+        "mac": "cmd+shift+k",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.continueWithSparks",
+        "key": "ctrl+shift+alt+k",
+        "mac": "cmd+shift+alt+k",
         "when": "editorTextFocus"
       }
     ],
@@ -151,6 +175,21 @@
           "type": "string",
           "default": ".story-mode",
           "description": "Path to story mode repository folder"
+        },
+        "storyMode.sparkKeywordCount": {
+          "type": "number",
+          "default": 3,
+          "description": "Number of keywords to generate for Sparks"
+        },
+        "storyMode.includeTableNames": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include source table names in Sparks output"
+        },
+        "storyMode.defaultTableEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the default keyword table"
         }
       }
     }

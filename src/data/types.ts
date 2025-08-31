@@ -309,3 +309,38 @@ export interface KeywordResolution {
   hasConflicts: boolean;
 }
 
+// Spark Tables System Types
+export interface SparkTable {
+  name: string;
+  source: string; // file path or 'built-in'
+  entries: string[];
+  lastModified: number;
+  enabled: boolean;
+  weight: number;
+  oracleEnabled: boolean;
+  sparksEnabled: boolean;
+  categories: string[];
+  isDefault: boolean;
+}
+
+export interface SparkTableList {
+  [key: string]: SparkTable;
+}
+
+export interface SparkTableSettings {
+  enabledTables: string[];
+  oracleTables: string[];
+  sparkTables: string[];
+  defaultTableEnabled: boolean;
+  defaultTableCount: number;
+  keywordCount: number;
+  includeTableNames: boolean;
+  allowCrossover: boolean;
+}
+
+export interface SparkResult {
+  keywords: string[];
+  tableNames?: string[];
+  timestamp: number;
+}
+
