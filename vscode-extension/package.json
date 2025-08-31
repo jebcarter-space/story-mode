@@ -163,6 +163,11 @@
         "key": "ctrl+shift+alt+k",
         "mac": "cmd+shift+alt+k",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "key": "ctrl+shift+alt+t",
+        "mac": "cmd+shift+alt+t"
       }
     ],
     "views": {

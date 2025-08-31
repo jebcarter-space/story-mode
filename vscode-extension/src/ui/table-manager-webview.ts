@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { SparkTableManager } from '../services/spark-table-manager';
 import { ConfigurationService } from '../services/configuration-service';
+import { TableAnalyticsService } from '../services/table-analytics-service';
 import type { SparkTable } from '../types';
 
 /**
@@ -13,7 +14,8 @@ export class TableManagerWebview {
 
   constructor(
     private context: vscode.ExtensionContext,
-    private sparkTableManager: SparkTableManager
+    private sparkTableManager: SparkTableManager,
+    private analyticsService?: TableAnalyticsService
   ) {}
 
   /**
@@ -102,14 +104,19 @@ export class TableManagerWebview {
     const sparksTables = ConfigurationService.getSparksTables();
     const keywordCount = ConfigurationService.getSparkKeywordCount();
 
-    // Enhance tables with configuration info
-    const enhancedTables = Object.entries(tables).map(([name, table]) => ({
-      ...table,
-      oracleConfigEnabled: oracleTables.includes(name),
-      sparksConfigEnabled: sparksTables.includes(name),
-      lastUsed: Date.now() - Math.random() * 86400000 * 7, // Mock data for now
-      usageCount: Math.floor(Math.random() * 100) // Mock data for now
-    }));
+    // Enhance tables with configuration info and analytics
+    const enhancedTables = Object.entries(tables).map(([name, table]) => {
+      const analytics = this.analyticsService?.getEnrichedStats(name);
+      return {
+        ...table,
+        oracleConfigEnabled: oracleTables.includes(name),
+        sparksConfigEnabled: sparksTables.includes(name),
+        lastUsed: analytics?.lastUsed || null,
+        usageCount: analytics?.totalUses || 0,
+        daysSinceLastUse: analytics?.daysSinceLastUse || null,
+        preferredContext: analytics?.preferredContext || 'sparks'
+      };
+    });
 
     this.panel.webview.postMessage({
       type: 'updateData',
@@ -495,6 +502,8 @@ export class TableManagerWebview {
                 const isEnabled = table.oracleConfigEnabled || table.sparksConfigEnabled;
                 const lastUsedText = table.lastUsed ? 
                     new Date(table.lastUsed).toLocaleDateString() : 'Never used';
+                const usageText = table.usageCount > 0 ? 
+                    'Used ' + table.usageCount + ' time' + (table.usageCount !== 1 ? 's' : '') : 'Never used';
                 const statusIcon = isEnabled ? '✅' : '❌';
                 const defaultText = table.isDefault ? ' (Default)' : '';
                 const sampleKeywords = table.entries.slice(0, 5).join(', ');
@@ -531,6 +540,7 @@ export class TableManagerWebview {
                 html += '  </div>';
                 html += '  <div class="table-preview">';
                 html += '    <div>Last used: ' + lastUsedText + '</div>';
+                html += '    <div>' + usageText + '</div>';
                 html += '    <div class="preview-keywords">';
                 html += '      Sample: ' + sampleKeywords + '...';
                 html += '      <button class="btn secondary" onclick="previewTable(\'' + table.name + '\')">Preview</button>';

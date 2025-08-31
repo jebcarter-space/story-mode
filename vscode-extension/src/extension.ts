@@ -15,6 +15,7 @@ import { SparkTableManager } from './services/spark-table-manager';
 import { SparksService } from './services/sparks-service';
 import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import { TableManagerWebview } from './ui/table-manager-webview';
+import { TableAnalyticsService } from './services/table-analytics-service';
 import type { InlineContinuationOptions } from './types';
 
 // Global reference to context indicator for streaming status
@@ -31,12 +32,13 @@ export function activate(context: vscode.ExtensionContext) {
     const templateManager = new TemplateManager(context);
     const llmService = new LLMService(context);
     const sparkTableManager = new SparkTableManager(context);
+    const analyticsService = new TableAnalyticsService(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
     const templatePicker = new TemplatePicker(context);
     const tableConfigurationPicker = new TableConfigurationPicker(context, sparkTableManager);
-    const tableManagerWebview = new TableManagerWebview(context, sparkTableManager);
+    const tableManagerWebview = new TableManagerWebview(context, sparkTableManager, analyticsService);
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
