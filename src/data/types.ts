@@ -7,6 +7,11 @@ export interface RandomTable {
   diceFormula: string;
   table: MinMaxRow[];
   consumable?: boolean;
+  // Enhanced table features
+  enhanced?: boolean;
+  relationships?: TableRelationship[];
+  defaultRollOptions?: AdvancedRollOptions;
+  indexedData?: TableIndexData;
 }
 
 export interface CustomTableList{
@@ -17,6 +22,77 @@ export interface MinMaxRow {
   min: number | string | null;
   max: number | string | null;
   description: string | Function;
+  // Enhanced table row features
+  modifiers?: TableModifier[];
+  metadata?: TableEntryMetadata;
+  id?: string;
+}
+
+// Enhanced Table System Interfaces
+export interface TableModifier {
+  type: 'conditional' | 'weighted' | 'sequential' | 'unique' | 'linked';
+  condition?: string;         // JavaScript expression
+  weight?: number;           // Probability multiplier  
+  dependency?: string;       // Reference to other table/result
+  parameters?: Record<string, any>;
+}
+
+export interface TableEntryMetadata {
+  tags?: string[];
+  category?: string;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'legendary';
+  created?: number;
+  updated?: number;
+}
+
+export interface TableRelationship {
+  type: 'parent-child' | 'cross-reference' | 'conditional-chain';
+  sourceTable: string;
+  targetTable: string;
+  condition?: string;
+  parameters?: Record<string, any>;
+  triggerCondition?: (result: TableResult, context: RollContext) => boolean;
+}
+
+export interface AdvancedRollOptions {
+  rollType?: 'standard' | 'advantage' | 'disadvantage' | 'exploding' | 'reroll';
+  rerollCondition?: string; // JavaScript expression for when to reroll
+  advantageCount?: number;
+  modifiers?: {
+    bonus: number;
+    multiplier: number;
+    threshold: number;
+  };
+  maxRerolls?: number;
+}
+
+export interface TableIndexData {
+  tagIndex: Map<string, Set<number>>;
+  categoryIndex: Map<string, Set<number>>;
+  rarityIndex: Map<string, Set<number>>;
+  fullTextIndex: Map<string, Set<number>>;
+  lastIndexed: number;
+}
+
+export interface RollContext {
+  variables: Record<string, any>;
+  previousResults: TableResult[];
+  depth: number;
+  storyId: string;
+  rollId: string;
+  customTables?: CustomTableList;
+  sparkTables?: SparkTableList;
+}
+
+export interface TableResult {
+  description: string;
+  roll: any; // DiceRoll result
+  tableId?: string;
+  entryId?: string;
+  metadata?: TableEntryMetadata;
+  linkedResults?: TableResult[];
+  rollOptions?: AdvancedRollOptions;
+  context?: RollContext;
 }
 
 export interface Content {
@@ -61,7 +137,7 @@ export interface SettingPage {
   component: SvelteComponent;
 };
 
-export type CustomTableViews = 'create' | 'import' | 'export' | 'bulk' | 'search' | 'view' | ''
+export type CustomTableViews = 'create' | 'import' | 'export' | 'bulk' | 'search' | 'view' | 'advanced' | ''
 
 export interface Template {
   name: string;
@@ -342,5 +418,48 @@ export interface SparkResult {
   keywords: string[];
   tableNames?: string[];
   timestamp: number;
+}
+
+// Performance and Caching Interfaces
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  hits: number;
+  ttl?: number;
+}
+
+export interface PerformanceMetrics {
+  rollTime: number;
+  evaluationTime: number;
+  cacheHits: number;
+  cacheMisses: number;
+  tableLoads: number;
+}
+
+export interface WeightedEntry {
+  entry: MinMaxRow;
+  weight: number;
+  conditionalWeights?: Array<{
+    condition: string;
+    weight: number;
+  }>;
+}
+
+export interface ConditionalEvaluationResult {
+  result: boolean;
+  error?: string;
+  evaluationTime: number;
+}
+
+export interface TableValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  enhancedFeatures?: {
+    hasConditionals: boolean;
+    hasRelationships: boolean;
+    hasWeighting: boolean;
+    hasMetadata: boolean;
+  };
 }
 
