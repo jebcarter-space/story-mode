@@ -13,7 +13,8 @@
   import ContextIndicator from "../ui/ContextIndicator.svelte";
   import { getRepositoryContext } from "../../lib/repository-context";
   import { AutoExtractionService, type ExtractionSuggestion, type AutoExtractionSettings } from "../../lib/auto-extraction-service";
-  import AutoExtractionPanel from "./AutoExtractionPanel.svelte";
+  // TODO: Add AutoExtractionPanel when build issues are resolved
+  // import AutoExtractionPanel from "./AutoExtractionPanel.svelte";
 
   export let input = createInput();
 </script>
@@ -46,7 +47,6 @@
     autoApproveHighConfidence: false,
     highConfidenceThreshold: 0.9,
   });
-  let showExtractionPanel = $state(false);
 
   // Get the currently selected profile
   let selectedProfile = $derived(
@@ -286,7 +286,6 @@
       
       if (newSuggestions.length > 0) {
         extractionSuggestions = [...extractionSuggestions, ...newSuggestions];
-        showExtractionPanel = true;
       }
     } catch (error) {
       console.warn('Auto-extraction failed:', error);
@@ -382,19 +381,47 @@
   tokenInfo={tokenInfo}
 />
 
-<!-- Auto-Extraction Panel -->
-{#if extractionSuggestions.length > 0 || showExtractionPanel}
-  <div class="mb-3">
-    <AutoExtractionPanel
-      suggestions={extractionSuggestions}
-      settings={extractionSettings}
-      context={repositoryContext}
-      extractionService={extractionService}
-      onApproveSuggestion={handleApproveSuggestion}
-      onRejectSuggestion={handleRejectSuggestion}
-      onClearProcessed={handleClearProcessed}
-      onUpdateSettings={handleUpdateExtractionSettings}
-    />
+<!-- Auto-Extraction Suggestions (Simple version) -->
+{#if extractionSuggestions.length > 0 && selectedProfile}
+  <div class="mb-3 p-3 border rounded bg-blue-50">
+    <h4 class="text-sm font-medium mb-2">🤖 Auto-Extract Suggestions ({extractionSuggestions.length})</h4>
+    <div class="space-y-2">
+      {#each extractionSuggestions as suggestion (suggestion.id)}
+        <div class="flex items-center justify-between p-2 bg-white rounded border">
+          <div class="flex-1">
+            <span class="font-medium">{suggestion.entity.name}</span>
+            <span class="text-xs bg-gray-100 px-1 rounded ml-2">{suggestion.entity.category}</span>
+            <div class="text-xs text-gray-600">{suggestion.entity.description}</div>
+          </div>
+          <div class="flex gap-1">
+            <button
+              onclick={() => handleRejectSuggestion(suggestion.id)}
+              class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+            >
+              Reject
+            </button>
+            <button
+              onclick={() => handleApproveSuggestion(suggestion.id, 'chapter')}
+              class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      {/each}
+    </div>
+    
+    <div class="flex justify-between items-center mt-3 pt-2 border-t">
+      <div class="text-xs text-gray-600">
+        Auto-extraction enabled: {extractionSettings.enabled ? 'Yes' : 'No'}
+      </div>
+      <button
+        onclick={() => handleClearProcessed()}
+        class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded"
+      >
+        Clear All
+      </button>
+    </div>
   </div>
 {/if}
 
@@ -402,11 +429,16 @@
 {#if selectedProfile}
   <div class="mb-2 flex items-center justify-between">
     <button
-      onclick={() => showExtractionPanel = !showExtractionPanel}
+      onclick={() => {
+        extractionSettings.enabled = !extractionSettings.enabled;
+        if (extractionService) {
+          extractionService.updateSettings(extractionSettings);
+        }
+      }}
       class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded flex items-center gap-1"
-      title="Toggle auto-extraction panel"
+      title="Toggle auto-extraction"
     >
-      🤖 Auto-Extract
+      🤖 Auto-Extract: {extractionSettings.enabled ? 'On' : 'Off'}
       {#if extractionSuggestions.length > 0}
         <span class="text-xs bg-blue-500 text-white rounded px-1">
           {extractionSuggestions.length}
