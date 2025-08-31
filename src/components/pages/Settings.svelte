@@ -15,12 +15,16 @@
     }
     
     if (appConfig.features.templates) {
-      pages.push(settingPages[4]); // Templates
+      pages.push(settingPages[5]); // Templates
     }
     
     if (appConfig.features.llmIntegration) {
-      pages.push(settingPages[5]); // LLM Settings
+      pages.push(settingPages[6]); // LLM Settings
     }
+    
+    // Always show Spark Tables and Help & Documentation
+    pages.push(settingPages[4]); // Spark Tables
+    pages.push(settingPages[7]); // Help & Documentation
     
     return pages;
   });
