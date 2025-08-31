@@ -392,27 +392,66 @@ The tavern features a large common room with wooden tables, a stone fireplace, a
             Buffer.from(exampleLocation)
         );
 
-        // Create example template
+        // Create enhanced example template
         const exampleTemplate = `---
 name: "Character Introduction"
-description: "Template for introducing a new character"
-category: "character"
+description: "Template for introducing a new character with LLM enhancement"
+category: "Characters"
 llmEnabled: true
-llmInstructions: "Generate a vivid character introduction based on the provided details"
+llmInstructions: "Generate a vivid character introduction based on the provided details, focusing on atmosphere and first impressions"
+llmProfile: ""
+appendMode: false
+repositoryTarget: "Character"
 ---
 
-**[Character Name]** approaches, their [distinctive feature] catching your attention immediately.
+## {{random_character}} Enters the Scene
 
-*Appearance:* [Physical description]
+**Age:** {{rand 18-65}}
+**Initial Impression:** {{roll 1d6}}
 
-*Demeanor:* [How they carry themselves, mood, attitude]
+{{#llm}}Describe this character's dramatic entrance into the scene, including their appearance, mannerisms, and the immediate impression they make on others present{{/llm}}
 
-*First Impression:* [What stands out about them]
+**Notable Equipment:** 
+- Primary weapon/tool: {{rand 1-10}}
+- Distinctive clothing or accessory
+
+**Random Quirk:** {{rand 1-100}}% chance of having an unusual habit
 `;
 
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-introduction.md'),
             Buffer.from(exampleTemplate)
+        );
+
+        // Create location template example
+        const locationTemplate = `---
+name: "Tavern Scene"
+description: "Generate a detailed tavern scene with atmosphere"
+category: "Locations"  
+llmEnabled: true
+llmInstructions: "Create a vivid tavern scene with sensory details, atmosphere, and notable features"
+llmProfile: ""
+appendMode: true
+repositoryTarget: "Location"
+---
+
+# The {{random_location}} Tavern
+
+**Crowd Level:** {{rand 5-50}} patrons  
+**Atmosphere Check:** {{roll 2d6}}
+
+## Basic Setup
+- **Lighting:** Flickering candlelight and oil lamps
+- **Sounds:** {{roll 1d4}} conversations happening simultaneously  
+- **Notable Patron:** {{random_character}} sits in the corner
+
+## Scene Enhancement
+{{#llm}}Add rich atmospheric details about the tavern's mood, smells, sounds, and any interesting events happening right now{{/llm}}
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'tavern-scene.md'),
+            Buffer.from(locationTemplate)
         );
 
         // Create default LLM profile

@@ -61,7 +61,10 @@ export class PlaceholderResolver {
 
     for (const match of matches) {
       const prompt = match[1].trim();
-      if (!prompt) continue;
+      if (!prompt) {
+        text = text.replace(match[0], '[Empty LLM prompt]');
+        continue;
+      }
 
       try {
         // Create a simple template for LLM expansion
@@ -81,8 +84,16 @@ export class PlaceholderResolver {
         text = text.replace(match[0], expandedContent.trim());
       } catch (error) {
         console.error('LLM placeholder expansion failed:', error);
-        // Fallback to the original prompt
-        text = text.replace(match[0], `[LLM Error: ${prompt}]`);
+        // Provide more helpful fallback based on error type
+        let fallback = `[LLM Error: ${prompt}]`;
+        if (error instanceof Error) {
+          if (error.message.includes('No LLM profile')) {
+            fallback = `[No LLM Profile: ${prompt}]`;
+          } else if (error.message.includes('API')) {
+            fallback = `[API Error: ${prompt}]`;
+          }
+        }
+        text = text.replace(match[0], fallback);
       }
     }
 

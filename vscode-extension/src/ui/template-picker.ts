@@ -11,7 +11,15 @@ export class TemplatePicker {
 
   async showTemplateSelector(templates: TemplateList): Promise<{ template: Template; key: string } | undefined> {
     if (Object.keys(templates).length === 0) {
-      vscode.window.showErrorMessage('No templates found. Create templates in .story-mode/templates/');
+      const action = await vscode.window.showErrorMessage(
+        'No templates found in .story-mode/templates/',
+        'Create Template Folder',
+        'Cancel'
+      );
+      
+      if (action === 'Create Template Folder') {
+        await this.createTemplateFolder();
+      }
       return undefined;
     }
 
@@ -74,6 +82,48 @@ export class TemplatePicker {
     }
 
     return undefined;
+  }
+
+  private async createTemplateFolder(): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      vscode.window.showErrorMessage('No workspace folder open');
+      return;
+    }
+
+    try {
+      const storyModeRoot = vscode.Uri.joinPath(workspaceFolders[0].uri, '.story-mode');
+      const templatesPath = vscode.Uri.joinPath(storyModeRoot, 'templates');
+      
+      await vscode.workspace.fs.createDirectory(storyModeRoot);
+      await vscode.workspace.fs.createDirectory(templatesPath);
+      
+      // Create a sample template
+      const sampleTemplate = `---
+name: "Sample Template"
+description: "A basic template to get you started"
+category: "Examples"
+llmEnabled: false
+---
+
+# Sample Content
+
+This is a sample template. Edit this file or create new .md files in the templates folder.
+
+- Random number: {{rand 1-10}}
+- Dice roll: {{roll 1d6}}`;
+
+      const samplePath = vscode.Uri.joinPath(templatesPath, 'sample.md');
+      await vscode.workspace.fs.writeFile(samplePath, new TextEncoder().encode(sampleTemplate));
+      
+      vscode.window.showInformationMessage('Template folder created with sample template!');
+      
+      // Open the templates folder
+      vscode.commands.executeCommand('vscode.openFolder', templatesPath, true);
+      
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create template folder: ${error}`);
+    }
   }
 
   private getTemplateDetailString(template: Template): string {
