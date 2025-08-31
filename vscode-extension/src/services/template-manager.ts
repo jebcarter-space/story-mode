@@ -45,11 +45,22 @@ export class TemplateManager {
           const frontmatter = text.slice(3, endOfFrontmatter);
           templateContent = text.slice(endOfFrontmatter + 3).trim();
           
-          // Simple YAML parsing for templates
+          // Enhanced YAML parsing for templates
           for (const line of frontmatter.split('\n')) {
             const [key, ...valueParts] = line.split(':');
             if (key && valueParts.length > 0) {
-              metadata[key.trim()] = valueParts.join(':').trim();
+              let value = valueParts.join(':').trim();
+              
+              // Remove surrounding quotes
+              if ((value.startsWith('"') && value.endsWith('"')) || 
+                  (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              
+              // Parse booleans and keep as strings for later processing
+              // (we'll handle boolean conversion when creating Template object)
+              
+              metadata[key.trim()] = value;
             }
           }
         }
@@ -63,8 +74,8 @@ export class TemplateManager {
         created: metadata.created || Date.now(),
         updated: metadata.updated || Date.now(),
         llmInstructions: metadata.llmInstructions || '',
-        llmEnabled: metadata.llmEnabled === 'true' || false,
-        appendMode: metadata.appendMode === 'true' || false,
+        llmEnabled: metadata.llmEnabled === true || metadata.llmEnabled === 'true',
+        appendMode: metadata.appendMode === true || metadata.appendMode === 'true',
         repositoryTarget: metadata.repositoryTarget || '',
         llmProfile: metadata.llmProfile || ''
       };

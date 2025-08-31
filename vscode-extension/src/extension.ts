@@ -6,6 +6,8 @@ import { TemplateManager } from './services/template-manager';
 import { OracleService } from './services/oracle-service';
 import { DiceService } from './services/dice-service';
 import { FileWatcher } from './services/file-watcher';
+import { TemplatePicker } from './ui/template-picker';
+import { PlaceholderResolver } from './lib/placeholder-resolver';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     const llmService = new LLMService(context);
     const oracleService = new OracleService();
     const diceService = new DiceService();
+    const templatePicker = new TemplatePicker(context);
 
     // Initialize file watcher
     const fileWatcher = new FileWatcher(context);
@@ -76,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Insert Template
     const insertTemplateCommand = vscode.commands.registerCommand('story-mode.insertTemplate', async () => {
-        await handleInsertTemplate(templateManager, llmService);
+        await handleInsertTemplate(templateManager, llmService, repositoryManager, templatePicker);
     });
 
     // Open Repository Manager - focus on tree view
@@ -236,7 +239,12 @@ async function handleRollDice(diceService: DiceService) {
 }
 
 // Insert Template
-async function handleInsertTemplate(templateManager: TemplateManager, llmService: LLMService) {
+async function handleInsertTemplate(
+    templateManager: TemplateManager, 
+    llmService: LLMService, 
+    repositoryManager: RepositoryManager, 
+    templatePicker: TemplatePicker
+) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor');
@@ -244,34 +252,48 @@ async function handleInsertTemplate(templateManager: TemplateManager, llmService
     }
 
     const templates = await templateManager.getTemplates();
-    const templateNames = Object.keys(templates);
     
-    if (templateNames.length === 0) {
-        vscode.window.showErrorMessage('No templates found. Create templates in .story-mode/templates/');
-        return;
-    }
+    // Use enhanced template picker
+    const selection = await templatePicker.showTemplateSelector(templates);
+    if (!selection) return;
 
-    const selectedTemplate = await vscode.window.showQuickPick(templateNames, {
-        placeHolder: 'Select a template to insert'
-    });
-
-    if (!selectedTemplate) return;
-
-    const template = templates[selectedTemplate];
+    const { template, key } = selection;
     const position = editor.selection.active;
+    const currentText = editor.document.getText();
 
-    if (template.llmEnabled && template.llmInstructions) {
-        // Process template with LLM
-        try {
-            const expandedContent = await llmService.expandTemplate(template, editor.document.getText());
-            await editor.edit(editBuilder => {
-                editBuilder.insert(position, expandedContent);
-            });
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to expand template: ${error}`);
+    try {
+        // Create placeholder resolver with current services
+        const placeholderResolver = new PlaceholderResolver({
+            llmService,
+            repositoryManager,
+            currentContext: currentText
+        });
+
+        // Resolve placeholders in template content
+        let resolvedContent = await placeholderResolver.resolve(template.content);
+
+        // If LLM expansion is enabled and we have instructions, do LLM expansion
+        if (template.llmEnabled && template.llmInstructions) {
+            const expandedContent = await llmService.expandTemplate(template, currentText);
+            
+            if (template.appendMode) {
+                resolvedContent = resolvedContent + '\n\n' + expandedContent;
+            } else {
+                resolvedContent = expandedContent;
+            }
         }
-    } else {
-        // Insert template as-is
+
+        // Insert the final content
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, resolvedContent);
+        });
+
+        vscode.window.showInformationMessage(`Template "${template.name}" inserted successfully!`);
+        
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to process template: ${error}`);
+        
+        // Fallback: insert raw template content
         await editor.edit(editBuilder => {
             editBuilder.insert(position, template.content);
         });
@@ -370,27 +392,66 @@ The tavern features a large common room with wooden tables, a stone fireplace, a
             Buffer.from(exampleLocation)
         );
 
-        // Create example template
+        // Create enhanced example template
         const exampleTemplate = `---
 name: "Character Introduction"
-description: "Template for introducing a new character"
-category: "character"
+description: "Template for introducing a new character with LLM enhancement"
+category: "Characters"
 llmEnabled: true
-llmInstructions: "Generate a vivid character introduction based on the provided details"
+llmInstructions: "Generate a vivid character introduction based on the provided details, focusing on atmosphere and first impressions"
+llmProfile: ""
+appendMode: false
+repositoryTarget: "Character"
 ---
 
-**[Character Name]** approaches, their [distinctive feature] catching your attention immediately.
+## {{random_character}} Enters the Scene
 
-*Appearance:* [Physical description]
+**Age:** {{rand 18-65}}
+**Initial Impression:** {{roll 1d6}}
 
-*Demeanor:* [How they carry themselves, mood, attitude]
+{{#llm}}Describe this character's dramatic entrance into the scene, including their appearance, mannerisms, and the immediate impression they make on others present{{/llm}}
 
-*First Impression:* [What stands out about them]
+**Notable Equipment:** 
+- Primary weapon/tool: {{rand 1-10}}
+- Distinctive clothing or accessory
+
+**Random Quirk:** {{rand 1-100}}% chance of having an unusual habit
 `;
 
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-introduction.md'),
             Buffer.from(exampleTemplate)
+        );
+
+        // Create location template example
+        const locationTemplate = `---
+name: "Tavern Scene"
+description: "Generate a detailed tavern scene with atmosphere"
+category: "Locations"  
+llmEnabled: true
+llmInstructions: "Create a vivid tavern scene with sensory details, atmosphere, and notable features"
+llmProfile: ""
+appendMode: true
+repositoryTarget: "Location"
+---
+
+# The {{random_location}} Tavern
+
+**Crowd Level:** {{rand 5-50}} patrons  
+**Atmosphere Check:** {{roll 2d6}}
+
+## Basic Setup
+- **Lighting:** Flickering candlelight and oil lamps
+- **Sounds:** {{roll 1d4}} conversations happening simultaneously  
+- **Notable Patron:** {{random_character}} sits in the corner
+
+## Scene Enhancement
+{{#llm}}Add rich atmospheric details about the tavern's mood, smells, sounds, and any interesting events happening right now{{/llm}}
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'tavern-scene.md'),
+            Buffer.from(locationTemplate)
         );
 
         // Create default LLM profile
