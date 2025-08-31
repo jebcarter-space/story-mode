@@ -6,6 +6,7 @@
   import Sidebar from '../story-mode/Sidebar.svelte';
   import Input from '../story-mode/Input.svelte';
   import Header from '../ui/Header.svelte';
+  import CreativeAssistantSidebar from '../ui/CreativeAssistantSidebar.svelte';
   import { content as globalContent } from '../../App.svelte';
   import type { Content as ContentType } from '../../data/types';
   import { setRepositoryContext } from '../../lib/repository-context';
@@ -38,6 +39,10 @@
 
   let showCreateChapter = $state(false);
   let newChapterName = $state('');
+  
+  // Creative Assistant state
+  let isCreativeAssistantOpen = $state(true);
+  let isCreativeAssistantDocked = $state(true);
 
   // Load chapter content when chapter changes
   $effect(() => {
@@ -92,99 +97,120 @@
     <div class="text-lg text-gray-600 dark:text-gray-400">Loading book...</div>
   </div>
 {:else if book && shelf}
-  <div class="book-page">
+  <div class="book-page flex flex-col h-screen">
     <Header />
-    <div class="p-4">
-      <Breadcrumb items={breadcrumbItems} />
-      
-      <!-- Book Header -->
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{book.name}</h1>
-            <p class="text-gray-600 dark:text-gray-400">
-              {Object.keys(book.chapters).length} chapter{Object.keys(book.chapters).length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          
-          <button
-            onclick={() => showCreateChapter = true}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            + New Chapter
-          </button>
-        </div>
+    
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Main Content Area -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="p-4">
+          <Breadcrumb items={breadcrumbItems} />
 
-        <!-- Chapter Navigation -->
-        {#if chapters.length > 0}
-          <div class="flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Chapters:</span>
-            {#each chapters as [chId, chapter], index (chId)}
-              <button
-                onclick={() => switchToChapter(chId)}
-                class="px-3 py-1 text-sm rounded-full transition-colors {
-                  currentChapterId === chId 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }"
-              >
-                {index + 1}. {chapter.name}
-              </button>
-            {/each}
+          <!-- Book Header -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{book.name}</h1>
+                <p class="text-gray-600 dark:text-gray-400">
+                  {Object.keys(book.chapters).length} chapter{Object.keys(book.chapters).length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <button
+                  onclick={() => isCreativeAssistantOpen = !isCreativeAssistantOpen}
+                  class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                  title="Toggle Creative Assistant"
+                >
+                  💭 Assistant
+                </button>
+                <button
+                  onclick={() => showCreateChapter = true}
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + New Chapter
+                </button>
+              </div>
+            </div>
+
+            <!-- Chapter Navigation -->
+            {#if chapters.length > 0}
+              <div class="flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Chapters:</span>
+                {#each chapters as [chId, chapter], index (chId)}
+                  <button
+                    onclick={() => switchToChapter(chId)}
+                    class="px-3 py-1 text-sm rounded-full transition-colors {
+                      currentChapterId === chId 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }"
+                  >
+                    {index + 1}. {chapter.name}
+                  </button>
+                {/each}
+              </div>
+            {/if}
           </div>
-        {/if}
+
+          <!-- Chapter Content -->
+          {#if currentChapter}
+            <div class="chapter-content">
+              <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                  📖 {currentChapter.name}
+                </h2>
+                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  Created {new Date(currentChapter.createdAt).toLocaleDateString()}
+                  {currentChapter.updatedAt !== currentChapter.createdAt && 
+                    ` • Updated ${new Date(currentChapter.updatedAt).toLocaleDateString()}`
+                  }
+                </p>
+              </div>
+
+              <!-- Story Mode Interface -->
+              <Content />
+              <div class="flex flex-col gap-2 mt-4">
+                <Sidebar />
+                <Input />
+              </div>
+            </div>
+          {:else if chapters.length === 0}
+            <!-- No chapters exist -->
+            <div class="text-center py-12">
+              <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+              </svg>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No chapters yet</h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">Start your story by creating the first chapter</p>
+              <button
+                onclick={() => showCreateChapter = true}
+                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create First Chapter
+              </button>
+            </div>
+          {:else}
+            <!-- Chapter not found -->
+            <div class="text-center py-12">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Chapter not found</h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-4">The chapter you're looking for doesn't exist</p>
+              <button
+                onclick={() => switchToChapter(chapters[0][0])}
+                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Go to First Chapter
+              </button>
+            </div>
+          {/if}
+        </div>
       </div>
 
-      <!-- Chapter Content -->
-      {#if currentChapter}
-        <div class="chapter-content">
-          <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100">
-              📖 {currentChapter.name}
-            </h2>
-            <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              Created {new Date(currentChapter.createdAt).toLocaleDateString()}
-              {currentChapter.updatedAt !== currentChapter.createdAt && 
-                ` • Updated ${new Date(currentChapter.updatedAt).toLocaleDateString()}`
-              }
-            </p>
-          </div>
-
-          <!-- Story Mode Interface -->
-          <Content />
-          <div class="flex flex-col gap-2 mt-4">
-            <Sidebar />
-            <Input />
-          </div>
-        </div>
-      {:else if chapters.length === 0}
-        <!-- No chapters exist -->
-        <div class="text-center py-12">
-          <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-          </svg>
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No chapters yet</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-4">Start your story by creating the first chapter</p>
-          <button
-            onclick={() => showCreateChapter = true}
-            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Create First Chapter
-          </button>
-        </div>
-      {:else}
-        <!-- Chapter not found -->
-        <div class="text-center py-12">
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Chapter not found</h3>
-          <p class="text-gray-600 dark:text-gray-400 mb-4">The chapter you're looking for doesn't exist</p>
-          <button
-            onclick={() => switchToChapter(chapters[0][0])}
-            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go to First Chapter
-          </button>
-        </div>
-      {/if}
+      <!-- Creative Assistant Sidebar -->
+      <CreativeAssistantSidebar 
+        bind:isOpen={isCreativeAssistantOpen} 
+        bind:isDocked={isCreativeAssistantDocked}
+      />
     </div>
 
     <!-- Create Chapter Modal -->
