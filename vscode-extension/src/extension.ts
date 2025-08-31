@@ -16,6 +16,7 @@ import { SparksService } from './services/sparks-service';
 import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import { TableManagerWebview } from './ui/table-manager-webview';
 import { TableAnalyticsService } from './services/table-analytics-service';
+import { WorkflowService } from './services/workflow-service';
 import type { InlineContinuationOptions } from './types';
 
 // Global reference to context indicator for streaming status
@@ -33,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
     const llmService = new LLMService(context);
     const sparkTableManager = new SparkTableManager(context);
     const analyticsService = new TableAnalyticsService(context);
+    const workflowService = new WorkflowService(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
@@ -175,6 +177,19 @@ export function activate(context: vscode.ExtensionContext) {
         tableManagerWebview.refresh();
     });
 
+    // LangChain Workflow Commands
+    const executeWorkflowCommand = vscode.commands.registerCommand('story-mode.executeWorkflow', async () => {
+        await handleExecuteWorkflow(workflowService);
+    });
+
+    const manageWorkflowsCommand = vscode.commands.registerCommand('story-mode.manageWorkflows', async () => {
+        await handleManageWorkflows(workflowService);
+    });
+
+    const workflowStatusCommand = vscode.commands.registerCommand('story-mode.workflowStatus', async () => {
+        await handleWorkflowStatus(workflowService);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -193,7 +208,10 @@ export function activate(context: vscode.ExtensionContext) {
         queryOracleCustomCommand,
         configureSparkTablesCommand,
         openTableManagerCommand,
-        refreshTableManagerCommand
+        refreshTableManagerCommand,
+        executeWorkflowCommand,
+        manageWorkflowsCommand,
+        workflowStatusCommand
     );
 }
 
@@ -1090,6 +1108,170 @@ async function handleOpenTableManager(tableManagerWebview: TableManagerWebview) 
         tableManagerWebview.show();
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to open table manager: ${error}`);
+    }
+}
+
+// LangChain Workflow Handlers
+
+// Execute a workflow
+async function handleExecuteWorkflow(workflowService: WorkflowService) {
+    try {
+        const workflows = workflowService.getWorkflows();
+        const workflowList = Object.values(workflows).filter(w => w.enabled);
+        
+        if (workflowList.length === 0) {
+            vscode.window.showInformationMessage('No workflows available. Create workflows in .story-mode/workflows/');
+            return;
+        }
+
+        const selectedWorkflow = await vscode.window.showQuickPick(
+            workflowList.map(w => ({
+                label: w.name,
+                description: w.description,
+                detail: `Category: ${w.category} | Nodes: ${w.nodes.length}`,
+                workflow: w
+            })),
+            {
+                placeHolder: 'Select a workflow to execute',
+                matchOnDescription: true,
+                matchOnDetail: true
+            }
+        );
+
+        if (selectedWorkflow) {
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: `Executing workflow: ${selectedWorkflow.workflow.name}`,
+                cancellable: true
+            }, async (progress, token) => {
+                try {
+                    const executionId = await workflowService.executeWorkflow(
+                        selectedWorkflow.workflow.id,
+                        { source: 'manual' }
+                    );
+                    
+                    // Monitor execution progress
+                    const interval = setInterval(() => {
+                        const status = workflowService.getExecutionStatus(executionId);
+                        if (status) {
+                            progress.report({ 
+                                message: `${status.status} - ${status.progress}%`,
+                                increment: status.progress 
+                            });
+                            
+                            if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
+                                clearInterval(interval);
+                                if (status.status === 'completed') {
+                                    vscode.window.showInformationMessage(`Workflow completed: ${selectedWorkflow.workflow.name}`);
+                                } else if (status.status === 'failed') {
+                                    const errors = status.errors.map(e => e.error).join(', ');
+                                    vscode.window.showErrorMessage(`Workflow failed: ${errors}`);
+                                }
+                            }
+                        }
+                    }, 500);
+
+                    // Handle cancellation
+                    token.onCancellationRequested(() => {
+                        workflowService.cancelExecution(executionId);
+                        clearInterval(interval);
+                    });
+                    
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Failed to execute workflow: ${error}`);
+                }
+            });
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to show workflows: ${error}`);
+    }
+}
+
+// Manage workflows
+async function handleManageWorkflows(workflowService: WorkflowService) {
+    const options = [
+        { label: 'View All Workflows', value: 'view' },
+        { label: 'Import Workflow', value: 'import' },
+        { label: 'Export Workflow', value: 'export' },
+        { label: 'Create New Workflow', value: 'create' },
+        { label: 'Delete Workflow', value: 'delete' }
+    ];
+
+    const selection = await vscode.window.showQuickPick(options, {
+        placeHolder: 'Select workflow management action'
+    });
+
+    if (!selection) return;
+
+    switch (selection.value) {
+        case 'view':
+            await showWorkflowList(workflowService);
+            break;
+        case 'create':
+            vscode.window.showInformationMessage(
+                'Create workflows by adding JSON files to .story-mode/workflows/ directory. See documentation for workflow schema.'
+            );
+            break;
+        case 'import':
+        case 'export':
+        case 'delete':
+            vscode.window.showInformationMessage(`${selection.label} feature will be available in future updates.`);
+            break;
+    }
+}
+
+// Show workflow execution status
+async function handleWorkflowStatus(workflowService: WorkflowService) {
+    // For now, just show a summary of available workflows
+    const workflows = workflowService.getWorkflows();
+    const workflowCount = Object.keys(workflows).length;
+    const enabledCount = Object.values(workflows).filter(w => w.enabled).length;
+    
+    const categories = [...new Set(Object.values(workflows).map(w => w.category))];
+    
+    vscode.window.showInformationMessage(
+        `Workflows: ${enabledCount}/${workflowCount} enabled | Categories: ${categories.join(', ')}`
+    );
+}
+
+// Helper function to show workflow list
+async function showWorkflowList(workflowService: WorkflowService) {
+    const workflows = workflowService.getWorkflows();
+    const workflowItems = Object.values(workflows).map(workflow => {
+        const status = workflow.enabled ? '✅' : '❌';
+        const nodeTypes = [...new Set(workflow.nodes.map(n => n.type))].join(', ');
+        return {
+            label: `${status} ${workflow.name}`,
+            description: workflow.description,
+            detail: `Category: ${workflow.category} | Nodes: ${workflow.nodes.length} (${nodeTypes})`,
+            workflow
+        };
+    });
+
+    if (workflowItems.length === 0) {
+        vscode.window.showInformationMessage('No workflows found. Add workflow files to .story-mode/workflows/');
+        return;
+    }
+
+    const selected = await vscode.window.showQuickPick(workflowItems, {
+        placeHolder: 'Workflow Library - Select for details',
+        matchOnDescription: true,
+        matchOnDetail: true
+    });
+
+    if (selected) {
+        const details = [
+            `Name: ${selected.workflow.name}`,
+            `Description: ${selected.workflow.description}`,
+            `Category: ${selected.workflow.category}`,
+            `Status: ${selected.workflow.enabled ? 'Enabled' : 'Disabled'}`,
+            `Nodes: ${selected.workflow.nodes.length}`,
+            `Triggers: ${selected.workflow.triggers.length}`,
+            `Version: ${selected.workflow.version || 'Unknown'}`,
+            `Created: ${new Date(selected.workflow.created).toLocaleDateString()}`
+        ].join('\n');
+        
+        vscode.window.showInformationMessage(details, { modal: true });
     }
 }
 
