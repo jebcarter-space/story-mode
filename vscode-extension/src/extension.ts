@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { LLMService } from './services/llm-service';
+import { StreamingLLMService } from './services/streaming-llm-service';
 import { RepositoryManager } from './services/repository-manager';
 import { StoryModeExplorer } from './providers/story-mode-explorer';
 import { TemplateManager } from './services/template-manager';
@@ -26,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
     const repositoryManager = new RepositoryManager(context);
     const templateManager = new TemplateManager(context);
     const llmService = new LLMService(context);
+    const streamingLLMService = new StreamingLLMService(context);
     const sparkTableManager = new SparkTableManager(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
@@ -83,12 +85,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // CORE COMMAND: Continue Text with AI
     const continueTextCommand = vscode.commands.registerCommand('story-mode.continueText', async () => {
-        await handleContinueText(llmService, repositoryManager);
+        await handleContinueText(llmService, streamingLLMService, repositoryManager);
     });
 
     // Continue with Oracle consultation
     const continueWithOracleCommand = vscode.commands.registerCommand('story-mode.continueWithOracle', async () => {
-        await handleContinueWithOracle(llmService, repositoryManager, oracleService);
+        await handleContinueWithOracle(llmService, streamingLLMService, repositoryManager, oracleService);
     });
 
     // Query Oracle (standalone)
@@ -108,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Continue with Template
     const continueWithTemplateCommand = vscode.commands.registerCommand('story-mode.continueWithTemplate', async () => {
-        await handleContinueWithTemplate(templateManager, llmService, repositoryManager, templatePicker);
+        await handleContinueWithTemplate(templateManager, llmService, streamingLLMService, repositoryManager, templatePicker);
     });
 
     // Open Repository Manager - focus on tree view
@@ -134,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Continue with Sparks
     const continueWithSparksCommand = vscode.commands.registerCommand('story-mode.continueWithSparks', async () => {
-        await handleContinueWithSparks(sparksService, llmService, repositoryManager);
+        await handleContinueWithSparks(sparksService, llmService, streamingLLMService, repositoryManager);
     });
 
     // Generate Sparks with Custom Table Selection
@@ -178,12 +180,133 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // CORE FUNCTIONALITY: Continue text with AI
-async function handleContinueText(llmService: LLMService, repositoryManager: RepositoryManager) {
+async function handleContinueText(
+    llmService: LLMService, 
+    streamingLLMService: StreamingLLMService, 
+    repositoryManager: RepositoryManager
+) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor');
         return;
     }
+
+    // Check if streaming is enabled
+    const streamingEnabled = vscode.workspace.getConfiguration('storyMode').get('enableStreaming', true);
+    const streamingDelay = vscode.workspace.getConfiguration('storyMode').get('streamingDelay', 50);
+
+    if (streamingEnabled) {
+        return await handleStreamingContinueText(streamingLLMService, repositoryManager, streamingDelay);
+    } else {
+        return await handleNonStreamingContinueText(llmService, repositoryManager);
+    }
+}
+
+// Streaming implementation
+async function handleStreamingContinueText(
+    streamingLLMService: StreamingLLMService,
+    repositoryManager: RepositoryManager,
+    streamingDelay: number
+) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+
+    try {
+        const cancellationTokenSource = new vscode.CancellationTokenSource();
+        let insertedText = '';
+        
+        // Show cancellable progress
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Generating streaming response...",
+            cancellable: true
+        }, async (progress, token) => {
+            // Cancel streaming if user cancels
+            token.onCancellationRequested(() => {
+                cancellationTokenSource.cancel();
+            });
+
+            const document = editor.document;
+            const position = editor.selection.active;
+            
+            // Get text from start to cursor
+            const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+            
+            // Get repository context for current file
+            const context = await repositoryManager.getContextForFile(document.uri);
+            
+            // Get relevant repository items
+            const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
+            
+            // Get LLM profile
+            const profileKey = vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
+            const profile = await getLLMProfile(profileKey);
+            
+            if (!profile) {
+                vscode.window.showErrorMessage('No LLM profile configured. Please set up an LLM profile in settings.');
+                return;
+            }
+
+            // Stream the response with real-time insertion
+            return await streamingLLMService.generateStreamingContinuation(
+                textBeforeCursor,
+                profile,
+                repositoryItems,
+                {
+                    onToken: async (token: string) => {
+                        if (cancellationTokenSource.token.isCancellationRequested) return;
+                        
+                        insertedText += token;
+                        
+                        // Insert token in editor with delay for smoother experience
+                        await editor.edit(editBuilder => {
+                            editBuilder.insert(position, token);
+                        });
+                        
+                        // Move cursor to end of inserted text
+                        const newPosition = new vscode.Position(
+                            position.line,
+                            position.character + insertedText.length
+                        );
+                        editor.selection = new vscode.Selection(newPosition, newPosition);
+                        
+                        // Optional delay for smoother streaming experience
+                        if (streamingDelay > 0) {
+                            await new Promise(resolve => setTimeout(resolve, streamingDelay));
+                        }
+                    },
+                    onComplete: (fullText: string) => {
+                        progress.report({ message: "Streaming complete" });
+                    },
+                    onError: (error: Error) => {
+                        vscode.window.showErrorMessage(`Streaming failed: ${error.message}`);
+                    }
+                },
+                cancellationTokenSource.token
+            );
+        });
+
+        // Auto-save if enabled
+        if (vscode.workspace.getConfiguration('storyMode').get('autoSave', true)) {
+            await editor.document.save();
+        }
+
+    } catch (error) {
+        if (error instanceof Error && error.message.includes('cancelled')) {
+            vscode.window.showInformationMessage('Text generation cancelled');
+        } else {
+            vscode.window.showErrorMessage(`Failed to generate continuation: ${error}`);
+        }
+    }
+}
+
+// Non-streaming fallback implementation  
+async function handleNonStreamingContinueText(
+    llmService: LLMService,
+    repositoryManager: RepositoryManager
+) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
 
     try {
         // Show progress indicator
@@ -227,7 +350,30 @@ async function handleContinueText(llmService: LLMService, repositoryManager: Rep
         });
 
     } catch (error) {
-        ErrorHandlingService.showError('Failed to generate continuation', error, 'LLM');
+        vscode.window.showErrorMessage(`Failed to generate continuation: ${error}`);
+    }
+}
+
+// Helper function to get LLM profile
+async function getLLMProfile(profileKey: string): Promise<any | null> {
+    if (!profileKey) return null;
+    
+    try {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) return null;
+
+        const profilePath = vscode.Uri.joinPath(
+            workspaceFolders[0].uri, 
+            '.story-mode', 
+            'llm-profiles', 
+            `${profileKey}.json`
+        );
+
+        const profileData = await vscode.workspace.fs.readFile(profilePath);
+        return JSON.parse(profileData.toString());
+    } catch (error) {
+        console.error(`Failed to load LLM profile ${profileKey}:`, error);
+        return null;
     }
 }
 
@@ -249,7 +395,12 @@ async function handleShowSuggestions(smartSuggestions: SmartSuggestionsService) 
 }
 
 // Continue with Oracle consultation
-async function handleContinueWithOracle(llmService: LLMService, repositoryManager: RepositoryManager, oracleService: OracleService) {
+async function handleContinueWithOracle(
+    llmService: LLMService, 
+    streamingLLMService: StreamingLLMService, 
+    repositoryManager: RepositoryManager, 
+    oracleService: OracleService
+) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor');
@@ -275,7 +426,7 @@ async function handleContinueWithOracle(llmService: LLMService, repositoryManage
     });
 
     // Now continue with AI using the oracle result as context
-    await handleContinueText(llmService, repositoryManager);
+    await handleContinueText(llmService, streamingLLMService, repositoryManager);
 }
 
 // Query Oracle (standalone)
@@ -395,6 +546,7 @@ async function handleInsertTemplate(
 async function handleContinueWithTemplate(
     templateManager: TemplateManager, 
     llmService: LLMService, 
+    streamingLLMService: StreamingLLMService,
     repositoryManager: RepositoryManager, 
     templatePicker: TemplatePicker
 ) {
@@ -443,7 +595,7 @@ async function handleContinueWithTemplate(
 
         // Now continue with AI using the template result as context
         vscode.window.showInformationMessage(`Template "${template.name}" applied, continuing with AI...`);
-        await handleContinueText(llmService, repositoryManager);
+        await handleContinueText(llmService, streamingLLMService, repositoryManager);
 
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to process template: ${error}`);
@@ -453,7 +605,7 @@ async function handleContinueWithTemplate(
             editBuilder.insert(position, `\n\n${template.content}\n\n`);
         });
         
-        await handleContinueText(llmService, repositoryManager);
+        await handleContinueText(llmService, streamingLLMService, repositoryManager);
     }
 }
 
@@ -678,6 +830,7 @@ async function handleGenerateSparks(sparksService: SparksService) {
 async function handleContinueWithSparks(
     sparksService: SparksService, 
     llmService: LLMService, 
+    streamingLLMService: StreamingLLMService,
     repositoryManager: RepositoryManager
 ) {
     const editor = vscode.window.activeTextEditor;
@@ -709,38 +862,8 @@ async function handleContinueWithSparks(
             const document = editor.document;
             const newPosition = new vscode.Position(position.line + 2, 0); // After sparks insertion
             
-            // Get text from start to cursor (including sparks)
-            const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), newPosition));
-            
-            // Get repository context for current file
-            const context = await repositoryManager.getContextForFile(document.uri);
-            
-            // Get relevant repository items
-            const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
-            
-            // Generate continuation
-            const continuation = await llmService.generateContinuation(textBeforeCursor, {
-                repositoryItems,
-                maxContextLength: vscode.workspace.getConfiguration('storyMode').get('maxContextLength', 4000),
-                includeRepositoryContext: true
-            }, token);
-            
-            if (token.isCancellationRequested) {
-                return;
-            }
-
-            // Insert continuation
-            await editor.edit(editBuilder => {
-                editBuilder.insert(newPosition, continuation);
-            });
-
-            // Move cursor to end of insertion
-            const lines = continuation.split('\n');
-            const finalPosition = new vscode.Position(
-                newPosition.line + lines.length - 1,
-                lines[lines.length - 1].length
-            );
-            editor.selection = new vscode.Selection(finalPosition, finalPosition);
+            // Continue with AI (this will automatically use streaming if enabled)
+            await handleContinueText(llmService, streamingLLMService, repositoryManager);
         });
         
     } catch (error) {

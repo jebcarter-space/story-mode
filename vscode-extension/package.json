@@ -224,6 +224,16 @@
           "type": "array", 
           "default": ["default"],
           "description": "Tables enabled for Sparks generation (uses all enabled tables if empty)"
+
+        "storyMode.enableStreaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming responses for smoother text generation"
+        },
+        "storyMode.streamingDelay": {
+          "type": "number",
+          "default": 50,
+          "description": "Delay between token updates in milliseconds"
         }
       }
     }
