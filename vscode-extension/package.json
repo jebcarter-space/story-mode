@@ -60,6 +60,11 @@
         "category": "Story Mode"
       },
       {
+        "command": "story-mode.showSuggestions",
+        "title": "Show Smart Suggestions",
+        "category": "Story Mode"
+      },
+      {
         "command": "story-mode.openRepository",
         "title": "Open Repository Manager",
         "category": "Story Mode"
@@ -93,6 +98,12 @@
         "command": "story-mode.continueWithTemplate",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.showSuggestions",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
         "when": "editorTextFocus"
       }
     ],

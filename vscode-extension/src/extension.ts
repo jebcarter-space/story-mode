@@ -9,10 +9,15 @@ import { FileWatcher } from './services/file-watcher';
 import { TemplatePicker } from './ui/template-picker';
 import { PlaceholderResolver } from './lib/placeholder-resolver';
 import { ContextIndicator } from './services/context-indicator';
+import { SmartSuggestionsService } from './services/smart-suggestions';
+import { ErrorHandlingService } from './services/error-handling';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
+
+    // Validate setup first
+    ErrorHandlingService.validateSetup();
 
     // Initialize services
     const repositoryManager = new RepositoryManager(context);
@@ -24,6 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
+
+    // Initialize smart suggestions
+    const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
 
     // Initialize file watcher
     const fileWatcher = new FileWatcher(context);
@@ -102,6 +110,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleCreateLibrary();
     });
 
+    // Show Smart Suggestions
+    const showSuggestionsCommand = vscode.commands.registerCommand('story-mode.showSuggestions', async () => {
+        await handleShowSuggestions(smartSuggestions);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -111,7 +124,8 @@ export function activate(context: vscode.ExtensionContext) {
         insertTemplateCommand,
         continueWithTemplateCommand,
         openRepositoryCommand,
-        createLibraryCommand
+        createLibraryCommand,
+        showSuggestionsCommand
     );
 }
 
@@ -165,7 +179,24 @@ async function handleContinueText(llmService: LLMService, repositoryManager: Rep
         });
 
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to generate continuation: ${error}`);
+        ErrorHandlingService.showError('Failed to generate continuation', error, 'LLM');
+    }
+}
+
+// Show Smart Suggestions
+async function handleShowSuggestions(smartSuggestions: SmartSuggestionsService) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    try {
+        const text = editor.document.getText();
+        const cursorPosition = editor.document.offsetAt(editor.selection.active);
+        await smartSuggestions.showSuggestions(text, cursorPosition);
+    } catch (error) {
+        ErrorHandlingService.showError('Failed to get suggestions', error, 'Suggestions');
     }
 }
 
