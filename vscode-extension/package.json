@@ -27,9 +27,13 @@
   "activationEvents": [
     "onCommand:story-mode.continueText",
     "onCommand:story-mode.queryOracle",
+    "onCommand:story-mode.queryOracleCustom",
     "onCommand:story-mode.rollDice",
     "onCommand:story-mode.generateSparks",
+    "onCommand:story-mode.generateSparksCustom",
     "onCommand:story-mode.continueWithSparks",
+    "onCommand:story-mode.continueWithSparksCustom",
+    "onCommand:story-mode.configureSparkTables",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -88,6 +92,26 @@
       {
         "command": "story-mode.continueWithSparks",
         "title": "Continue with Sparks",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.generateSparksCustom",
+        "title": "Sparks: Select Tables",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.continueWithSparksCustom",
+        "title": "Continue with Sparks: Select Tables",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.queryOracleCustom",
+        "title": "Oracle: Select Tables",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.configureSparkTables",
+        "title": "Configure Spark Tables",
         "category": "Story Mode"
       }
     ],
@@ -191,6 +215,16 @@
           "default": true,
           "description": "Enable the default keyword table"
         },
+        "storyMode.oracleTables": {
+          "type": "array",
+          "default": ["default"],
+          "description": "Tables enabled for Oracle queries (uses all enabled tables if empty)"
+        },
+        "storyMode.sparksTables": {
+          "type": "array", 
+          "default": ["default"],
+          "description": "Tables enabled for Sparks generation (uses all enabled tables if empty)"
+
         "storyMode.enableStreaming": {
           "type": "boolean",
           "default": true,

@@ -1,5 +1,8 @@
+import * as vscode from 'vscode';
+import * as path from 'path';
 import type { RandomTable } from '../types';
 import { SparkTableManager } from './spark-table-manager';
+import { ConfigurationService } from './configuration-service';
 
 // Oracle table for Yes/No answers with complications
 const oracleTable: RandomTable = {
@@ -37,14 +40,15 @@ export class OracleService {
 
   constructor(private sparkTableManager: SparkTableManager) {}
 
-  queryOracle(question?: string): OracleResult {
+  queryOracle(question?: string, tableNames?: string[]): OracleResult {
     const roll = this.rollDice(20);
     const result = this.getResultFromTable(oracleTable, roll);
     
     let answer = typeof result.description === 'string' ? result.description : 'Unknown';
     
-    // Always provide keywords for inspiration
-    const resultKeywords: string[] = this.getRandomKeywords(2);
+    // Use configured oracle tables if no specific tables provided
+    const tablesToUse = tableNames || ConfigurationService.getOracleTables();
+    const resultKeywords: string[] = this.getRandomKeywords(2, tablesToUse);
     
     // Generate interpretation with keywords
     const interpretation = this.generateInterpretation(answer, resultKeywords);
@@ -171,8 +175,48 @@ export class OracleService {
     return table.table[0]; // Fallback
   }
 
-  private getRandomKeywords(count: number = 2): string[] {
-    // Always use SparkTableManager for keywords
-    return this.sparkTableManager.generateKeywords(count, 'oracle');
+  private getRandomKeywords(count: number = 2, tableNames?: string[]): string[] {
+    // Use SparkTableManager with specified tables or default oracle tables
+    return this.sparkTableManager.generateKeywords(count, 'oracle', tableNames);
+  }
+
+  /**
+   * Get quick pick options for oracle table selection
+   */
+  async getOracleTableQuickPickOptions(): Promise<vscode.QuickPickItem[]> {
+    const tables = this.sparkTableManager.getTables();
+    const stats = this.sparkTableManager.getTableStats();
+
+    return Object.entries(tables).map(([name, table]) => ({
+      label: table.name,
+      description: `${stats[name]?.entryCount || 0} entries`,
+      detail: table.isDefault ? 'Default keywords' : `Source: ${path.basename(table.source)}`,
+      picked: table.enabled && table.oracleEnabled
+    }));
+  }
+
+  /**
+   * Show table selection quick pick for Oracle
+   */
+  async showOracleTableSelectionPicker(): Promise<string[] | undefined> {
+    const options = await this.getOracleTableQuickPickOptions();
+    
+    const selected = await vscode.window.showQuickPick(options, {
+      canPickMany: true,
+      placeHolder: 'Select tables to use for oracle queries',
+      title: 'Oracle Tables'
+    });
+
+    return selected?.map(item => item.label);
+  }
+
+  /**
+   * Query oracle with custom table selection
+   */
+  async queryOracleCustom(question?: string): Promise<OracleResult | undefined> {
+    const selectedTables = await this.showOracleTableSelectionPicker();
+    if (!selectedTables || selectedTables.length === 0) return undefined;
+
+    return this.queryOracle(question, selectedTables);
   }
 }

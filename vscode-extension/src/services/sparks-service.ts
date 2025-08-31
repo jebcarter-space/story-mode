@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { SparkResult } from '../types';
 import { SparkTableManager } from './spark-table-manager';
+import { ConfigurationService } from './configuration-service';
 
 export interface SparksHistory {
   result: SparkResult;
@@ -14,20 +15,23 @@ export class SparksService {
   constructor(private sparkTableManager: SparkTableManager) {}
 
   /**
-   * Generate sparks (2-3 keywords) from enabled tables
+   * Generate sparks (2-3 keywords) from enabled tables using configuration
    */
   generateSparks(count?: number, tableNames?: string[]): SparkResult {
-    const keywordCount = count || vscode.workspace.getConfiguration('storyMode').get('sparkKeywordCount', 3);
+    const keywordCount = count || ConfigurationService.getSparkKeywordCount();
+    
+    // Use configured tables if no specific tables provided
+    const tablesToUse = tableNames || ConfigurationService.getSparksTables();
     
     const keywords = this.sparkTableManager.generateKeywords(
       keywordCount, 
       'sparks', 
-      tableNames
+      tablesToUse
     );
 
     const result: SparkResult = {
       keywords,
-      tableNames: tableNames || this.sparkTableManager.getEnabledTables('sparks').map(t => t.name),
+      tableNames: tablesToUse,
       timestamp: Date.now()
     };
 
@@ -165,5 +169,35 @@ export class SparksService {
     });
 
     return selected?.map(item => item.label);
+  }
+
+  /**
+   * Generate sparks with custom table selection
+   */
+  async generateSparksCustom(count?: number): Promise<SparkResult | undefined> {
+    const selectedTables = await this.showTableSelectionPicker();
+    if (!selectedTables || selectedTables.length === 0) return undefined;
+
+    return this.generateSparks(count, selectedTables);
+  }
+
+  /**
+   * Generate sparks with custom table selection and insert into editor
+   */
+  async insertSparksCustom(count?: number): Promise<void> {
+    const selectedTables = await this.showTableSelectionPicker();
+    if (!selectedTables || selectedTables.length === 0) return;
+
+    await this.insertSparks(count, selectedTables);
+  }
+
+  /**
+   * Generate sparks for continuation with custom table selection
+   */
+  async generateSparksForContinuationCustom(count?: number): Promise<string | undefined> {
+    const selectedTables = await this.showTableSelectionPicker();
+    if (!selectedTables || selectedTables.length === 0) return undefined;
+
+    return this.generateSparksForContinuation(count, selectedTables);
   }
 }

@@ -14,6 +14,7 @@ import { SmartSuggestionsService } from './services/smart-suggestions';
 import { ErrorHandlingService } from './services/error-handling';
 import { SparkTableManager } from './services/spark-table-manager';
 import { SparksService } from './services/sparks-service';
+import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -32,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
     const templatePicker = new TemplatePicker(context);
+    const tableConfigurationPicker = new TableConfigurationPicker(context, sparkTableManager);
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
@@ -137,6 +139,26 @@ export function activate(context: vscode.ExtensionContext) {
         await handleContinueWithSparks(sparksService, llmService, streamingLLMService, repositoryManager);
     });
 
+    // Generate Sparks with Custom Table Selection
+    const generateSparksCustomCommand = vscode.commands.registerCommand('story-mode.generateSparksCustom', async () => {
+        await handleGenerateSparksCustom(sparksService);
+    });
+
+    // Continue with Sparks with Custom Table Selection  
+    const continueWithSparksCustomCommand = vscode.commands.registerCommand('story-mode.continueWithSparksCustom', async () => {
+        await handleContinueWithSparksCustom(sparksService, llmService, repositoryManager);
+    });
+
+    // Query Oracle with Custom Table Selection
+    const queryOracleCustomCommand = vscode.commands.registerCommand('story-mode.queryOracleCustom', async () => {
+        await handleQueryOracleCustom(oracleService);
+    });
+
+    // Configure Spark Tables
+    const configureSparkTablesCommand = vscode.commands.registerCommand('story-mode.configureSparkTables', async () => {
+        await handleConfigureSparkTables(tableConfigurationPicker);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -149,7 +171,11 @@ export function activate(context: vscode.ExtensionContext) {
         createLibraryCommand,
         showSuggestionsCommand,
         generateSparksCommand,
-        continueWithSparksCommand
+        continueWithSparksCommand,
+        generateSparksCustomCommand,
+        continueWithSparksCustomCommand,
+        queryOracleCustomCommand,
+        configureSparkTablesCommand
     );
 }
 
@@ -783,7 +809,7 @@ repositoryTarget: "Location"
     }
 }
 
-// Generate Sparks
+// Generate Sparks (uses configured tables, no prompts)
 async function handleGenerateSparks(sparksService: SparksService) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -792,25 +818,8 @@ async function handleGenerateSparks(sparksService: SparksService) {
     }
 
     try {
-        // Show table selection if user wants to customize
-        const shouldSelectTables = await vscode.window.showQuickPick(
-            ['Use enabled tables', 'Select specific tables'],
-            {
-                placeHolder: 'How would you like to generate sparks?'
-            }
-        );
-
-        if (!shouldSelectTables) return;
-
-        let selectedTables: string[] | undefined;
-        
-        if (shouldSelectTables === 'Select specific tables') {
-            selectedTables = await sparksService.showTableSelectionPicker();
-            if (!selectedTables || selectedTables.length === 0) return;
-        }
-
-        // Generate and insert sparks
-        await sparksService.insertSparks(undefined, selectedTables);
+        // Generate and insert sparks using configured tables
+        await sparksService.insertSparks();
         
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to generate sparks: ${error}`);
@@ -839,24 +848,7 @@ async function handleContinueWithSparks(
             // Step 1: Generate sparks
             progress.report({ message: "Generating sparks..." });
             
-            // Show table selection if user wants to customize
-            const shouldSelectTables = await vscode.window.showQuickPick(
-                ['Use enabled tables', 'Select specific tables'],
-                {
-                    placeHolder: 'How would you like to generate sparks?'
-                }
-            );
-
-            if (!shouldSelectTables) return;
-
-            let selectedTables: string[] | undefined;
-            
-            if (shouldSelectTables === 'Select specific tables') {
-                selectedTables = await sparksService.showTableSelectionPicker();
-                if (!selectedTables || selectedTables.length === 0) return;
-            }
-
-            const sparksFormatted = sparksService.generateSparksForContinuation(undefined, selectedTables);
+            const sparksFormatted = sparksService.generateSparksForContinuation();
 
             // Step 2: Insert sparks  
             const position = editor.selection.active;
@@ -876,6 +868,135 @@ async function handleContinueWithSparks(
         
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to continue with sparks: ${error}`);
+    }
+}
+
+// Generate Sparks with Custom Table Selection
+async function handleGenerateSparksCustom(sparksService: SparksService) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    try {
+        await sparksService.insertSparksCustom();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to generate sparks: ${error}`);
+    }
+}
+
+// Continue with Sparks with Custom Table Selection
+async function handleContinueWithSparksCustom(
+    sparksService: SparksService, 
+    llmService: LLMService, 
+    repositoryManager: RepositoryManager
+) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    try {
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Generating sparks and continuing with AI...",
+            cancellable: true
+        }, async (progress, token) => {
+            // Step 1: Generate sparks with custom table selection
+            progress.report({ message: "Selecting tables and generating sparks..." });
+            
+            const sparksFormatted = await sparksService.generateSparksForContinuationCustom();
+            if (!sparksFormatted) return; // User cancelled table selection
+
+            // Step 2: Insert sparks  
+            const position = editor.selection.active;
+            await editor.edit(editBuilder => {
+                editBuilder.insert(position, `\n${sparksFormatted}\n`);
+            });
+
+            // Step 3: Continue with AI using sparks as context
+            progress.report({ message: "Continuing with AI..." });
+            
+            const document = editor.document;
+            const newPosition = new vscode.Position(position.line + 2, 0); // After sparks insertion
+            
+            // Get text from start to cursor (including sparks)
+            const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), newPosition));
+            
+            // Get repository context for current file
+            const context = await repositoryManager.getContextForFile(document.uri);
+            
+            // Get relevant repository items
+            const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
+            
+            // Generate continuation
+            const continuation = await llmService.generateContinuation(textBeforeCursor, {
+                repositoryItems,
+                maxContextLength: vscode.workspace.getConfiguration('storyMode').get('maxContextLength', 4000),
+                includeRepositoryContext: true
+            }, token);
+            
+            if (token.isCancellationRequested) {
+                return;
+            }
+
+            // Insert continuation
+            await editor.edit(editBuilder => {
+                editBuilder.insert(newPosition, continuation);
+            });
+
+            // Move cursor to end of insertion
+            const lines = continuation.split('\n');
+            const finalPosition = new vscode.Position(
+                newPosition.line + lines.length - 1,
+                lines[lines.length - 1].length
+            );
+            editor.selection = new vscode.Selection(finalPosition, finalPosition);
+        });
+        
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to continue with sparks: ${error}`);
+    }
+}
+
+// Query Oracle with Custom Table Selection
+async function handleQueryOracleCustom(oracleService: OracleService) {
+    const editor = vscode.window.activeTextEditor;
+    
+    const question = await vscode.window.showInputBox({
+        prompt: 'Ask the Oracle a question',
+        placeHolder: 'Will the guard notice me?'
+    });
+
+    if (!question) return;
+
+    try {
+        const result = await oracleService.queryOracleCustom(question);
+        if (!result) return; // User cancelled table selection
+        
+        if (editor) {
+            // Insert into editor if available
+            const position = editor.selection.active;
+            await editor.edit(editBuilder => {
+                editBuilder.insert(position, `**Oracle:** ${question}\n**Answer:** ${result.answer} *(${result.roll})*\n\n`);
+            });
+        } else {
+            // Show in notification if no editor
+            vscode.window.showInformationMessage(`🔮 Oracle says: ${result.answer} (${result.roll})`);
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to query oracle: ${error}`);
+    }
+}
+
+// Configure Spark Tables
+async function handleConfigureSparkTables(tableConfigurationPicker: TableConfigurationPicker) {
+    try {
+        await tableConfigurationPicker.showTableConfiguration();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to configure spark tables: ${error}`);
     }
 }
 
