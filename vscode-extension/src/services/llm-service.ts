@@ -4,6 +4,18 @@ import type { LLMProfile, RepositoryItem, Template, InlineContinuationOptions } 
 
 const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant helping with creative writing and interactive storytelling. Continue the story naturally, maintaining consistency with the established tone, characters, and setting. Keep responses engaging and appropriate for the context.`;
 
+export interface LLMResponse {
+  choices: Array<{
+    delta?: {
+      content?: string;
+    };
+    message?: {
+      content: string;
+    };
+    finish_reason?: string;
+  }>;
+}
+
 export interface LLMGenerationOptions {
   repositoryItems?: RepositoryItem[];
   maxContextLength: number;
@@ -146,7 +158,7 @@ export class LLMService {
         throw new Error(`LLM API request failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as LLMResponse;
       
       if (data.choices && data.choices.length > 0) {
         return data.choices[0].message?.content || '';

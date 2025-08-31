@@ -1,0 +1,19 @@
+{
+  "name": "Creative Writer",
+  "provider": "koboldcpp",
+  "apiKey": "",
+  "endpoint": "http://localhost:5001/v1/chat/completions",
+  "model": "llama-3.1-8b-instruct",
+  "systemPrompt": "You are an AI assistant helping with creative writing and interactive storytelling. Continue the story naturally, maintaining consistency with the established tone, characters, and setting. Keep responses engaging and appropriate for the context.",
+  "settings": {
+    "temperature": 0.8,
+    "maxTokens": 200,
+    "topP": 0.9,
+    "frequencyPenalty": 0.1,
+    "presencePenalty": 0.1
+  },
+  "includeSystemContent": true,
+  "maxContextEntries": 10,
+  "created": 1693123456789,
+  "updated": 1693123456789
+}
