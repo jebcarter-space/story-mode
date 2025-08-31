@@ -1,7 +1,7 @@
 import type { RandomTable } from '../types';
 import { SparkTableManager } from './spark-table-manager';
 
-// Ported from main app oracle tables
+// Oracle table for Yes/No answers with complications
 const oracleTable: RandomTable = {
   name: "Oracle",
   description: "Yes/No questions with complications",
@@ -16,68 +16,6 @@ const oracleTable: RandomTable = {
     { min: 19, max: 20, description: "Yes, and..." }
   ]
 };
-
-const keywords = [
-  'mysterious', 'ancient', 'forbidden', 'hidden', 'sacred', 'cursed',
-  'powerful', 'dangerous', 'magical', 'divine', 'demonic', 'ethereal',
-  'betrayal', 'alliance', 'secret', 'treasure', 'enemy', 'friend',
-  'journey', 'quest', 'discovery', 'loss', 'victory', 'defeat',
-  'turgid', 'decayed', 'glitter', 'village', 'craft', 'guard', 'obligation', 
-  'ruined', 'twisted', 'premonition', 'metal', 'gamble', 'sarcophagus', 'bell',
-  'tunnel', 'armies', 'potential', 'target', 'singing', 'subliminal', 'camp',
-  'wary', 'illuminate', 'door', 'damage', 'structure', 'fresh', 'hairpin',
-  'important', 'device', 'fragmented', 'enthusiastic', 'surprise', 'runes',
-  'luminescent', 'burial', 'obstinate', 'shame', 'blood', 'banter', 'trapped',
-  'nobility', 'disastrous', 'gold', 'dream', 'title', 'warrant', 'damaged',
-  'opening', 'pleasant', 'heat', 'shape', 'mother', 'silence', 'temperature',
-  'thick', 'illusion', 'mirror', 'daughter', 'controller', 'medium', 'priest',
-  'blustering', 'web', 'tedious', 'skin', 'candidate', 'luck', 'memory',
-  'cloying', 'communion', 'pattern', 'clue', 'stray', 'disguise', 'investigate',
-  'crypt', 'rotten', 'spoiled', 'clank', 'rites', 'smell', 'pilgrim',
-  'courage', 'uncharacteristic', 'vacant', 'oppress', 'witness', 'rope',
-  'health', 'seat', 'dungeon', 'toss', 'weather', 'brother', 'goods',
-  'weakness', 'orbit', 'road', 'dance', 'parent', 'orb', 'noxious',
-  'accomplice', 'demon', 'proposal', 'prehistoric', 'advance', 'indication',
-  'rescue', 'diversion', 'garbage', 'food', 'family', 'girl', 'slime',
-  'unthinking', 'slide', 'guidance', 'diseased', 'item', 'midnight', 'birth',
-  'diary', 'original', 'carry', 'representative', 'mouth', 'fetid', 'spirit',
-  'accident', 'bother', 'vessel', 'disease', 'slippery', 'curiosity', 'son',
-  'fortune', 'operation', 'man', 'maximum', 'cover', 'turned', 'silver',
-  'sleep', 'track', 'message', 'heart', 'rusty', 'republic', 'malodorous',
-  'refuse', 'language', 'temple', 'faith', 'hefty', 'sentimental', 'fear',
-  'skill', 'escape', 'king', 'ammunition', 'infectious', 'foliage', 'love',
-  'slave', 'sundered', 'motive', 'natural', 'release', 'boy', 'guest',
-  'hollow', 'argument', 'enchanted', 'weird', 'floating', 'calm', 'woman',
-  'entertain', 'fluttering', 'knowledge', 'disciple', 'common', 'building',
-  'valuable', 'admission', 'chill', 'change', 'sister', 'revealing',
-  'delusional', 'instrument', 'success', 'woven', 'impact', 'moan',
-  'vibration', 'foreknowledge', 'map', 'boon', 'bones', 'prize', 'equipment',
-  'embrace', 'sceptre', 'question', 'costume', 'unsophisticated', 'give',
-  'alcohol', 'reflect', 'itch', 'gap', 'effigy', 'manage', 'river', 'mould',
-  'invite', 'tradition', 'curse', 'statue', 'scuttling', 'hole', 'identity',
-  'lake', 'proof', 'wealth', 'protection', 'aftershock', 'sea', 'shoe',
-  'teacher', 'downward', 'flee', 'foot', 'search', 'dimension', 'swear',
-  'effect', 'storage', 'henchman', 'noise', 'government', 'step', 'alarm',
-  'treacherous', 'glowing', 'rainbow', 'child', 'tidy', 'awful', 'demand',
-  'ability', 'march', 'fugitive', 'explosion', 'ball', 'mammoth', 'student',
-  'persecute', 'vision', 'area', 'history', 'ambition', 'champion', 'obsidian',
-  'performance', 'payment', 'country', 'information', 'code', 'loot', 'storm',
-  'command', 'symbol', 'familiar', 'endanger', 'persistent', 'undead',
-  'wilderness', 'contradict', 'talk', 'book', 'arid', 'guide', 'portal',
-  'enshrine', 'incongruous', 'ruler', 'sneak', 'well', 'rocky', 'speed',
-  'possession', 'overexcited', 'nimble', 'gears', 'apocalypse', 'entice',
-  'location', 'song', 'unnatural', 'technology', 'erratic', 'precious',
-  'adventurers', 'negotiation', 'smoke', 'temper', 'enlarge', 'persuade',
-  'scary', 'medicine', 'few', 'bridge', 'agreement', 'dripping', 'eye',
-  'tale', 'cloud', 'angular', 'duty', 'water', 'check', 'unsafe', 'laugh',
-  'rancid', 'fancy', 'celebration', 'energy', 'decrepit', 'suggestion',
-  'twilight', 'deteriorating', 'gaping', 'implicate', 'force', 'wine',
-  'request', 'saviour', 'dispute', 'fall', 'rambling', 'awake', 'employment',
-  'music', 'rundown', 'dark', 'misty', 'confusion', 'warning', 'enlighten',
-  'city', 'lounge', 'punish', 'crack', 'group', 'chain', 'native', 'patrol',
-  'captive', 'secure', 'percussive', 'overexcited', 'decomposed', 'gossip',
-  'unseen', 'prodigy', 'hide', 'dryrot'
-];
 
 export interface OracleResult {
   answer: string;
@@ -97,7 +35,7 @@ export interface OracleHistory {
 export class OracleService {
   private history: OracleHistory[] = [];
 
-  constructor(private sparkTableManager?: SparkTableManager) {}
+  constructor(private sparkTableManager: SparkTableManager) {}
 
   queryOracle(question?: string): OracleResult {
     const roll = this.rollDice(20);
@@ -234,20 +172,7 @@ export class OracleService {
   }
 
   private getRandomKeywords(count: number = 2): string[] {
-    // Use SparkTableManager if available, otherwise fallback to hardcoded keywords
-    if (this.sparkTableManager) {
-      return this.sparkTableManager.generateKeywords(count, 'oracle');
-    }
-
-    // Fallback to hardcoded keywords
-    const result: string[] = [];
-    const availableKeywords = [...keywords];
-    
-    for (let i = 0; i < count && availableKeywords.length > 0; i++) {
-      const index = Math.floor(Math.random() * availableKeywords.length);
-      result.push(availableKeywords.splice(index, 1)[0]);
-    }
-    
-    return result;
+    // Always use SparkTableManager for keywords
+    return this.sparkTableManager.generateKeywords(count, 'oracle');
   }
 }
