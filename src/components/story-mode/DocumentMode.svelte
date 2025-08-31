@@ -104,22 +104,40 @@
   function setPanelLocation(location: 'left' | 'right' | 'bottom') {
     panelLocation = location;
     
-    // Update panel position based on location
+    // Update panel position based on location and screen size
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
+    const isMobile = windowWidth <= 480;
+    const isTablet = windowWidth <= 768;
     
     switch (location) {
       case 'left':
-        panelPosition = { x: 20, y: 100 };
-        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        if (isMobile) {
+          panelPosition = { x: 10, y: 80 };
+          panelSize = { width: windowWidth - 20, height: Math.min(400, windowHeight - 160) };
+        } else {
+          panelPosition = { x: 20, y: 100 };
+          panelSize = { width: isTablet ? 280 : 320, height: Math.min(500, windowHeight - 200) };
+        }
         break;
       case 'right':
-        panelPosition = { x: windowWidth - 340, y: 100 };
-        panelSize = { width: 320, height: Math.min(500, windowHeight - 200) };
+        if (isMobile) {
+          panelPosition = { x: 10, y: 80 };
+          panelSize = { width: windowWidth - 20, height: Math.min(400, windowHeight - 160) };
+        } else {
+          const panelWidth = isTablet ? 280 : 320;
+          panelPosition = { x: windowWidth - panelWidth - 20, y: 100 };
+          panelSize = { width: panelWidth, height: Math.min(500, windowHeight - 200) };
+        }
         break;
       case 'bottom':
-        panelPosition = { x: 20, y: windowHeight - 220 };
-        panelSize = { width: Math.min(600, windowWidth - 40), height: 200 };
+        if (isMobile) {
+          panelPosition = { x: 10, y: windowHeight - 280 };
+          panelSize = { width: windowWidth - 20, height: 260 };
+        } else {
+          panelPosition = { x: 20, y: windowHeight - 220 };
+          panelSize = { width: Math.min(600, windowWidth - 40), height: 200 };
+        }
         break;
     }
   }

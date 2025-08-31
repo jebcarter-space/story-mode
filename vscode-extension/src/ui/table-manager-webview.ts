@@ -233,48 +233,89 @@ export class TableManagerWebview {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spark Table Configuration</title>
     <style>
+        :root {
+          /* Responsive breakpoints */
+          --mobile: 480px;
+          --tablet: 768px;
+          --desktop: 1024px;
+          
+          /* Touch target sizes */
+          --touch-mobile: 48px;
+          --touch-tablet: 44px;
+          --touch-desktop: 40px;
+          
+          /* Spacing */
+          --spacing-mobile: 16px;
+          --spacing-tablet: 12px;
+          --spacing-desktop: 8px;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
         body {
             font-family: var(--vscode-font-family);
             color: var(--vscode-foreground);
             background-color: var(--vscode-editor-background);
-            padding: 20px;
+            padding: var(--spacing-desktop);
             margin: 0;
+            min-width: 320px;
+            line-height: 1.5;
         }
         
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: var(--spacing-desktop);
             border-bottom: 1px solid var(--vscode-panel-border);
-            padding-bottom: 15px;
+            padding-bottom: var(--spacing-desktop);
+            flex-wrap: wrap;
+            gap: var(--spacing-desktop);
         }
         
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 1.5rem;
+            min-width: 0;
         }
         
         .actions {
             display: flex;
-            gap: 10px;
+            gap: var(--spacing-desktop);
+            flex-wrap: wrap;
         }
         
         .btn {
-            padding: 6px 12px;
+            min-width: var(--touch-desktop);
+            min-height: var(--touch-desktop);
+            padding: 8px 12px;
             background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
-            border-radius: 3px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            touch-action: manipulation;
+            transition: background-color 0.2s ease;
         }
         
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             background: var(--vscode-button-hoverBackground);
+        }
+        
+        .btn:focus {
+            outline: 2px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
         .btn.secondary {
@@ -288,15 +329,17 @@ export class TableManagerWebview {
         
         .table-grid {
             display: grid;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: var(--spacing-desktop);
+            margin-bottom: var(--spacing-desktop);
+            grid-template-columns: 1fr;
         }
         
         .table-card {
             border: 1px solid var(--vscode-panel-border);
-            border-radius: 5px;
-            padding: 15px;
+            border-radius: 6px;
+            padding: var(--spacing-desktop);
             background: var(--vscode-editor-background);
+            transition: border-color 0.2s ease;
         }
         
         .table-card.enabled {
@@ -304,60 +347,75 @@ export class TableManagerWebview {
         }
         
         .table-card.disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             border-left: 4px solid var(--vscode-descriptionForeground);
         }
         
         .table-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-desktop);
+            flex-wrap: wrap;
+            gap: var(--spacing-desktop);
         }
         
         .table-title {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 1.1rem;
+            margin: 0;
+            min-width: 0;
         }
         
         .table-stats {
-            font-size: 12px;
+            font-size: 0.85rem;
             color: var(--vscode-descriptionForeground);
+            flex-shrink: 0;
         }
         
         .table-controls {
             display: flex;
-            gap: 15px;
+            gap: var(--spacing-desktop);
             align-items: center;
-            margin: 10px 0;
+            margin: var(--spacing-desktop) 0;
+            flex-wrap: wrap;
         }
         
         .toggle-group {
             display: flex;
-            gap: 10px;
+            gap: var(--spacing-desktop);
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .toggle {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 12px;
+            gap: 6px;
+            font-size: 0.9rem;
+            min-height: var(--touch-desktop);
+            cursor: pointer;
         }
         
         .toggle input[type="checkbox"] {
             margin: 0;
+            min-width: 16px;
+            min-height: 16px;
+            cursor: pointer;
         }
         
         .weight-control {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 12px;
+            gap: 6px;
+            font-size: 0.9rem;
+            min-height: var(--touch-desktop);
         }
         
         .weight-slider {
-            width: 60px;
+            min-width: 80px;
+            height: var(--touch-desktop);
+            cursor: pointer;
         }
         
         .table-preview {
@@ -386,8 +444,169 @@ export class TableManagerWebview {
         .summary-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 14px;
+            gap: var(--spacing-desktop);
+            font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            padding: var(--spacing-desktop) * 2;
+            font-style: italic;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 480px) {
+            body {
+                padding: var(--spacing-mobile);
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-mobile);
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .actions {
+                width: 100%;
+                justify-content: flex-start;
+                gap: var(--spacing-mobile);
+            }
+            
+            .btn {
+                min-width: var(--touch-mobile);
+                min-height: var(--touch-mobile);
+                padding: 16px 20px;
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+            
+            .table-grid {
+                gap: var(--spacing-mobile);
+            }
+            
+            .table-card {
+                padding: var(--spacing-mobile);
+            }
+            
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-mobile);
+            }
+            
+            .table-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-mobile);
+                width: 100%;
+            }
+            
+            .toggle-group {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-mobile);
+            }
+            
+            .toggle {
+                min-height: var(--touch-mobile);
+                width: 100%;
+                padding: 8px 0;
+            }
+            
+            .toggle input[type="checkbox"] {
+                min-width: 20px;
+                min-height: 20px;
+            }
+            
+            .weight-control {
+                min-height: var(--touch-mobile);
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .weight-slider {
+                min-width: 120px;
+                height: var(--touch-mobile);
+            }
+            
+            .summary-stats {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-mobile);
+            }
+        }
+        
+        /* Tablet responsive styles */
+        @media (min-width: 481px) and (max-width: 768px) {
+            body {
+                padding: var(--spacing-tablet);
+            }
+            
+            .table-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: var(--spacing-tablet);
+            }
+            
+            .btn {
+                min-width: var(--touch-tablet);
+                min-height: var(--touch-tablet);
+                padding: 12px 16px;
+                font-size: 15px;
+            }
+            
+            .toggle {
+                min-height: var(--touch-tablet);
+            }
+            
+            .weight-slider {
+                height: var(--touch-tablet);
+            }
+        }
+        
+        /* Desktop and larger */
+        @media (min-width: 769px) {
+            .table-grid {
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            }
+        }
+        
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .table-title,
+            .table-stats,
+            .btn {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+        
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-width: var(--touch-mobile);
+                min-height: var(--touch-mobile);
+            }
+            
+            .btn:hover {
+                background: var(--vscode-button-background);
+            }
+            
+            .toggle input[type="checkbox"] {
+                min-width: 20px;
+                min-height: 20px;
+            }
+        }
+        
+        /* Accessibility: Respect reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .btn,
+            .table-card {
+                transition: none;
+            }
         }
         
         .loading {
