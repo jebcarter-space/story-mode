@@ -16,6 +16,9 @@ import { SparksService } from './services/sparks-service';
 import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import type { InlineContinuationOptions } from './types';
 
+// Global reference to context indicator for streaming status
+let globalContextIndicator: ContextIndicator | null = null;
+
 export function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
 
@@ -35,6 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
+    globalContextIndicator = contextIndicator;
 
     // Initialize smart suggestions
     const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
@@ -193,7 +197,7 @@ async function handleContinueText(
     const streamingDelay = vscode.workspace.getConfiguration('storyMode').get('streamingDelay', 50);
 
     if (streamingEnabled) {
-        return await handleStreamingContinueText(llmService, repositoryManager, streamingDelay);
+        return await handleStreamingContinueText(llmService, repositoryManager, streamingDelay, globalContextIndicator!);
     } else {
         return await handleNonStreamingContinueText(llmService, repositoryManager);
     }
@@ -203,7 +207,8 @@ async function handleContinueText(
 async function handleStreamingContinueText(
     llmService: LLMService,
     repositoryManager: RepositoryManager,
-    streamingDelay: number
+    streamingDelay: number,
+    contextIndicator: ContextIndicator
 ) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
@@ -235,6 +240,9 @@ async function handleStreamingContinueText(
             // Get relevant repository items
             const repositoryItems = await repositoryManager.getRelevantItems(textBeforeCursor, context);
             
+            // Start streaming status indicator
+            contextIndicator?.startStreamingStatus();
+            
             // Stream the response with real-time insertion using unified service
             return await llmService.generateStreamingContinuation(
                 textBeforeCursor,
@@ -243,6 +251,9 @@ async function handleStreamingContinueText(
                         if (cancellationTokenSource.token.isCancellationRequested) return;
                         
                         insertedText += token;
+                        
+                        // Update streaming status
+                        contextIndicator?.updateStreamingToken();
                         
                         // Insert token in editor with delay for smoother experience
                         await editor.edit(editBuilder => {
@@ -263,9 +274,16 @@ async function handleStreamingContinueText(
                     },
                     onComplete: (fullText: string) => {
                         progress.report({ message: "Streaming complete" });
+                        contextIndicator?.stopStreamingStatus();
                     },
                     onError: (error: Error) => {
-                        vscode.window.showErrorMessage(`Streaming failed: ${error.message}`);
+                        const friendlyMessage = error.message.includes('using standard mode') 
+                            ? error.message 
+                            : `Streaming failed: ${error.message}`;
+                        vscode.window.showErrorMessage(friendlyMessage);
+                        contextIndicator?.updateStreamingError(error.message);
+                        // Stop status after a delay to show the error
+                        setTimeout(() => contextIndicator?.stopStreamingStatus(), 3000);
                     }
                 },
                 {
@@ -283,6 +301,9 @@ async function handleStreamingContinueText(
         }
 
     } catch (error) {
+        // Ensure streaming status is stopped on any error
+        contextIndicator?.stopStreamingStatus();
+        
         if (error instanceof Error && error.message.includes('cancelled')) {
             vscode.window.showInformationMessage('Text generation cancelled');
         } else {

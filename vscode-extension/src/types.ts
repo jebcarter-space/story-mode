@@ -245,3 +245,29 @@ export interface StoryFileMetadata {
   chapter?: string;
   repositoryScope?: RepositoryContext;
 }
+
+// Enhanced Streaming Configuration
+export interface StreamingErrorHandler {
+  onConnectionError(error: Error): void;
+  onTimeoutError(timeoutMs: number): void;
+  onPartialResponse(partialText: string): void;
+  onApiError(statusCode: number, message: string): void;
+}
+
+export interface StreamingReliabilityOptions {
+  enableFallback: boolean;
+  maxRetries: number;
+  retryDelayMs: number;
+  timeoutMs: number;
+  fallbackToNonStreaming: boolean;
+  exponentialBackoff: boolean;
+}
+
+export interface StreamingStatus {
+  isActive: boolean;
+  tokensReceived: number;
+  tokensPerSecond?: number;
+  elapsedTime: number;
+  retryCount?: number;
+  lastError?: string;
+}
