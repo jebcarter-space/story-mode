@@ -20,7 +20,62 @@ const keywords = [
   'mysterious', 'ancient', 'forbidden', 'hidden', 'sacred', 'cursed',
   'powerful', 'dangerous', 'magical', 'divine', 'demonic', 'ethereal',
   'betrayal', 'alliance', 'secret', 'treasure', 'enemy', 'friend',
-  'journey', 'quest', 'discovery', 'loss', 'victory', 'defeat'
+  'journey', 'quest', 'discovery', 'loss', 'victory', 'defeat',
+  'turgid', 'decayed', 'glitter', 'village', 'craft', 'guard', 'obligation', 
+  'ruined', 'twisted', 'premonition', 'metal', 'gamble', 'sarcophagus', 'bell',
+  'tunnel', 'armies', 'potential', 'target', 'singing', 'subliminal', 'camp',
+  'wary', 'illuminate', 'door', 'damage', 'structure', 'fresh', 'hairpin',
+  'important', 'device', 'fragmented', 'enthusiastic', 'surprise', 'runes',
+  'luminescent', 'burial', 'obstinate', 'shame', 'blood', 'banter', 'trapped',
+  'nobility', 'disastrous', 'gold', 'dream', 'title', 'warrant', 'damaged',
+  'opening', 'pleasant', 'heat', 'shape', 'mother', 'silence', 'temperature',
+  'thick', 'illusion', 'mirror', 'daughter', 'controller', 'medium', 'priest',
+  'blustering', 'web', 'tedious', 'skin', 'candidate', 'luck', 'memory',
+  'cloying', 'communion', 'pattern', 'clue', 'stray', 'disguise', 'investigate',
+  'crypt', 'rotten', 'spoiled', 'clank', 'rites', 'smell', 'pilgrim',
+  'courage', 'uncharacteristic', 'vacant', 'oppress', 'witness', 'rope',
+  'health', 'seat', 'dungeon', 'toss', 'weather', 'brother', 'goods',
+  'weakness', 'orbit', 'road', 'dance', 'parent', 'orb', 'noxious',
+  'accomplice', 'demon', 'proposal', 'prehistoric', 'advance', 'indication',
+  'rescue', 'diversion', 'garbage', 'food', 'family', 'girl', 'slime',
+  'unthinking', 'slide', 'guidance', 'diseased', 'item', 'midnight', 'birth',
+  'diary', 'original', 'carry', 'representative', 'mouth', 'fetid', 'spirit',
+  'accident', 'bother', 'vessel', 'disease', 'slippery', 'curiosity', 'son',
+  'fortune', 'operation', 'man', 'maximum', 'cover', 'turned', 'silver',
+  'sleep', 'track', 'message', 'heart', 'rusty', 'republic', 'malodorous',
+  'refuse', 'language', 'temple', 'faith', 'hefty', 'sentimental', 'fear',
+  'skill', 'escape', 'king', 'ammunition', 'infectious', 'foliage', 'love',
+  'slave', 'sundered', 'motive', 'natural', 'release', 'boy', 'guest',
+  'hollow', 'argument', 'enchanted', 'weird', 'floating', 'calm', 'woman',
+  'entertain', 'fluttering', 'knowledge', 'disciple', 'common', 'building',
+  'valuable', 'admission', 'chill', 'change', 'sister', 'revealing',
+  'delusional', 'instrument', 'success', 'woven', 'impact', 'moan',
+  'vibration', 'foreknowledge', 'map', 'boon', 'bones', 'prize', 'equipment',
+  'embrace', 'sceptre', 'question', 'costume', 'unsophisticated', 'give',
+  'alcohol', 'reflect', 'itch', 'gap', 'effigy', 'manage', 'river', 'mould',
+  'invite', 'tradition', 'curse', 'statue', 'scuttling', 'hole', 'identity',
+  'lake', 'proof', 'wealth', 'protection', 'aftershock', 'sea', 'shoe',
+  'teacher', 'downward', 'flee', 'foot', 'search', 'dimension', 'swear',
+  'effect', 'storage', 'henchman', 'noise', 'government', 'step', 'alarm',
+  'treacherous', 'glowing', 'rainbow', 'child', 'tidy', 'awful', 'demand',
+  'ability', 'march', 'fugitive', 'explosion', 'ball', 'mammoth', 'student',
+  'persecute', 'vision', 'area', 'history', 'ambition', 'champion', 'obsidian',
+  'performance', 'payment', 'country', 'information', 'code', 'loot', 'storm',
+  'command', 'symbol', 'familiar', 'endanger', 'persistent', 'undead',
+  'wilderness', 'contradict', 'talk', 'book', 'arid', 'guide', 'portal',
+  'enshrine', 'incongruous', 'ruler', 'sneak', 'well', 'rocky', 'speed',
+  'possession', 'overexcited', 'nimble', 'gears', 'apocalypse', 'entice',
+  'location', 'song', 'unnatural', 'technology', 'erratic', 'precious',
+  'adventurers', 'negotiation', 'smoke', 'temper', 'enlarge', 'persuade',
+  'scary', 'medicine', 'few', 'bridge', 'agreement', 'dripping', 'eye',
+  'tale', 'cloud', 'angular', 'duty', 'water', 'check', 'unsafe', 'laugh',
+  'rancid', 'fancy', 'celebration', 'energy', 'decrepit', 'suggestion',
+  'twilight', 'deteriorating', 'gaping', 'implicate', 'force', 'wine',
+  'request', 'saviour', 'dispute', 'fall', 'rambling', 'awake', 'employment',
+  'music', 'rundown', 'dark', 'misty', 'confusion', 'warning', 'enlighten',
+  'city', 'lounge', 'punish', 'crack', 'group', 'chain', 'native', 'patrol',
+  'captive', 'secure', 'percussive', 'overexcited', 'decomposed', 'gossip',
+  'unseen', 'prodigy', 'hide', 'dryrot'
 ];
 
 export interface OracleResult {
@@ -47,22 +102,16 @@ export class OracleService {
     
     let answer = typeof result.description === 'string' ? result.description : 'Unknown';
     
-    // Add keywords for "and" or "but" results
-    const resultKeywords: string[] = [];
-    if (answer.includes('and') || answer.includes('but')) {
-      resultKeywords.push(...this.getRandomKeywords(2));
-    }
+    // Always provide keywords for inspiration
+    const resultKeywords: string[] = this.getRandomKeywords(2);
     
-    // Generate interpretation if keywords are present
-    let interpretation: string | undefined;
-    if (resultKeywords.length > 0) {
-      interpretation = this.generateInterpretation(answer, resultKeywords);
-    }
+    // Generate interpretation with keywords
+    const interpretation = this.generateInterpretation(answer, resultKeywords);
     
     const oracleResult: OracleResult = {
       answer,
       roll,
-      keywords: resultKeywords.length > 0 ? resultKeywords : undefined,
+      keywords: resultKeywords,
       interpretation,
       question,
       timestamp: Date.now()
@@ -120,24 +169,45 @@ export class OracleService {
     const templates = {
       'Yes, and': [
         `The situation favors you, and it involves something ${keywords[0]} ${keywords[1] ? `and ${keywords[1]}` : ''}.`,
-        `Success is certain, enhanced by ${keywords[0]} elements ${keywords[1] ? `with ${keywords[1]} undertones` : ''}.`
+        `Success is certain, enhanced by ${keywords[0]} elements ${keywords[1] ? `with ${keywords[1]} undertones` : ''}.`,
+        `Absolutely! The ${keywords[0]} nature of this brings ${keywords[1] ? `${keywords[1]} opportunities` : 'new possibilities'}.`
       ],
       'Yes, but': [
         `Success is likely, though complicated by ${keywords[0]} factors ${keywords[1] ? `and ${keywords[1]} influences` : ''}.`,
-        `The outcome is positive, but beware of ${keywords[0]} complications ${keywords[1] ? `involving ${keywords[1]} elements` : ''}.`
+        `The outcome is positive, but beware of ${keywords[0]} complications ${keywords[1] ? `involving ${keywords[1]} elements` : ''}.`,
+        `Yes, though the ${keywords[0]} aspect creates ${keywords[1] ? `${keywords[1]} challenges` : 'unexpected obstacles'}.`
+      ],
+      'Yes': [
+        `A clear affirmative, with ${keywords[0]} influences at play ${keywords[1] ? `and ${keywords[1]} undertones` : ''}.`,
+        `The answer is yes, guided by ${keywords[0]} forces ${keywords[1] ? `through ${keywords[1]} means` : ''}.`,
+        `Definitely, with ${keywords[0]} energy surrounding this ${keywords[1] ? `and ${keywords[1]} implications` : ''}.`
       ],
       'No, but': [
         `The direct approach fails, yet ${keywords[0]} opportunities emerge ${keywords[1] ? `through ${keywords[1]} means` : ''}.`,
-        `Failure in the obvious sense, but ${keywords[0]} alternatives present themselves ${keywords[1] ? `via ${keywords[1]} paths` : ''}.`
+        `Failure in the obvious sense, but ${keywords[0]} alternatives present themselves ${keywords[1] ? `via ${keywords[1]} paths` : ''}.`,
+        `Not as expected, though ${keywords[0]} possibilities arise ${keywords[1] ? `involving ${keywords[1]} elements` : ''}.`
+      ],
+      'No': [
+        `A clear negative, influenced by ${keywords[0]} factors ${keywords[1] ? `and ${keywords[1]} circumstances` : ''}.`,
+        `The answer is no, with ${keywords[0]} forces working against this ${keywords[1] ? `alongside ${keywords[1]} obstacles` : ''}.`,
+        `Definitely not, due to ${keywords[0]} complications ${keywords[1] ? `and ${keywords[1]} interference` : ''}.`
       ],
       'No, and': [
         `Not only does it fail, but ${keywords[0]} complications arise ${keywords[1] ? `with ${keywords[1]} consequences` : ''}.`,
-        `Definite failure, worsened by ${keywords[0]} setbacks ${keywords[1] ? `and ${keywords[1]} obstacles` : ''}.`
+        `Definite failure, worsened by ${keywords[0]} setbacks ${keywords[1] ? `and ${keywords[1]} obstacles` : ''}.`,
+        `Absolutely not! The ${keywords[0]} nature makes things worse ${keywords[1] ? `with ${keywords[1]} repercussions` : ''}.`
+      ],
+      'Maybe': [
+        `Uncertain outcome, with ${keywords[0]} factors creating ambiguity ${keywords[1] ? `and ${keywords[1]} variables` : ''}.`,
+        `The situation is unclear, influenced by ${keywords[0]} elements ${keywords[1] ? `and ${keywords[1]} possibilities` : ''}.`,
+        `Perhaps, depending on how the ${keywords[0]} aspect unfolds ${keywords[1] ? `relative to ${keywords[1]} influences` : ''}.`
       ]
     };
 
     const relevantTemplates = templates[answer as keyof typeof templates] || [
-      `The answer suggests ${keywords[0]} influences ${keywords[1] ? `connected to ${keywords[1]} aspects` : ''}.`
+      `The answer suggests ${keywords[0]} influences ${keywords[1] ? `connected to ${keywords[1]} aspects` : ''}.`,
+      `This involves ${keywords[0]} elements ${keywords[1] ? `with ${keywords[1]} undertones` : ''}.`,
+      `Consider the ${keywords[0]} nature of this situation ${keywords[1] ? `and its ${keywords[1]} implications` : ''}.`
     ];
 
     return relevantTemplates[Math.floor(Math.random() * relevantTemplates.length)];
