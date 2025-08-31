@@ -1,6 +1,8 @@
 <script lang="ts" module>
   import { createCustomTables } from "../../../data/models/custom-tables.svelte";
+  import { createEnhancedTables } from "../../../data/models/enhanced-tables.svelte";
   export let customTables = createCustomTables();
+  export let enhancedTables = createEnhancedTables();
 </script>
 
 <script lang="ts">
@@ -9,6 +11,7 @@
   import { TableImporter } from "../../../lib/table-importer";
   import { TableExporter } from "../../../lib/table-exporter";
   import SettingPage from "../../ui/SettingPage.svelte";
+  import AdvancedTableEditor from "../../ui/AdvancedTableEditor.svelte";
   import TableIcon from '../../../assets/table.svg';
   import ImportIcon from '../../../assets/import.svg';
   import SaveIcon from '../../../assets/save.svg';
@@ -40,6 +43,9 @@
   
   // Validation state
   let validationResult: any = $state(null);
+
+  // Enhanced table editor state
+  let advancedEditingTable: RandomTable | null = $state(null);
 
   // Computed properties  
   let allTables = $derived(customTables.value);
@@ -121,6 +127,34 @@
     rows = 1;
     validationResult = null;
     open = 'create';
+  }
+
+  function openAdvancedEditor(tableData?: RandomTable) {
+    if (tableData) {
+      advancedEditingTable = {...tableData};
+    } else {
+      advancedEditingTable = {...emptyTable, enhanced: true};
+    }
+    open = 'advanced';
+  }
+
+  function saveAdvancedTable() {
+    if (advancedEditingTable) {
+      // Use enhanced tables for enhanced features, regular tables for basic features
+      if (advancedEditingTable.enhanced) {
+        enhancedTables.addTable(advancedEditingTable);
+      } else {
+        customTables.add(advancedEditingTable);
+      }
+      
+      advancedEditingTable = null;
+      open = 'view';
+    }
+  }
+
+  function cancelAdvancedEditor() {
+    advancedEditingTable = null;
+    open = 'view';
   }
 
   function openImport() {
@@ -284,6 +318,12 @@
         <img src={TableIcon} alt="Create Table" class="h-5 w-5"/>
         <img src={PlusIcon} alt="Add" class="h-3 w-3 absolute top-1 right-1 bg-stone-50 rounded"/>
         <div id="tooltip" class="bottom">Create Table</div>
+      </button>
+      
+      <button onclick={() => openAdvancedEditor()} class="relative tooltip" title="Create Enhanced Table">
+        <img src={TableIcon} alt="Enhanced Table" class="h-5 w-5"/>
+        <span class="absolute top-0 right-0 bg-purple-500 text-white text-xs px-1 rounded">✨</span>
+        <div id="tooltip" class="bottom">Enhanced Table</div>
       </button>
       
       <button onclick={openImport} class="tooltip" title="Import Table">
@@ -618,6 +658,10 @@
                         <img src={SaveIcon} alt="Export" class="h-4 w-4"/>
                         <div id="tooltip" class="bottom">Export</div>
                       </button>
+                      <button onclick={() => openAdvancedEditor(table)} title="Advanced Edit" class="tooltip">
+                        <span class="text-purple-600 text-sm">✨</span>
+                        <div id="tooltip" class="bottom">Advanced Edit</div>
+                      </button>
                       <button onclick={() => duplicateTable(table.name)} title="Duplicate" class="tooltip">
                         <img src={CopyIcon} alt="Duplicate" class="h-4 w-4"/>
                         <div id="tooltip" class="bottom">Duplicate</div>
@@ -649,6 +693,18 @@
                 </div>
               {/each}
             </div>
+          {/if}
+        </div>
+
+      {:else if open === 'advanced'}
+        <div class="max-w-full">
+          {#if advancedEditingTable}
+            <AdvancedTableEditor
+              table={advancedEditingTable}
+              onTableChange={(updatedTable) => advancedEditingTable = updatedTable}
+              onSave={saveAdvancedTable}
+              onCancel={cancelAdvancedEditor}
+            />
           {/if}
         </div>
       {/if}
@@ -705,6 +761,10 @@
               <div class="space-y-2">
                 <button onclick={() => exportSingle(table.name)} class="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm">
                   Export Table
+                </button>
+                <button onclick={() => openAdvancedEditor(table)} class="w-full px-3 py-2 bg-purple-500 text-white rounded text-sm flex items-center justify-center gap-2">
+                  <span>✨</span>
+                  Advanced Edit
                 </button>
                 <button onclick={() => duplicateTable(table.name)} class="w-full px-3 py-2 bg-green-500 text-white rounded text-sm">
                   Duplicate Table

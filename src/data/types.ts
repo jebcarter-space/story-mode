@@ -137,7 +137,7 @@ export interface SettingPage {
   component: SvelteComponent;
 };
 
-export type CustomTableViews = 'create' | 'import' | 'export' | 'bulk' | 'search' | 'view' | ''
+export type CustomTableViews = 'create' | 'import' | 'export' | 'bulk' | 'search' | 'view' | 'advanced' | ''
 
 export interface Template {
   name: string;

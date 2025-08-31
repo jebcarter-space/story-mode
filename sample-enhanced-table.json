@@ -1,0 +1,198 @@
+{
+  "name": "Enhanced Magic Items",
+  "description": "A demonstration table with conditional entries, weighted probabilities, and table relationships",
+  "diceFormula": "1d100",
+  "enhanced": true,
+  "consumable": false,
+  "defaultRollOptions": {
+    "rollType": "standard",
+    "modifiers": {
+      "bonus": 0,
+      "multiplier": 1,
+      "threshold": 0
+    }
+  },
+  "relationships": [
+    {
+      "type": "parent-child",
+      "sourceTable": "Enhanced Magic Items",
+      "targetTable": "Magic Item Properties",
+      "condition": "last_result.includes('weapon') || last_result.includes('armor')"
+    }
+  ],
+  "table": [
+    {
+      "min": 1,
+      "max": 20,
+      "description": "Common healing potion",
+      "id": "heal_pot_1",
+      "metadata": {
+        "tags": ["healing", "consumable", "common"],
+        "category": "potion",
+        "rarity": "common"
+      },
+      "modifiers": [
+        {
+          "type": "weighted",
+          "weight": 5
+        }
+      ]
+    },
+    {
+      "min": 21,
+      "max": 40,
+      "description": "Simple enchanted weapon",
+      "id": "weapon_1",
+      "metadata": {
+        "tags": ["weapon", "enchanted", "combat"],
+        "category": "weapon",
+        "rarity": "uncommon"
+      },
+      "modifiers": [
+        {
+          "type": "conditional",
+          "condition": "character_level >= 3"
+        },
+        {
+          "type": "weighted",
+          "weight": 3
+        }
+      ]
+    },
+    {
+      "min": 41,
+      "max": 55,
+      "description": "Protective charm",
+      "id": "charm_1",
+      "metadata": {
+        "tags": ["protection", "accessory"],
+        "category": "charm",
+        "rarity": "uncommon"
+      },
+      "modifiers": [
+        {
+          "type": "weighted",
+          "weight": 3
+        }
+      ]
+    },
+    {
+      "min": 56,
+      "max": 70,
+      "description": "Mage's spell scroll",
+      "id": "scroll_1",
+      "metadata": {
+        "tags": ["magic", "scroll", "consumable"],
+        "category": "scroll",
+        "rarity": "uncommon"
+      },
+      "modifiers": [
+        {
+          "type": "conditional",
+          "condition": "character_class === 'wizard' || character_class === 'sorcerer'"
+        },
+        {
+          "type": "weighted",
+          "weight": 4
+        }
+      ]
+    },
+    {
+      "min": 71,
+      "max": 85,
+      "description": "Rare artifact weapon",
+      "id": "artifact_1",
+      "metadata": {
+        "tags": ["artifact", "weapon", "rare"],
+        "category": "weapon",
+        "rarity": "rare"
+      },
+      "modifiers": [
+        {
+          "type": "conditional",
+          "condition": "character_level >= 8 && story_progress >= 40"
+        },
+        {
+          "type": "weighted",
+          "weight": 1
+        },
+        {
+          "type": "linked",
+          "dependency": "Artifact Powers",
+          "parameters": {
+            "artifact_type": "weapon"
+          }
+        }
+      ]
+    },
+    {
+      "min": 86,
+      "max": 95,
+      "description": "Ancient spellbook",
+      "id": "spellbook_1",
+      "metadata": {
+        "tags": ["spellbook", "ancient", "knowledge"],
+        "category": "book",
+        "rarity": "rare"
+      },
+      "modifiers": [
+        {
+          "type": "conditional",
+          "condition": "character_level >= 5 && (character_class === 'wizard' || character_class === 'warlock')"
+        },
+        {
+          "type": "weighted",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "min": 96,
+      "max": 99,
+      "description": "Legendary crown of power",
+      "id": "crown_1",
+      "metadata": {
+        "tags": ["legendary", "crown", "power"],
+        "category": "accessory",
+        "rarity": "legendary"
+      },
+      "modifiers": [
+        {
+          "type": "conditional",
+          "condition": "character_level >= 15 && story_progress >= 80"
+        },
+        {
+          "type": "unique"
+        },
+        {
+          "type": "weighted",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "min": 100,
+      "max": 100,
+      "description": "Cursed item of random effect",
+      "id": "cursed_1",
+      "metadata": {
+        "tags": ["cursed", "random", "dangerous"],
+        "category": "cursed",
+        "rarity": "rare"
+      },
+      "modifiers": [
+        {
+          "type": "linked",
+          "dependency": "Curse Effects",
+          "parameters": {
+            "severity": "random"
+          }
+        },
+        {
+          "type": "weighted",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
