@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <!-- Dark theme - uses CSS custom properties that can be overridden -->
+    <style>
+      .logo-primary { fill: var(--theme-foreground, #1e293b); }
+      .logo-secondary { fill: var(--theme-muted, #64748b); }
+      .logo-accent { fill: var(--theme-accent, #0f172a); }
+      .logo-background { fill: var(--theme-background, #f8fafc); stroke: var(--theme-border, #e2e8f0); }
+      .logo-text { fill: var(--theme-background, #ffffff); }
+    </style>
+    
+    <!-- Drop shadow filter -->
+    <filter id="dropShadowMono" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="rgba(0,0,0,0.2)"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="120" cy="120" r="115" class="logo-background" stroke-width="10"/>
+  
+  <!-- D20 Icosahedron Die (positioned top-left) -->
+  <g transform="translate(60, 50)" filter="url(#dropShadowMono)">
+    <!-- Main die shape -->
+    <path d="M30 10 L50 25 L40 45 L10 45 L0 25 Z" class="logo-primary" stroke-width="1.5"/>
+    <path d="M30 10 L50 25 L60 5 L35 0 Z" class="logo-primary" stroke-width="1.5" opacity="0.9"/>
+    <path d="M0 25 L10 45 L15 50 L-5 35 Z" class="logo-primary" stroke-width="1.5" opacity="0.8"/>
+    
+    <!-- Die number "20" -->
+    <text x="25" y="30" font-family="Arial, sans-serif" font-size="12" font-weight="bold" class="logo-text" text-anchor="middle">20</text>
+  </g>
+  
+  <!-- Book (positioned bottom-left) -->
+  <g transform="translate(40, 140)" filter="url(#dropShadowMono)">
+    <!-- Book cover -->
+    <rect x="0" y="0" width="45" height="35" rx="2" class="logo-primary" stroke-width="1"/>
+    <!-- Book pages -->
+    <rect x="3" y="3" width="39" height="29" class="logo-background" stroke-width="0.5"/>
+    <!-- Book spine -->
+    <rect x="0" y="0" width="6" height="35" class="logo-accent"/>
+    <!-- Page lines -->
+    <line x1="8" y1="10" x2="38" y2="10" class="logo-secondary" stroke-width="0.8"/>
+    <line x1="8" y1="15" x2="35" y2="15" class="logo-secondary" stroke-width="0.8"/>
+    <line x1="8" y1="20" x2="38" y2="20" class="logo-secondary" stroke-width="0.8"/>
+    <line x1="8" y1="25" x2="32" y2="25" class="logo-secondary" stroke-width="0.8"/>
+  </g>
+  
+  <!-- Pen/Quill (positioned right side) -->
+  <g transform="translate(160, 80)" filter="url(#dropShadowMono)">
+    <!-- Pen shaft -->
+    <rect x="0" y="0" width="6" height="60" rx="3" class="logo-primary" stroke-width="1"/>
+    <!-- Pen nib -->
+    <path d="M1 55 L5 55 L3 65 Z" class="logo-accent" stroke-width="0.5"/>
+    <!-- Pen clip -->
+    <rect x="6" y="8" width="2" height="15" rx="1" class="logo-secondary"/>
+    <!-- Pen tip detail -->
+    <circle cx="3" cy="60" r="1" class="logo-accent"/>
+    
+    <!-- Decorative ink flourish -->
+    <path d="M8 65 Q15 70 20 65 Q25 60 30 70" class="logo-primary" stroke-width="1.5" fill="none" opacity="0.6"/>
+  </g>
+  
+  <!-- Central connecting element - stylized "SM" for Story Mode -->
+  <g transform="translate(120, 120)">
+    <circle cx="0" cy="0" r="25" class="logo-accent" stroke-width="2"/>
+    <text x="0" y="8" font-family="Arial, sans-serif" font-size="18" font-weight="bold" class="logo-text" text-anchor="middle">SM</text>
+  </g>
+  
+  <!-- Connecting lines between elements -->
+  <line x1="85" y1="75" x2="105" y2="95" class="logo-secondary" stroke-width="2" opacity="0.4"/>
+  <line x1="85" y1="165" x2="105" y2="145" class="logo-secondary" stroke-width="2" opacity="0.4"/>
+  <line x1="160" y1="120" x2="145" y2="120" class="logo-secondary" stroke-width="2" opacity="0.4"/>
+</svg>
