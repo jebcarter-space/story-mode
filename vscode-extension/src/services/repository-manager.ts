@@ -74,6 +74,25 @@ export class RepositoryManager {
   }
 
   /**
+   * Get repositories by category as a key-value object for template placeholders
+   */
+  async getRepositoriesByCategory(category: RepositoryCategory): Promise<Record<string, RepositoryItem>> {
+    if (this.repositoryCache.size === 0 || this.shouldRefreshCache()) {
+      await this.refreshRepository();
+    }
+
+    const repositories: Record<string, RepositoryItem> = {};
+    
+    for (const [key, item] of this.repositoryCache) {
+      if (item.category === category) {
+        repositories[key] = item;
+      }
+    }
+
+    return repositories;
+  }
+
+  /**
    * Load all repository items from filesystem
    */
   private async loadAllRepositoryItems(): Promise<void> {
