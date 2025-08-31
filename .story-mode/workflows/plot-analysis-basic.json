@@ -1,0 +1,54 @@
+{
+  "id": "plot-analysis-basic",
+  "name": "Plot Analyzer & Enhancer",
+  "description": "Analyze story content and suggest plot developments",
+  "category": "plot",
+  "nodes": [
+    {
+      "id": "context-analysis",
+      "type": "llm",
+      "config": {
+        "profileId": "default",
+        "prompt": "Analyze the current story context for themes, tensions, and potential plot developments.",
+        "temperature": 0.6,
+        "maxTokens": 400
+      },
+      "connections": [
+        "suggestion-node"
+      ],
+      "label": "Context Analysis"
+    },
+    {
+      "id": "suggestion-node",
+      "type": "llm",
+      "config": {
+        "profileId": "default",
+        "prompt": "Based on analysis: {{context-analysis-output}}, suggest 3 compelling plot developments.",
+        "temperature": 0.8,
+        "maxTokens": 300
+      },
+      "connections": [],
+      "label": "Plot Suggestions"
+    }
+  ],
+  "triggers": [
+    {
+      "event": "content_added",
+      "conditions": {
+        "minWords": 100
+      },
+      "enabled": false
+    }
+  ],
+  "outputs": [
+    {
+      "id": "plot-suggestions",
+      "type": "text",
+      "format": "markdown"
+    }
+  ],
+  "created": 1756678782981,
+  "updated": 1756678782981,
+  "enabled": true,
+  "version": "1.0.0"
+}

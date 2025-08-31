@@ -1,0 +1,71 @@
+{
+  "id": "character-development-basic",
+  "name": "Character Development Pro",
+  "description": "Multi-step character creation with personality generation and validation",
+  "category": "character",
+  "nodes": [
+    {
+      "id": "research-node",
+      "type": "retriever",
+      "config": {
+        "source": "repository",
+        "query": "character archetype background",
+        "maxResults": 5
+      },
+      "connections": [
+        "personality-node"
+      ],
+      "label": "Research"
+    },
+    {
+      "id": "personality-node",
+      "type": "llm",
+      "config": {
+        "profileId": "default",
+        "prompt": "Generate detailed character personality based on research: {{research-output}}",
+        "temperature": 0.8,
+        "maxTokens": 300
+      },
+      "connections": [
+        "validation-node"
+      ],
+      "label": "Personality Generation"
+    },
+    {
+      "id": "validation-node",
+      "type": "custom",
+      "config": {
+        "scriptPath": "validate-character.js",
+        "parameters": {}
+      },
+      "connections": [],
+      "label": "Consistency Check"
+    }
+  ],
+  "triggers": [
+    {
+      "event": "manual",
+      "conditions": {},
+      "enabled": true
+    },
+    {
+      "event": "template_expansion",
+      "conditions": {
+        "templateCategory": "character"
+      },
+      "enabled": true
+    }
+  ],
+  "outputs": [
+    {
+      "id": "character-output",
+      "type": "repository_item",
+      "target": "Character",
+      "format": "markdown"
+    }
+  ],
+  "created": 1756678782981,
+  "updated": 1756678782981,
+  "enabled": true,
+  "version": "1.0.0"
+}
