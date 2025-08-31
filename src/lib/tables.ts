@@ -1,8 +1,37 @@
 import { DiceRoll } from '@dice-roller/rpg-dice-roller';
-import type { RandomTable, CustomTableList } from '../data/types';
+import type { RandomTable, CustomTableList, RollContext, AdvancedRollOptions, TableResult } from '../data/types';
 import { dcTable } from '../data/tables';
 import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
+import { AdvancedTableRoller } from './advanced-table-engine';
 
+// Global enhanced table roller instance
+let enhancedRoller: AdvancedTableRoller | null = null;
+
+/**
+ * Initialize or update the enhanced table roller
+ */
+export function initializeEnhancedRoller(customTables: CustomTableList = {}, sparkTables: any = {}) {
+  enhancedRoller = new AdvancedTableRoller(customTables, sparkTables);
+}
+
+/**
+ * Enhanced table rolling with advanced features
+ */
+export async function rollOnEnhancedTable(
+  table: RandomTable, 
+  context: RollContext,
+  rollOptions?: AdvancedRollOptions
+): Promise<TableResult> {
+  if (!enhancedRoller) {
+    initializeEnhancedRoller();
+  }
+
+  return enhancedRoller!.rollWithModifiers(table, context, rollOptions);
+}
+
+/**
+ * Original table rolling function (maintained for backward compatibility)
+ */
 export function rollOnTable(table: RandomTable, resolverOptions?: ResolverOptions) {
   const roll = new DiceRoll(table.diceFormula);
   const total = roll.total;
