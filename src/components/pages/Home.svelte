@@ -10,14 +10,23 @@
   import { content } from "../../App.svelte";
   import { tooltip } from "../../lib/tooltip.svelte";
   import { createLibrary } from "../../data/models/library.svelte";
+  import Help from "../ui/Help.svelte";
 
   // Accept theme as prop
   let { theme } = $props();
 
   const library = createLibrary();
+  
+  // Help system state
+  let showHelp = $state(false);
+  let helpSearchTerm = $state('');
 
   function toggleTheme() {
     theme.toggle();
+  }
+  
+  function openHelp() {
+    showHelp = true;
   }
 
   let game = $state('Start a Game');
@@ -73,10 +82,15 @@
     <button onclick={toggleTheme} class="transparent" use:tooltip={`Theme`}>
       <img src={!theme.isDark ? SunIcon : MoonIcon} alt="Theme" class="h-6 w-6"/>
     </button>
-    <a href="/about" use:link use:tooltip={`About`}>
-      <img src={InfoIcon} alt="About" class="h-6 w-6"/>
+    <button onclick={openHelp} class="transparent" use:tooltip={`Help & Documentation`}>
+      <img src={InfoIcon} alt="Help" class="h-6 w-6"/>
+    </button>
+    <a href="/about" use:link use:tooltip={`About`} aria-label="About Story Mode">
+      <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
     </a>
-    <a href="https://github.com/matalina/story-mode" use:tooltip={`Github`}>
+    <a href="https://github.com/jebcarter-space/story-mode" use:tooltip={`Github`}>
       <img src={GithubIcon} alt="Github" class="h-6 w-6"/>
     </a>
   </div>
@@ -84,3 +98,6 @@
 
   </div>
 </div>
+
+<!-- Help Component -->
+<Help bind:isOpen={showHelp} bind:searchTerm={helpSearchTerm} />
