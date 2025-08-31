@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import { RepositoryManager } from './repository-manager';
-import type { RepositoryContext, RepositoryItem } from '../types';
+import type { RepositoryContext, RepositoryItem, StreamingStatus } from '../types';
 
 export class ContextIndicator {
   private statusBarItem: vscode.StatusBarItem;
   private repositoryManager: RepositoryManager;
+  private streamingStatus: StreamingStatus | null = null;
+  private streamingUpdateInterval: NodeJS.Timeout | null = null;
 
   constructor(context: vscode.ExtensionContext, repositoryManager: RepositoryManager) {
     this.repositoryManager = repositoryManager;
@@ -98,7 +100,122 @@ export class ContextIndicator {
     return parts.join(', ');
   }
 
+  /**
+   * Start showing streaming status
+   */
+  public startStreamingStatus(): void {
+    const config = vscode.workspace.getConfiguration('storyMode');
+    if (!config.get('streamingShowStatus', true)) {
+      return;
+    }
+
+    this.streamingStatus = {
+      isActive: true,
+      tokensReceived: 0,
+      elapsedTime: 0,
+      retryCount: 0
+    };
+
+    // Update streaming status every 100ms
+    this.streamingUpdateInterval = setInterval(() => {
+      if (this.streamingStatus) {
+        this.streamingStatus.elapsedTime += 100;
+        this.updateStreamingStatusBar();
+      }
+    }, 100);
+
+    this.updateStreamingStatusBar();
+  }
+
+  /**
+   * Update streaming status with new token
+   */
+  public updateStreamingToken(): void {
+    if (this.streamingStatus) {
+      this.streamingStatus.tokensReceived++;
+      
+      // Calculate tokens per second
+      if (this.streamingStatus.elapsedTime > 0) {
+        this.streamingStatus.tokensPerSecond = (this.streamingStatus.tokensReceived * 1000) / this.streamingStatus.elapsedTime;
+      }
+    }
+  }
+
+  /**
+   * Update streaming status with retry
+   */
+  public updateStreamingRetry(retryCount: number): void {
+    if (this.streamingStatus) {
+      this.streamingStatus.retryCount = retryCount;
+      this.updateStreamingStatusBar();
+    }
+  }
+
+  /**
+   * Update streaming status with error
+   */
+  public updateStreamingError(error: string): void {
+    if (this.streamingStatus) {
+      this.streamingStatus.lastError = error;
+      this.updateStreamingStatusBar();
+    }
+  }
+
+  /**
+   * Stop streaming status and restore normal status
+   */
+  public stopStreamingStatus(): void {
+    if (this.streamingUpdateInterval) {
+      clearInterval(this.streamingUpdateInterval);
+      this.streamingUpdateInterval = null;
+    }
+    
+    this.streamingStatus = null;
+    
+    // Restore normal status
+    this.updateContext();
+  }
+
+  /**
+   * Update status bar with streaming information
+   */
+  private updateStreamingStatusBar(): void {
+    if (!this.streamingStatus) return;
+
+    const status = this.streamingStatus;
+    const elapsed = Math.round(status.elapsedTime / 1000);
+    const tokensPerSec = status.tokensPerSecond ? Math.round(status.tokensPerSecond) : 0;
+    
+    let text = `🔄 Streaming`;
+    let tooltip = `Story Mode: Generating streaming response`;
+
+    if (status.tokensReceived > 0) {
+      text += ` (${status.tokensReceived} tokens`;
+      if (tokensPerSec > 0) {
+        text += `, ${tokensPerSec}/s`;
+      }
+      text += ')';
+    }
+
+    if (status.retryCount && status.retryCount > 0) {
+      text += ` [Retry ${status.retryCount}]`;
+      tooltip += ` - Retry ${status.retryCount}`;
+    }
+
+    if (status.lastError) {
+      text += ' ⚠️';
+      tooltip += ` - ${status.lastError}`;
+    }
+
+    this.statusBarItem.text = text;
+    this.statusBarItem.tooltip = tooltip;
+    this.statusBarItem.show();
+  }
+
   public dispose(): void {
+    if (this.streamingUpdateInterval) {
+      clearInterval(this.streamingUpdateInterval);
+    }
     this.statusBarItem.dispose();
   }
 }

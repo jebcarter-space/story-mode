@@ -234,6 +234,31 @@
           "type": "number",
           "default": 50,
           "description": "Delay between token updates in milliseconds"
+        },
+        "storyMode.streamingFallback": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fallback to non-streaming on persistent failures"
+        },
+        "storyMode.streamingMaxRetries": {
+          "type": "number",
+          "default": 2,
+          "description": "Maximum retry attempts for streaming requests"
+        },
+        "storyMode.streamingTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout for streaming requests in milliseconds"
+        },
+        "storyMode.streamingRetryDelayMs": {
+          "type": "number",
+          "default": 1000,
+          "description": "Base delay between retry attempts in milliseconds"
+        },
+        "storyMode.streamingShowStatus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show streaming status in the status bar"
         }
       }
     }

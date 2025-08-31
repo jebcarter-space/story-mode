@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
-import type { LLMProfile, RepositoryItem, Template, InlineContinuationOptions } from '../types';
+import type { LLMProfile, RepositoryItem, Template, InlineContinuationOptions, StreamingReliabilityOptions } from '../types';
 
 const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant helping with creative writing and interactive storytelling. Continue the story naturally, maintaining consistency with the established tone, characters, and setting. Keep responses engaging and appropriate for the context.`;
 
@@ -82,9 +82,39 @@ export class LLMService {
       context = this.truncateContext(textBeforeCursor, options?.maxContextLength || 4000);
     }
 
+    // Get streaming configuration
+    const config = vscode.workspace.getConfiguration('storyMode');
+    const reliabilityOptions: StreamingReliabilityOptions = {
+      enableFallback: config.get('streamingFallback', true),
+      maxRetries: config.get('streamingMaxRetries', 2),
+      retryDelayMs: config.get('streamingRetryDelayMs', 1000),
+      timeoutMs: config.get('streamingTimeoutMs', 30000),
+      fallbackToNonStreaming: config.get('streamingFallback', true),
+      exponentialBackoff: true
+    };
+
     // Check if provider supports streaming
     if (this.supportsStreaming(profile)) {
-      return await this.streamLLMRequest(profile, context, streamingOptions, cancellationToken);
+      try {
+        return await this.streamLLMRequestWithRetry(profile, context, streamingOptions, reliabilityOptions, cancellationToken);
+      } catch (error) {
+        // If fallback is enabled and this is a streaming failure, try non-streaming
+        if (reliabilityOptions.fallbackToNonStreaming && error instanceof Error) {
+          console.warn('Streaming failed, falling back to non-streaming:', error.message);
+          
+          // Notify user of fallback through progress notification
+          if (streamingOptions.onError) {
+            streamingOptions.onError(new Error(`Streaming unavailable, using standard mode: ${this.categorizeError(error)}`));
+          }
+          
+          const result = await this.callLLM(profile, context, cancellationToken);
+          if (streamingOptions.onComplete) {
+            streamingOptions.onComplete(result);
+          }
+          return result;
+        }
+        throw error;
+      }
     } else {
       // Fallback to non-streaming
       const result = await this.callLLM(profile, context, cancellationToken);
@@ -224,6 +254,108 @@ export class LLMService {
    */
   private supportsStreaming(profile: LLMProfile): boolean {
     return ['openai', 'koboldcpp', 'custom'].includes(profile.provider);
+  }
+
+  /**
+   * Categorize error for user-friendly messages
+   */
+  private categorizeError(error: Error): string {
+    const message = error.message.toLowerCase();
+    
+    if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) {
+      return 'network connection issue';
+    } else if (message.includes('401') || message.includes('unauthorized')) {
+      return 'authentication error';
+    } else if (message.includes('429') || message.includes('rate limit')) {
+      return 'rate limit exceeded';
+    } else if (message.includes('500') || message.includes('502') || message.includes('503')) {
+      return 'server error';
+    } else if (message.includes('cancelled')) {
+      return 'request cancelled';
+    } else {
+      return 'connection error';
+    }
+  }
+
+  /**
+   * Enhanced streaming request with retry logic and fallback
+   */
+  private async streamLLMRequestWithRetry(
+    profile: LLMProfile,
+    context: string,
+    streamingOptions: StreamingOptions,
+    reliabilityOptions: StreamingReliabilityOptions,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<string> {
+    let retryCount = 0;
+    let lastError: Error | null = null;
+
+    while (retryCount <= reliabilityOptions.maxRetries) {
+      try {
+        // Create timeout promise
+        const timeoutPromise = new Promise<string>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Streaming timeout after ${reliabilityOptions.timeoutMs}ms`));
+          }, reliabilityOptions.timeoutMs);
+        });
+
+        // Race between streaming request and timeout
+        const streamingPromise = this.streamLLMRequest(profile, context, streamingOptions, cancellationToken);
+        
+        return await Promise.race([streamingPromise, timeoutPromise]);
+
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Check if we should retry this error
+        if (this.shouldRetryStreamingError(error as Error, retryCount, reliabilityOptions)) {
+          retryCount++;
+          
+          // Calculate delay with exponential backoff if enabled
+          const delay = reliabilityOptions.exponentialBackoff 
+            ? reliabilityOptions.retryDelayMs * Math.pow(2, retryCount - 1)
+            : reliabilityOptions.retryDelayMs;
+          
+          console.log(`Streaming retry ${retryCount}/${reliabilityOptions.maxRetries} after ${delay}ms delay`);
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // If not retryable or max retries reached, throw the error
+        throw error;
+      }
+    }
+
+    // This should never be reached, but just in case
+    throw lastError || new Error('Streaming failed after maximum retries');
+  }
+
+  /**
+   * Determine if a streaming error should trigger a retry
+   */
+  private shouldRetryStreamingError(error: Error, retryCount: number, options: StreamingReliabilityOptions): boolean {
+    // Don't retry if we've hit the max
+    if (retryCount >= options.maxRetries) {
+      return false;
+    }
+
+    // Don't retry cancelled requests
+    if (error.message.includes('cancelled')) {
+      return false;
+    }
+
+    // Retry network errors, timeouts, and server errors
+    const message = error.message.toLowerCase();
+    return message.includes('network') ||
+           message.includes('fetch') ||
+           message.includes('timeout') ||
+           message.includes('500') ||
+           message.includes('502') ||
+           message.includes('503') ||
+           message.includes('stream') ||
+           message.includes('connection');
   }
 
   /**
