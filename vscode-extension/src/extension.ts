@@ -5,10 +5,19 @@ import { StoryModeExplorer } from './providers/story-mode-explorer';
 import { TemplateManager } from './services/template-manager';
 import { OracleService } from './services/oracle-service';
 import { DiceService } from './services/dice-service';
+import { FileWatcher } from './services/file-watcher';
+import { TemplatePicker } from './ui/template-picker';
+import { PlaceholderResolver } from './lib/placeholder-resolver';
+import { ContextIndicator } from './services/context-indicator';
+import { SmartSuggestionsService } from './services/smart-suggestions';
+import { ErrorHandlingService } from './services/error-handling';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
+
+    // Validate setup first
+    ErrorHandlingService.validateSetup();
 
     // Initialize services
     const repositoryManager = new RepositoryManager(context);
@@ -16,12 +25,45 @@ export function activate(context: vscode.ExtensionContext) {
     const llmService = new LLMService(context);
     const oracleService = new OracleService();
     const diceService = new DiceService();
+    const templatePicker = new TemplatePicker(context);
+
+    // Initialize context indicator (status bar)
+    const contextIndicator = new ContextIndicator(context, repositoryManager);
+
+    // Initialize smart suggestions
+    const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
+
+    // Initialize file watcher
+    const fileWatcher = new FileWatcher(context);
+    fileWatcher.startWatching();
 
     // Initialize tree data provider
     const storyModeExplorer = new StoryModeExplorer(context, repositoryManager);
     vscode.window.createTreeView('storyModeExplorer', {
         treeDataProvider: storyModeExplorer,
         showCollapseAll: true
+    });
+
+    // Connect file watcher to refresh tree view and repository cache
+    fileWatcher.onDidChangeFiles((changedFiles) => {
+        let shouldRefreshRepo = false;
+        let shouldRefreshTree = false;
+
+        for (const uri of changedFiles) {
+            if (fileWatcher.isRepositoryFile(uri)) {
+                shouldRefreshRepo = true;
+                shouldRefreshTree = true;
+            } else if (fileWatcher.isTemplateFile(uri) || fileWatcher.isLLMProfileFile(uri)) {
+                shouldRefreshTree = true;
+            }
+        }
+
+        if (shouldRefreshRepo) {
+            repositoryManager.refreshRepository();
+        }
+        if (shouldRefreshTree) {
+            storyModeExplorer.refresh();
+        }
     });
 
     // Set context for when Story Mode is enabled
@@ -49,17 +91,28 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Insert Template
     const insertTemplateCommand = vscode.commands.registerCommand('story-mode.insertTemplate', async () => {
-        await handleInsertTemplate(templateManager, llmService);
+        await handleInsertTemplate(templateManager, llmService, repositoryManager, templatePicker);
     });
 
-    // Open Repository Manager
+    // Continue with Template
+    const continueWithTemplateCommand = vscode.commands.registerCommand('story-mode.continueWithTemplate', async () => {
+        await handleContinueWithTemplate(templateManager, llmService, repositoryManager, templatePicker);
+    });
+
+    // Open Repository Manager - focus on tree view
     const openRepositoryCommand = vscode.commands.registerCommand('story-mode.openRepository', async () => {
-        await repositoryManager.openRepositoryPanel();
+        vscode.commands.executeCommand('storyModeExplorer.focus');
+        vscode.window.showInformationMessage('Repository items are available in the Story Mode tree view');
     });
 
     // Create Library Structure
     const createLibraryCommand = vscode.commands.registerCommand('story-mode.createLibrary', async () => {
         await handleCreateLibrary();
+    });
+
+    // Show Smart Suggestions
+    const showSuggestionsCommand = vscode.commands.registerCommand('story-mode.showSuggestions', async () => {
+        await handleShowSuggestions(smartSuggestions);
     });
 
     // Register all commands
@@ -69,8 +122,10 @@ export function activate(context: vscode.ExtensionContext) {
         queryOracleCommand,
         rollDiceCommand,
         insertTemplateCommand,
+        continueWithTemplateCommand,
         openRepositoryCommand,
-        createLibraryCommand
+        createLibraryCommand,
+        showSuggestionsCommand
     );
 }
 
@@ -124,7 +179,24 @@ async function handleContinueText(llmService: LLMService, repositoryManager: Rep
         });
 
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to generate continuation: ${error}`);
+        ErrorHandlingService.showError('Failed to generate continuation', error, 'LLM');
+    }
+}
+
+// Show Smart Suggestions
+async function handleShowSuggestions(smartSuggestions: SmartSuggestionsService) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    try {
+        const text = editor.document.getText();
+        const cursorPosition = editor.document.offsetAt(editor.selection.active);
+        await smartSuggestions.showSuggestions(text, cursorPosition);
+    } catch (error) {
+        ErrorHandlingService.showError('Failed to get suggestions', error, 'Suggestions');
     }
 }
 
@@ -146,10 +218,12 @@ async function handleContinueWithOracle(llmService: LLMService, repositoryManage
 
     const oracleResult = oracleService.queryOracle(question);
     
-    // Insert oracle result
+    // Insert oracle result with enhanced formatting
     const position = editor.selection.active;
+    const formattedResult = oracleService.formatOracleResult(oracleResult);
+    
     await editor.edit(editBuilder => {
-        editBuilder.insert(position, `\n\n**Oracle:** ${question}\n**Answer:** ${oracleResult.answer} *(${oracleResult.roll})*\n\n`);
+        editBuilder.insert(position, `\n\n${formattedResult}\n`);
     });
 
     // Now continue with AI using the oracle result as context
@@ -208,7 +282,12 @@ async function handleRollDice(diceService: DiceService) {
 }
 
 // Insert Template
-async function handleInsertTemplate(templateManager: TemplateManager, llmService: LLMService) {
+async function handleInsertTemplate(
+    templateManager: TemplateManager, 
+    llmService: LLMService, 
+    repositoryManager: RepositoryManager, 
+    templatePicker: TemplatePicker
+) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No active text editor');
@@ -216,37 +295,117 @@ async function handleInsertTemplate(templateManager: TemplateManager, llmService
     }
 
     const templates = await templateManager.getTemplates();
-    const templateNames = Object.keys(templates);
     
-    if (templateNames.length === 0) {
-        vscode.window.showErrorMessage('No templates found. Create templates in .story-mode/templates/');
-        return;
-    }
+    // Use enhanced template picker
+    const selection = await templatePicker.showTemplateSelector(templates);
+    if (!selection) return;
 
-    const selectedTemplate = await vscode.window.showQuickPick(templateNames, {
-        placeHolder: 'Select a template to insert'
-    });
-
-    if (!selectedTemplate) return;
-
-    const template = templates[selectedTemplate];
+    const { template, key } = selection;
     const position = editor.selection.active;
+    const currentText = editor.document.getText();
 
-    if (template.llmEnabled && template.llmInstructions) {
-        // Process template with LLM
-        try {
-            const expandedContent = await llmService.expandTemplate(template, editor.document.getText());
-            await editor.edit(editBuilder => {
-                editBuilder.insert(position, expandedContent);
-            });
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to expand template: ${error}`);
+    try {
+        // Create placeholder resolver with current services
+        const placeholderResolver = new PlaceholderResolver({
+            llmService,
+            repositoryManager,
+            currentContext: currentText
+        });
+
+        // Resolve placeholders in template content
+        let resolvedContent = await placeholderResolver.resolve(template.content);
+
+        // If LLM expansion is enabled and we have instructions, do LLM expansion
+        if (template.llmEnabled && template.llmInstructions) {
+            const expandedContent = await llmService.expandTemplate(template, currentText);
+            
+            if (template.appendMode) {
+                resolvedContent = resolvedContent + '\n\n' + expandedContent;
+            } else {
+                resolvedContent = expandedContent;
+            }
         }
-    } else {
-        // Insert template as-is
+
+        // Insert the final content
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, resolvedContent);
+        });
+
+        vscode.window.showInformationMessage(`Template "${template.name}" inserted successfully!`);
+        
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to process template: ${error}`);
+        
+        // Fallback: insert raw template content
         await editor.edit(editBuilder => {
             editBuilder.insert(position, template.content);
         });
+    }
+}
+
+// Continue with Template
+async function handleContinueWithTemplate(
+    templateManager: TemplateManager, 
+    llmService: LLMService, 
+    repositoryManager: RepositoryManager, 
+    templatePicker: TemplatePicker
+) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    const templates = await templateManager.getTemplates();
+    
+    // Use enhanced template picker
+    const selection = await templatePicker.showTemplateSelector(templates);
+    if (!selection) return;
+
+    const { template, key } = selection;
+    const position = editor.selection.active;
+    const currentText = editor.document.getText();
+
+    try {
+        // Create placeholder resolver with current services
+        const placeholderResolver = new PlaceholderResolver({
+            llmService,
+            repositoryManager,
+            currentContext: currentText
+        });
+
+        // Resolve placeholders in template content
+        let resolvedContent = await placeholderResolver.resolve(template.content);
+
+        // If LLM expansion is enabled and we have instructions, do LLM expansion
+        if (template.llmEnabled && template.llmInstructions) {
+            const expandedContent = await llmService.expandTemplate(template, currentText);
+            
+            if (template.appendMode) {
+                resolvedContent = resolvedContent + '\n\n' + expandedContent;
+            } else {
+                resolvedContent = expandedContent;
+            }
+        }
+
+        // Insert the template content
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, `\n\n${resolvedContent}\n\n`);
+        });
+
+        // Now continue with AI using the template result as context
+        vscode.window.showInformationMessage(`Template "${template.name}" applied, continuing with AI...`);
+        await handleContinueText(llmService, repositoryManager);
+
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to process template: ${error}`);
+        
+        // Fallback: insert raw template content and continue
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, `\n\n${template.content}\n\n`);
+        });
+        
+        await handleContinueText(llmService, repositoryManager);
     }
 }
 
@@ -312,6 +471,135 @@ Born in a small village, they left home to seek their destiny...
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'example-hero.md'),
             Buffer.from(exampleCharacter)
+        );
+
+        // Create example location
+        const exampleLocation = `---
+type: location
+tags: [tavern, social, cozy]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# The Prancing Pony Tavern
+
+A warm, welcoming tavern that serves as a gathering place for travelers and locals alike.
+
+## Description
+The tavern features a large common room with wooden tables, a stone fireplace, and oil lamps that cast dancing shadows on the walls. The air is filled with the aroma of hearty stews and fresh bread.
+
+## Notable Features
+- Friendly bartender who knows all the local gossip
+- Private rooms upstairs for rent
+- Stable out back for horses
+- Notice board with job postings and news
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'prancing-pony-tavern.md'),
+            Buffer.from(exampleLocation)
+        );
+
+        // Create enhanced example template
+        const exampleTemplate = `---
+name: "Character Introduction"
+description: "Template for introducing a new character with LLM enhancement"
+category: "Characters"
+llmEnabled: true
+llmInstructions: "Generate a vivid character introduction based on the provided details, focusing on atmosphere and first impressions"
+llmProfile: ""
+appendMode: false
+repositoryTarget: "Character"
+---
+
+## {{random_character}} Enters the Scene
+
+**Age:** {{rand 18-65}}
+**Initial Impression:** {{roll 1d6}}
+
+{{#llm}}Describe this character's dramatic entrance into the scene, including their appearance, mannerisms, and the immediate impression they make on others present{{/llm}}
+
+**Notable Equipment:** 
+- Primary weapon/tool: {{rand 1-10}}
+- Distinctive clothing or accessory
+
+**Random Quirk:** {{rand 1-100}}% chance of having an unusual habit
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-introduction.md'),
+            Buffer.from(exampleTemplate)
+        );
+
+        // Create location template example
+        const locationTemplate = `---
+name: "Tavern Scene"
+description: "Generate a detailed tavern scene with atmosphere"
+category: "Locations"  
+llmEnabled: true
+llmInstructions: "Create a vivid tavern scene with sensory details, atmosphere, and notable features"
+llmProfile: ""
+appendMode: true
+repositoryTarget: "Location"
+---
+
+# The {{random_location}} Tavern
+
+**Crowd Level:** {{rand 5-50}} patrons  
+**Atmosphere Check:** {{roll 2d6}}
+
+## Basic Setup
+- **Lighting:** Flickering candlelight and oil lamps
+- **Sounds:** {{roll 1d4}} conversations happening simultaneously  
+- **Notable Patron:** {{random_character}} sits in the corner
+
+## Scene Enhancement
+{{#llm}}Add rich atmospheric details about the tavern's mood, smells, sounds, and any interesting events happening right now{{/llm}}
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'tavern-scene.md'),
+            Buffer.from(locationTemplate)
+        );
+
+        // Create default LLM profile
+        const defaultProfile = {
+            name: "Default Creative Writer",
+            provider: "openai",
+            apiKey: "",
+            endpoint: "",
+            model: "gpt-4",
+            systemPrompt: "You are a creative writing assistant helping with interactive storytelling. Continue the narrative in a vivid, engaging style that matches the tone and genre of the existing text.",
+            settings: {
+                temperature: 0.7,
+                maxTokens: 500,
+                topP: 1.0,
+                frequencyPenalty: 0.0,
+                presencePenalty: 0.0
+            },
+            includeSystemContent: true,
+            maxContextEntries: 10,
+            created: Date.now(),
+            updated: Date.now()
+        };
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'llm-profiles', 'default.json'),
+            Buffer.from(JSON.stringify(defaultProfile, null, 2))
+        );
+
+        // Create metadata files for repository categories
+        const categoriesMetadata = {
+            characters: { count: 1, lastUpdated: Date.now() },
+            locations: { count: 1, lastUpdated: Date.now() },
+            objects: { count: 0, lastUpdated: Date.now() },
+            situations: { count: 0, lastUpdated: Date.now() }
+        };
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'metadata.json'),
+            Buffer.from(JSON.stringify(categoriesMetadata, null, 2))
         );
 
         vscode.window.showInformationMessage('Story Mode library structure created! Check the .story-mode folder.');
