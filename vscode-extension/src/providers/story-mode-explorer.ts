@@ -34,6 +34,8 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
         return this.getStoryItems();
       case 'repository':
         return this.getRepositoryItems();
+      case 'repository-category':
+        return this.getRepositoryCategoryItems(element.category!);
       case 'templates':
         return this.getTemplateItems();
       case 'llm-profiles':
@@ -73,15 +75,61 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
 
   private async getRepositoryItems(): Promise<StoryModeItem[]> {
     const items: StoryModeItem[] = [];
-    const categories = ['Characters', 'Locations', 'Objects', 'Situations'];
+    const categories = ['characters', 'locations', 'objects', 'situations'];
     
     for (const category of categories) {
-      items.push(new StoryModeItem(
-        category,
-        vscode.TreeItemCollapsibleState.Collapsed,
+      const categoryItems = await this.repositoryManager.getItemsByCategory(category);
+      const categoryLabel = `${category.charAt(0).toUpperCase() + category.slice(1)} (${categoryItems.length})`;
+      
+      const categoryItem = new StoryModeItem(
+        categoryLabel,
+        categoryItems.length > 0 ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
         'repository-category',
-        category.toLowerCase()
-      ));
+        category
+      );
+      
+      items.push(categoryItem);
+    }
+    
+    return items;
+  }
+
+  private async getRepositoryCategoryItems(category: string): Promise<StoryModeItem[]> {
+    const items: StoryModeItem[] = [];
+    const repositoryItems = await this.repositoryManager.getItemsByCategory(category);
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    
+    if (!workspaceFolders) return items;
+    
+    for (const item of repositoryItems) {
+      const fileName = item.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.md';
+      const filePath = vscode.Uri.joinPath(
+        workspaceFolders[0].uri, 
+        '.story-mode', 
+        'repositories', 
+        category,
+        fileName
+      );
+      
+      const treeItem = new StoryModeItem(
+        item.name,
+        vscode.TreeItemCollapsibleState.None,
+        'repository-item',
+        category,
+        filePath
+      );
+      
+      // Add tooltip with item details
+      treeItem.tooltip = `${item.description}\nKeywords: ${item.keywords.join(', ')}\nScope: ${item.scope}`;
+      
+      // Add context indicators
+      if (item.forceInContext) {
+        treeItem.description = '⭐ Force in context';
+      } else if (item.scope !== 'library') {
+        treeItem.description = `📍 ${item.scope}`;
+      }
+      
+      items.push(treeItem);
     }
     
     return items;
@@ -181,6 +229,9 @@ class StoryModeItem extends vscode.TreeItem {
         break;
       case 'repository-category':
         this.iconPath = new vscode.ThemeIcon('symbol-class');
+        break;
+      case 'repository-item':
+        this.iconPath = new vscode.ThemeIcon('file-text');
         break;
       case 'template':
         this.iconPath = new vscode.ThemeIcon('file');
