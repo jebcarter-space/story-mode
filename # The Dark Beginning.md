@@ -49,3 +49,34 @@ He reached for a small leather-bound book from the stack on his desk, flipping i
 Your eyes scanned the words. They were dense, the sentences winding together like a puzzle, but the meaning was clear: a warning, a promise. It spoke of truths buried deep, of doors that should not be opened, of knowledge that could remake a man—or unmake him entirely.
 
 You lifted your gaze to meet his. He had not moved, his face still carefully neutral, but
+
+**Oracle:** Does he confess the dark truth?
+**Answer:** Yes *(18)*
+**Keywords:** son, twisted
+**Interpretation:** Definitely, with son energy surrounding this and twisted implications.
+
+his eyes held something darker now—something knowing. "You understand," he said quietly, almost testing the words himself as he spoke them. "You understand what this means."
+
+You nodded slowly. "I think so."
+
+His lips curled into something that was not quite a smile. "Then you understand why I don't waste time with idle talk." He closed the book with a soft thud and leaned back again, studying you with an almost clinical interest. "You're here because you're looking for something dangerous. Something... twisted."
+
+The word hung between you, heavy with implication.
+
+"But," he continued, voice dropping lower, "I think you already suspected that. Didn't you?"
+
+You didn't answer immediately. Instead, you let the silence stretch between you, feeling his gaze press down on you like a weight. The air in the room seemed to grow stiller, as if the very walls were holding their breath.
+
+Finally, you nodded. "Yes."
+
+His face did not change, but something flickered across his features—approval, perhaps. Or satisfaction. He nodded once, as if confirming something to himself, and leaned forward again.
+
+"Good," he said softly. "Then let's begin."
+
+He reached for his cigarette again, took a long drag, and exhaled slowly. The smoke curled between you like a living thing, thick and heavy in the still air.
+
+"You're not the first to come here looking for answers," he said. "But you are the first in a long time to admit what you're really seeking." His fingers traced the edge of the ashtray, leaving another smudge of ash. "That tells me something about you."
+
+You waited, feeling the weight of his words, the significance of his gaze.
+
+"You're strong," he continued. "Not just physically—though I suspect you are that too—but mentally. You didn't flinch when I showed you that passage. You didn't recoil when I called what you seek
