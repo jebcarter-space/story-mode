@@ -115,4 +115,38 @@ You swallowed, speaking quietly. "It changes people."
 
 His eyes flickered with something unreadable. "It does."
 
-You let that settle between you, the quiet acknowledgment of what neither of you needed to say aloud. This wasn't just a drink. This was a
+You let that settle between you, the quiet acknowledgment of what neither of you needed to say aloud. This wasn't just a drink. This was a  threshold. A choice. A transformation.
+
+"You're hesitating," he observed, voice smooth and knowing. His fingers drummed once against the desk again, a slow, rhythmic sound in the quiet. "That's good."
+
+You weren't sure if he meant that sincerely or not. It didn't matter. "I need to know what it does," you said, still watching the dark liquid swirl slightly inside the bottle.
+
+He shrugged, almost lazily. "It rewrites you. Changes you from the inside out. Turns you into something else."
+
+Your fingers twitched slightly. "And that's a good thing?"
+
+He laughed then—a short, dry sound, devoid of real humor. "That depends on what you want."
+
+You met his gaze, steady despite the unease curling in your stomach. "I want to understand."
+
+His face remained impassive, but something in his eyes sharpened. "Then understand this," he said, voice dropping lower. "Itthreshold. A crossing. A door to something else.
+
+You reached out, fingers hovering just above the glass. Not touching. Not yet.
+
+"And once it's inside you," he said, voice even, "you don't come back."
+
+You looked up at him. His face was impassive, but there was something in his tone—a warning, maybe. Or a challenge.
+
+You exhaled slowly. "I know."
+
+His fingers tapped once against the desk. "You do."
+
+Another silence. The smoke had thinned between you now, almost dissipated, but the air still felt heavy, charged.
+
+He leaned back slightly, resting an elbow on the arm of his chair. "You're hesitating."
+
+You weren't sure if it was a question or an observation. Either way, it was true. Your fingers were still hovering, not quite touching the bottle.
+
+"Not hesitation," you said finally. "Consideration."
+
+He hummed in his throat, as if weighing that. "That 

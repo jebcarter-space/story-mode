@@ -120,43 +120,43 @@
         "command": "story-mode.continueText",
         "key": "ctrl+shift+enter",
         "mac": "cmd+shift+enter",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.queryOracle",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.rollDice",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.continueWithTemplate",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.showSuggestions",
         "key": "ctrl+shift+s",
         "mac": "cmd+shift+s",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.generateSparks",
         "key": "ctrl+shift+k",
         "mac": "cmd+shift+k",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       },
       {
         "command": "story-mode.continueWithSparks",
         "key": "ctrl+shift+alt+k",
         "mac": "cmd+shift+alt+k",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus || (editorFocus && !inputFocus)"
       }
     ],
     "views": {
