@@ -8,10 +8,16 @@ import { DiceService } from './services/dice-service';
 import { FileWatcher } from './services/file-watcher';
 import { TemplatePicker } from './ui/template-picker';
 import { PlaceholderResolver } from './lib/placeholder-resolver';
+import { ContextIndicator } from './services/context-indicator';
+import { SmartSuggestionsService } from './services/smart-suggestions';
+import { ErrorHandlingService } from './services/error-handling';
 import type { InlineContinuationOptions } from './types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
+
+    // Validate setup first
+    ErrorHandlingService.validateSetup();
 
     // Initialize services
     const repositoryManager = new RepositoryManager(context);
@@ -20,6 +26,12 @@ export function activate(context: vscode.ExtensionContext) {
     const oracleService = new OracleService();
     const diceService = new DiceService();
     const templatePicker = new TemplatePicker(context);
+
+    // Initialize context indicator (status bar)
+    const contextIndicator = new ContextIndicator(context, repositoryManager);
+
+    // Initialize smart suggestions
+    const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
 
     // Initialize file watcher
     const fileWatcher = new FileWatcher(context);
@@ -82,6 +94,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleInsertTemplate(templateManager, llmService, repositoryManager, templatePicker);
     });
 
+    // Continue with Template
+    const continueWithTemplateCommand = vscode.commands.registerCommand('story-mode.continueWithTemplate', async () => {
+        await handleContinueWithTemplate(templateManager, llmService, repositoryManager, templatePicker);
+    });
+
     // Open Repository Manager - focus on tree view
     const openRepositoryCommand = vscode.commands.registerCommand('story-mode.openRepository', async () => {
         vscode.commands.executeCommand('storyModeExplorer.focus');
@@ -93,6 +110,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleCreateLibrary();
     });
 
+    // Show Smart Suggestions
+    const showSuggestionsCommand = vscode.commands.registerCommand('story-mode.showSuggestions', async () => {
+        await handleShowSuggestions(smartSuggestions);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -100,8 +122,10 @@ export function activate(context: vscode.ExtensionContext) {
         queryOracleCommand,
         rollDiceCommand,
         insertTemplateCommand,
+        continueWithTemplateCommand,
         openRepositoryCommand,
-        createLibraryCommand
+        createLibraryCommand,
+        showSuggestionsCommand
     );
 }
 
@@ -155,7 +179,24 @@ async function handleContinueText(llmService: LLMService, repositoryManager: Rep
         });
 
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to generate continuation: ${error}`);
+        ErrorHandlingService.showError('Failed to generate continuation', error, 'LLM');
+    }
+}
+
+// Show Smart Suggestions
+async function handleShowSuggestions(smartSuggestions: SmartSuggestionsService) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    try {
+        const text = editor.document.getText();
+        const cursorPosition = editor.document.offsetAt(editor.selection.active);
+        await smartSuggestions.showSuggestions(text, cursorPosition);
+    } catch (error) {
+        ErrorHandlingService.showError('Failed to get suggestions', error, 'Suggestions');
     }
 }
 
@@ -177,10 +218,12 @@ async function handleContinueWithOracle(llmService: LLMService, repositoryManage
 
     const oracleResult = oracleService.queryOracle(question);
     
-    // Insert oracle result
+    // Insert oracle result with enhanced formatting
     const position = editor.selection.active;
+    const formattedResult = oracleService.formatOracleResult(oracleResult);
+    
     await editor.edit(editBuilder => {
-        editBuilder.insert(position, `\n\n**Oracle:** ${question}\n**Answer:** ${oracleResult.answer} *(${oracleResult.roll})*\n\n`);
+        editBuilder.insert(position, `\n\n${formattedResult}\n`);
     });
 
     // Now continue with AI using the oracle result as context
@@ -297,6 +340,72 @@ async function handleInsertTemplate(
         await editor.edit(editBuilder => {
             editBuilder.insert(position, template.content);
         });
+    }
+}
+
+// Continue with Template
+async function handleContinueWithTemplate(
+    templateManager: TemplateManager, 
+    llmService: LLMService, 
+    repositoryManager: RepositoryManager, 
+    templatePicker: TemplatePicker
+) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No active text editor');
+        return;
+    }
+
+    const templates = await templateManager.getTemplates();
+    
+    // Use enhanced template picker
+    const selection = await templatePicker.showTemplateSelector(templates);
+    if (!selection) return;
+
+    const { template, key } = selection;
+    const position = editor.selection.active;
+    const currentText = editor.document.getText();
+
+    try {
+        // Create placeholder resolver with current services
+        const placeholderResolver = new PlaceholderResolver({
+            llmService,
+            repositoryManager,
+            currentContext: currentText
+        });
+
+        // Resolve placeholders in template content
+        let resolvedContent = await placeholderResolver.resolve(template.content);
+
+        // If LLM expansion is enabled and we have instructions, do LLM expansion
+        if (template.llmEnabled && template.llmInstructions) {
+            const expandedContent = await llmService.expandTemplate(template, currentText);
+            
+            if (template.appendMode) {
+                resolvedContent = resolvedContent + '\n\n' + expandedContent;
+            } else {
+                resolvedContent = expandedContent;
+            }
+        }
+
+        // Insert the template content
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, `\n\n${resolvedContent}\n\n`);
+        });
+
+        // Now continue with AI using the template result as context
+        vscode.window.showInformationMessage(`Template "${template.name}" applied, continuing with AI...`);
+        await handleContinueText(llmService, repositoryManager);
+
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to process template: ${error}`);
+        
+        // Fallback: insert raw template content and continue
+        await editor.edit(editBuilder => {
+            editBuilder.insert(position, `\n\n${template.content}\n\n`);
+        });
+        
+        await handleContinueText(llmService, repositoryManager);
     }
 }
 

@@ -249,6 +249,25 @@ export class RepositoryManager {
           break;
         case 'createItem':
           await this.createRepositoryItem(message.item);
+          // Refresh items
+          const refreshedItems = await this.getAllRepositoryItems();
+          panel.webview.postMessage({ command: 'showItems', items: refreshedItems });
+          break;
+        case 'updateItem':
+          await this.updateRepositoryItem(message.originalName, message.item);
+          const updatedItems = await this.getAllRepositoryItems();
+          panel.webview.postMessage({ command: 'showItems', items: updatedItems });
+          break;
+        case 'deleteItem':
+          await this.deleteRepositoryItem(message.name);
+          const remainingItems = await this.getAllRepositoryItems();
+          panel.webview.postMessage({ command: 'showItems', items: remainingItems });
+          break;
+        case 'exportItems':
+          await this.exportRepositoryItems();
+          break;
+        case 'importItems':
+          await this.importRepositoryItems();
           break;
       }
     });
@@ -279,6 +298,144 @@ export class RepositoryManager {
     const content = `---\n${Object.entries(frontmatter).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n')}\n---\n\n# ${itemData.name}\n\n${itemData.content || 'Add description here...'}`;
 
     await vscode.workspace.fs.writeFile(filePath, new TextEncoder().encode(content));
+    
+    // Refresh cache
+    await this.refreshRepository();
+  }
+
+  private async updateRepositoryItem(originalName: string, itemData: Partial<RepositoryItem>): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || !itemData.name || !itemData.category) return;
+
+    // Find the original file
+    const originalFileName = originalName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.md';
+    const categoryPath = vscode.Uri.joinPath(
+      workspaceFolders[0].uri, 
+      '.story-mode', 
+      'repositories', 
+      itemData.category.toLowerCase() + 's'
+    );
+    const originalFilePath = vscode.Uri.joinPath(categoryPath, originalFileName);
+
+    // Create new file name if name changed
+    const newFileName = itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.md';
+    const newFilePath = vscode.Uri.joinPath(categoryPath, newFileName);
+
+    const frontmatter = {
+      type: itemData.category?.toLowerCase(),
+      tags: itemData.keywords || [],
+      scope: itemData.scope || 'library',
+      forceContext: itemData.forceInContext || false,
+      llmProfile: itemData.llmProfile || ''
+    };
+
+    const content = `---\n${Object.entries(frontmatter).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n')}\n---\n\n# ${itemData.name}\n\n${itemData.content || itemData.description || 'Add description here...'}`;
+
+    // Write to new location
+    await vscode.workspace.fs.writeFile(newFilePath, new TextEncoder().encode(content));
+
+    // Delete original file if name changed
+    if (originalFileName !== newFileName) {
+      try {
+        await vscode.workspace.fs.delete(originalFilePath);
+      } catch (error) {
+        // Ignore if original file doesn't exist
+      }
+    }
+
+    // Refresh cache
+    await this.refreshRepository();
+  }
+
+  private async deleteRepositoryItem(itemName: string): Promise<void> {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) return;
+
+    // Find the item to get its category
+    const item = Array.from(this.repositoryCache.values()).find(i => i.name === itemName);
+    if (!item) return;
+
+    const fileName = itemName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.md';
+    const categoryPath = vscode.Uri.joinPath(
+      workspaceFolders[0].uri, 
+      '.story-mode', 
+      'repositories', 
+      item.category.toLowerCase() + 's'
+    );
+    const filePath = vscode.Uri.joinPath(categoryPath, fileName);
+
+    try {
+      await vscode.workspace.fs.delete(filePath);
+      // Refresh cache
+      await this.refreshRepository();
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to delete item: ${error}`);
+    }
+  }
+
+  private async exportRepositoryItems(): Promise<void> {
+    const items = await this.getAllRepositoryItems();
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      items: items.map(item => ({
+        name: item.name,
+        category: item.category,
+        description: item.description,
+        content: item.content,
+        keywords: item.keywords,
+        scope: item.scope,
+        forceInContext: item.forceInContext
+      }))
+    };
+
+    const uri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file('story-mode-repository-export.json'),
+      filters: {
+        'JSON Files': ['json']
+      }
+    });
+
+    if (uri) {
+      await vscode.workspace.fs.writeFile(
+        uri, 
+        new TextEncoder().encode(JSON.stringify(exportData, null, 2))
+      );
+      vscode.window.showInformationMessage(`Exported ${items.length} items to ${uri.fsPath}`);
+    }
+  }
+
+  private async importRepositoryItems(): Promise<void> {
+    const uris = await vscode.window.showOpenDialog({
+      canSelectFiles: true,
+      canSelectMany: false,
+      filters: {
+        'JSON Files': ['json']
+      }
+    });
+
+    if (!uris || uris.length === 0) return;
+
+    try {
+      const content = await vscode.workspace.fs.readFile(uris[0]);
+      const data = JSON.parse(new TextDecoder().decode(content));
+      
+      if (!data.items || !Array.isArray(data.items)) {
+        vscode.window.showErrorMessage('Invalid import file format');
+        return;
+      }
+
+      let importCount = 0;
+      for (const item of data.items) {
+        if (item.name && item.category) {
+          await this.createRepositoryItem(item);
+          importCount++;
+        }
+      }
+
+      vscode.window.showInformationMessage(`Imported ${importCount} items successfully`);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to import items: ${error}`);
+    }
   }
 
   private async getAllRepositoryItems(): Promise<RepositoryItem[]> {
