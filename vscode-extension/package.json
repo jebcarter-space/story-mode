@@ -1,0 +1,147 @@
+{
+  "name": "story-mode-vscode",
+  "displayName": "Story Mode",
+  "description": "AI-powered interactive storytelling and solo RPG tools for VSCode",
+  "version": "0.1.0",
+  "publisher": "jebcarter",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Snippets",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "ai",
+    "storytelling",
+    "rpg",
+    "writing",
+    "creative",
+    "llm"
+  ],
+  "activationEvents": [
+    "onCommand:story-mode.continueText",
+    "onCommand:story-mode.queryOracle",
+    "onCommand:story-mode.rollDice",
+    "onView:storyModeExplorer"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "story-mode.continueText",
+        "title": "Continue Text with AI",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.continueWithOracle",
+        "title": "Continue with Oracle",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.queryOracle",
+        "title": "Query Oracle",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.rollDice",
+        "title": "Roll Dice",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.insertTemplate",
+        "title": "Insert Template",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.openRepository",
+        "title": "Open Repository Manager",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.createLibrary",
+        "title": "Create Story Library",
+        "category": "Story Mode"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "story-mode.continueText",
+        "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.queryOracle",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.rollDice",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "editorTextFocus"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "storyModeExplorer",
+          "name": "Story Mode",
+          "when": "story-mode:enabled"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "story-mode",
+          "title": "Story Mode",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Story Mode",
+      "properties": {
+        "storyMode.defaultLLMProfile": {
+          "type": "string",
+          "default": "",
+          "description": "Default LLM profile to use for text continuation"
+        },
+        "storyMode.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save changes to story files"
+        },
+        "storyMode.maxContextLength": {
+          "type": "number",
+          "default": 4000,
+          "description": "Maximum context length to send to LLM (in characters)"
+        },
+        "storyMode.repositoryPath": {
+          "type": "string",
+          "default": ".story-mode",
+          "description": "Path to story mode repository folder"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@types/node-fetch": "^2.6.13",
+    "node-fetch": "^3.3.2",
+    "yaml": "^2.3.4"
+  }
+}
