@@ -14,6 +14,7 @@ import { ErrorHandlingService } from './services/error-handling';
 import { SparkTableManager } from './services/spark-table-manager';
 import { SparksService } from './services/sparks-service';
 import { TableConfigurationPicker } from './ui/table-configuration-picker';
+import { TableManagerWebview } from './ui/table-manager-webview';
 import type { InlineContinuationOptions } from './types';
 
 // Global reference to context indicator for streaming status
@@ -35,6 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
     const diceService = new DiceService();
     const templatePicker = new TemplatePicker(context);
     const tableConfigurationPicker = new TableConfigurationPicker(context, sparkTableManager);
+    const tableManagerWebview = new TableManagerWebview(context, sparkTableManager);
 
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
@@ -161,6 +163,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleConfigureSparkTables(tableConfigurationPicker);
     });
 
+    // Open Visual Table Manager
+    const openTableManagerCommand = vscode.commands.registerCommand('story-mode.openTableManager', async () => {
+        await handleOpenTableManager(tableManagerWebview);
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -177,7 +184,8 @@ export function activate(context: vscode.ExtensionContext) {
         generateSparksCustomCommand,
         continueWithSparksCustomCommand,
         queryOracleCustomCommand,
-        configureSparkTablesCommand
+        configureSparkTablesCommand,
+        openTableManagerCommand
     );
 }
 
@@ -1065,6 +1073,15 @@ async function handleConfigureSparkTables(tableConfigurationPicker: TableConfigu
         await tableConfigurationPicker.showTableConfiguration();
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to configure spark tables: ${error}`);
+    }
+}
+
+// Open Visual Table Manager
+async function handleOpenTableManager(tableManagerWebview: TableManagerWebview) {
+    try {
+        tableManagerWebview.show();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to open table manager: ${error}`);
     }
 }
 

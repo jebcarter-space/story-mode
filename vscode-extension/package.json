@@ -34,6 +34,7 @@
     "onCommand:story-mode.continueWithSparks",
     "onCommand:story-mode.continueWithSparksCustom",
     "onCommand:story-mode.configureSparkTables",
+    "onCommand:story-mode.openTableManager",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -112,6 +113,11 @@
       {
         "command": "story-mode.configureSparkTables",
         "title": "Configure Spark Tables",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "title": "Visual Spark Table Manager",
         "category": "Story Mode"
       }
     ],
