@@ -24,7 +24,7 @@
   let dark = $derived(theme.isDark);
 </script>
 
-<div id="app" class="mx-auto lg:w-1/2" class:dark={dark}>
+<div id="app" class="mx-auto lg:w-5/6" class:dark={dark}>
   <Router {url}>
     <div class="layout p-3 border h-full">
       <section class="">

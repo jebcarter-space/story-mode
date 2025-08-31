@@ -30,6 +30,7 @@
   );
 
   let breadcrumbItems = $derived([
+    { label: 'Home', path: '/' },
     { label: 'Library', path: '/library' },
     { label: shelf?.name || 'Shelf', path: `/library/${shelfId}` },
     { label: book?.name || 'Book', path: `/library/${shelfId}/${bookId}` }

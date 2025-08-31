@@ -227,6 +227,38 @@ export function createLibrary() {
     return '/library';
   }
 
+  async function populateTestData(): Promise<void> {
+    if (!library) await initialize();
+    if (!library) return;
+
+    const now = Date.now();
+    
+    // Create test shelves
+    const fantasyShelfId = await createShelf('Fantasy Adventures', '');
+    const scifiShelfId = await createShelf('Sci-Fi Chronicles', '');
+    const mysteryShelfId = await createShelf('Mystery & Detective', '');
+    
+    // Add test books to fantasy shelf
+    const fantasyBook1Id = await createBook(fantasyShelfId, 'The Dragon\'s Quest');
+    const fantasyBook2Id = await createBook(fantasyShelfId, 'Elven Mysteries');
+    
+    // Add test books to sci-fi shelf  
+    const scifiBook1Id = await createBook(scifiShelfId, 'Space Station Alpha');
+    
+    // Add test books to mystery shelf
+    const mysteryBook1Id = await createBook(mysteryShelfId, 'The Missing Artifact');
+    
+    // Add test chapters to some books
+    await createChapter(fantasyShelfId, fantasyBook1Id, 'Chapter 1: The Beginning');
+    await createChapter(fantasyShelfId, fantasyBook1Id, 'Chapter 2: The Journey');
+    
+    await createChapter(scifiShelfId, scifiBook1Id, 'Chapter 1: Arrival');
+    
+    await createChapter(mysteryShelfId, mysteryBook1Id, 'Chapter 1: The Crime Scene');
+    
+    console.log('Test data populated successfully');
+  }
+
   // Initialize on creation
   initialize();
 
@@ -243,5 +275,6 @@ export function createLibrary() {
     createChapter,
     updateChapter,
     getContinueBookPath,
+    populateTestData,
   };
 }
