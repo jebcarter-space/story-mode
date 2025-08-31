@@ -5,6 +5,7 @@
 
 <script lang="ts">
   import type { Template, TemplateViews } from "../../../data/types";
+  import { createLLMProfiles } from "../../../data/models/llm-profiles.svelte";
   import SettingPage from "../../ui/SettingPage.svelte";
   import { loadDefaultTemplates } from "../../../lib/template-engine";
   
@@ -15,6 +16,9 @@
   import ListIcon from '../../../assets/list.svg';
   import CloseIcon from '../../../assets/trash.svg';
 
+  // Create LLM profiles instance in regular script to ensure fresh data from localStorage
+  let llmProfiles = createLLMProfiles();
+
   let open: TemplateViews = $state('');
   let template: Template = $state({
     name: '',
@@ -22,7 +26,12 @@
     content: '',
     category: 'Custom',
     created: 0,
-    updated: 0
+    updated: 0,
+    llmInstructions: '',
+    llmEnabled: false,
+    appendMode: false,
+    repositoryTarget: 'None',
+    llmProfile: undefined
   });
   let selectedKey: string = $state('');
   let importData: string = $state('');
@@ -42,7 +51,8 @@
       llmInstructions: '',
       llmEnabled: false,
       appendMode: false,
-      repositoryTarget: 'None'
+      repositoryTarget: 'None',
+      llmProfile: undefined
     };
     selectedKey = '';
     open = 'create';
@@ -65,7 +75,8 @@
         llmInstructions: '',
         llmEnabled: false,
         appendMode: false,
-        repositoryTarget: 'None'
+        repositoryTarget: 'None',
+        llmProfile: undefined
       };
       selectedKey = '';
       open = '';
@@ -230,6 +241,19 @@
                     <option value="Object">Object Repository</option>
                     <option value="Situation">Situation Repository</option>
                   </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-1">LLM Profile</label>
+                  <select bind:value={template.llmProfile} class="w-full p-2 border rounded">
+                    <option value={undefined}>Use Main UI Selection</option>
+                    {#each Object.entries(llmProfiles.value) as [key, profile]}
+                      <option value={key}>{profile.name}</option>
+                    {/each}
+                  </select>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Select a specific LLM profile for this template, or use the main UI selection as fallback
+                  </p>
                 </div>
               </div>
             {/if}

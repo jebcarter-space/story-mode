@@ -39,9 +39,18 @@
     try {
       isProcessing = true;
       
-      // Get the default LLM profile if LLM is enabled
+      // Get the LLM profile if LLM is enabled
       const profileEntries = Object.entries(llmProfiles.value);
-      const defaultProfile = profileEntries.length > 0 ? profileEntries[0][1] : null;
+      let selectedProfile: LLMProfile | null = null;
+      
+      // Try to use template-specific profile first
+      if (template.llmProfile && llmProfiles.value[template.llmProfile]) {
+        selectedProfile = llmProfiles.value[template.llmProfile];
+      } 
+      // Fallback to first available profile
+      else if (profileEntries.length > 0) {
+        selectedProfile = profileEntries[0][1];
+      }
       
       // Repository save callback
       const saveToRepository = (content: string, category: RepositoryCategory) => {
@@ -64,9 +73,9 @@
       let result: string;
       let processingNote = '';
 
-      if (template.llmEnabled && defaultProfile) {
+      if (template.llmEnabled && selectedProfile) {
         // Execute template with LLM
-        result = await templateEngine.executeTemplateWithLLM(template, defaultProfile, saveToRepository);
+        result = await templateEngine.executeTemplateWithLLM(template, selectedProfile, saveToRepository);
       } else {
         // Standard template execution
         result = templateEngine.executeTemplate(template);
@@ -78,7 +87,7 @@
           <div class="template-header mb-2">
             <strong>${template.name}</strong>
             <span class="text-xs theme-text-muted ml-2">[${template.category}]</span>
-            ${template.llmEnabled && defaultProfile ? '<span class="text-xs text-green-500 ml-2">✓ LLM Enhanced</span>' : ''}
+            ${template.llmEnabled && selectedProfile ? `<span class="text-xs text-green-500 ml-2">✓ LLM: ${selectedProfile.name}</span>` : ''}
             ${template.repositoryTarget && template.repositoryTarget !== 'None' ? `<span class="text-xs text-purple-500 ml-2">→ ${template.repositoryTarget}</span>` : ''}
           </div>
           <div class="template-content">${result.replace(/\n/g, '<br>')}</div>
