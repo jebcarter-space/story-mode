@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ConfigurationService } from './configuration-service';
 import type { SparkTable, SparkTableList } from '../types';
 
 export class SparkTableManager {
@@ -65,6 +66,24 @@ export class SparkTableManager {
     }
 
     this._onTablesChanged.fire(this.tables);
+    
+    // Initialize default table configurations if none exist
+    await this.initializeDefaultConfiguration();
+  }
+
+  /**
+   * Initialize default table configurations if none are set
+   */
+  private async initializeDefaultConfiguration(): Promise<void> {
+    const oracleTables = ConfigurationService.getOracleTables();
+    const sparksTables = ConfigurationService.getSparksTables();
+    
+    // If no configuration exists, set up defaults
+    if (oracleTables.length === 1 && oracleTables[0] === 'default' && Object.keys(this.tables).length > 1) {
+      const allTableNames = Object.keys(this.tables);
+      await ConfigurationService.updateOracleTables(allTableNames);
+      await ConfigurationService.updateSparksTables(allTableNames);
+    }
   }
 
   /**
@@ -139,16 +158,17 @@ export class SparkTableManager {
    * Get enabled tables for a specific use case
    */
   getEnabledTables(type: 'oracle' | 'sparks' | 'both' = 'both'): SparkTable[] {
+    const oracleTables = ConfigurationService.getOracleTables();
+    const sparksTables = ConfigurationService.getSparksTables();
+    
     return Object.values(this.tables).filter(table => {
-      if (!table.enabled) return false;
-      
       switch (type) {
         case 'oracle':
-          return table.oracleEnabled;
+          return oracleTables.includes(table.name);
         case 'sparks':
-          return table.sparksEnabled;
+          return sparksTables.includes(table.name);
         case 'both':
-          return table.oracleEnabled || table.sparksEnabled;
+          return oracleTables.includes(table.name) || sparksTables.includes(table.name);
         default:
           return true;
       }
@@ -214,6 +234,33 @@ export class SparkTableManager {
   }
 
   /**
+   * Get all available table names
+   */
+  getAvailableTableNames(): string[] {
+    return Object.keys(this.tables);
+  }
+
+  /**
+   * Check if a table is enabled for a specific type
+   */
+  isTableEnabled(tableName: string, type: 'oracle' | 'sparks'): boolean {
+    const table = this.tables[tableName];
+    if (!table) return false;
+    
+    const oracleTables = ConfigurationService.getOracleTables();
+    const sparksTables = ConfigurationService.getSparksTables();
+    
+    switch (type) {
+      case 'oracle':
+        return oracleTables.includes(tableName);
+      case 'sparks':
+        return sparksTables.includes(tableName);
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Update table settings (enabled, weight, etc.)
    */
   updateTableSettings(tableName: string, settings: Partial<SparkTable>): void {
@@ -230,6 +277,9 @@ export class SparkTableManager {
    */
   async reloadTables(): Promise<void> {
     await this.loadTables();
+    
+    // Notify Visual Table Manager to refresh if it's open
+    vscode.commands.executeCommand('story-mode.refreshTableManager');
   }
 
   /**

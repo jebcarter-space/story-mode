@@ -170,6 +170,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleOpenTableManager(tableManagerWebview);
     });
 
+    // Refresh Visual Table Manager (internal command)
+    const refreshTableManagerCommand = vscode.commands.registerCommand('story-mode.refreshTableManager', async () => {
+        tableManagerWebview.refresh();
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -187,7 +192,8 @@ export function activate(context: vscode.ExtensionContext) {
         continueWithSparksCustomCommand,
         queryOracleCustomCommand,
         configureSparkTablesCommand,
-        openTableManagerCommand
+        openTableManagerCommand,
+        refreshTableManagerCommand
     );
 }
 

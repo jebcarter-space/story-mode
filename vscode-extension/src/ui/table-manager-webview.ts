@@ -94,6 +94,13 @@ export class TableManagerWebview {
   }
 
   /**
+   * Refresh the webview (external API)
+   */
+  public refresh(): void {
+    this.refreshTableData();
+  }
+
+  /**
    * Refresh table data in the webview
    */
   private refreshTableData(): void {
