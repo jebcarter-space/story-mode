@@ -35,6 +35,9 @@
     "onCommand:story-mode.continueWithSparksCustom",
     "onCommand:story-mode.configureSparkTables",
     "onCommand:story-mode.openTableManager",
+    "onCommand:story-mode.executeWorkflow",
+    "onCommand:story-mode.manageWorkflows",
+    "onCommand:story-mode.workflowStatus",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -119,6 +122,21 @@
         "command": "story-mode.openTableManager",
         "title": "Visual Spark Table Manager",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.executeWorkflow",
+        "title": "Execute Workflow",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.manageWorkflows", 
+        "title": "Manage Workflows",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.workflowStatus",
+        "title": "Workflow Status",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -168,6 +186,12 @@
         "command": "story-mode.openTableManager",
         "key": "ctrl+shift+alt+t",
         "mac": "cmd+shift+alt+t"
+      },
+      {
+        "command": "story-mode.executeWorkflow",
+        "key": "ctrl+shift+w",
+        "mac": "cmd+shift+w",
+        "when": "editorTextFocus"
       }
     ],
     "views": {
@@ -288,5 +312,9 @@
     "@types/node-fetch": "^2.6.13",
     "node-fetch": "^3.3.2",
     "yaml": "^2.3.4"
+  },
+  "optionalDependencies": {
+  },
+  "peerDependencies": {
   }
 }
