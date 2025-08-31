@@ -16,14 +16,14 @@
   const appConfig = createAppConfig();
 </script>
 
-<div class="flex flex-wrap gap-3 mt-3">
+<div class="flex gap-2 mt-2">
   <OracleButton />
   <TaskButton/>
   {#if appConfig.features.templates}
     <TemplateButton/>
   {/if}
 </div>
-<div class="flex flex-wrap gap-3 mt-3">
+<div class="flex gap-2">
   <DiceButton  />
   <Divider />
   <InputButton  />
