@@ -184,7 +184,7 @@
 
 <div class="creative-assistant-sidebar {isDocked ? 'docked' : 'floating'}" class:open={isOpen}>
   <!-- Header -->
-  <div class="header p-3 border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+  <div class="header p-3 border-b border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-lg">{modeInfo[currentMode].icon}</span>
@@ -214,7 +214,7 @@
 
   {#if isOpen}
     <!-- Context Info -->
-    <div class="context-info p-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-gray-600">
+    <div class="context-info p-2 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-b border-gray-300 dark:border-gray-600">
       <div class="flex items-center justify-between">
         <span>Context: {storyContext.contextDescription}</span>
         <span class="{modeInfo[currentMode].color}">
@@ -244,7 +244,7 @@
       <div class="profile-selection p-2 border-b border-gray-300 dark:border-gray-600">
         <select 
           bind:value={selectedProfileKey} 
-          class="w-full text-xs p-1 border rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+          class="w-full text-xs p-1 border rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
         >
           <option value="">No LLM Profile</option>
           {#each Object.entries(profiles.value) as [key, profile]}
@@ -259,7 +259,7 @@
     {/if}
 
     <!-- Conversation -->
-    <div class="conversation flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50 dark:bg-gray-800">
+    <div class="conversation flex-1 overflow-y-auto p-2 space-y-2 bg-gray-100 dark:bg-gray-900">
       {#if hasActiveSession && activeSession.conversation.length > 0}
         {#each activeSession.conversation as message}
           <div class="message {message.role}">
@@ -301,13 +301,13 @@
 
     <!-- Quick Prompts -->
     {#if showPrompts && availablePrompts.length > 0}
-      <div class="prompts p-2 border-t border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
+      <div class="prompts p-2 border-t border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700">
         <div class="text-xs text-gray-600 dark:text-gray-300 mb-2">Quick Ideas:</div>
         <div class="space-y-1">
           {#each availablePrompts as prompt}
             <button
               onclick={() => usePrompt(prompt)}
-              class="prompt-btn w-full text-left text-xs p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
+              class="prompt-btn w-full text-left text-xs p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100"
             >
               {prompt}
             </button>
@@ -317,13 +317,13 @@
     {/if}
 
     <!-- Input Area -->
-    <div class="input-area p-2 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+    <div class="input-area p-2 border-t border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900">
       <div class="flex gap-2">
         <textarea
           bind:value={currentMessage}
           onkeydown={handleKeydown}
           placeholder="Share an idea..."
-          class="flex-1 text-sm p-2 border rounded resize-none bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+          class="flex-1 text-sm p-2 border rounded resize-none bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
           rows="2"
           disabled={!selectedProfile || isGenerating}
         ></textarea>
@@ -371,22 +371,30 @@
 
 <style>
   .creative-assistant-sidebar {
-    @apply flex flex-col bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600;
+    display: flex;
+    flex-direction: column;
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
     height: 100vh;
     width: 320px;
-    border-left: 1px solid rgb(209 213 219 / 1);
+    border-left: 1px solid #d1d5db;
   }
   
   .dark .creative-assistant-sidebar {
-    border-left-color: rgb(75 85 99 / 1);
+    background-color: #111827;
+    border-left-color: #6b7280;
   }
 
   .creative-assistant-sidebar.docked {
-    @apply relative;
+    position: relative;
   }
 
   .creative-assistant-sidebar.floating {
-    @apply fixed top-0 right-0 z-50 shadow-lg;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 50;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
   .creative-assistant-sidebar:not(.open) {
@@ -399,36 +407,90 @@
   }
 
   .mode-btn {
-    @apply flex items-center gap-1 px-2 py-1 rounded text-xs border;
-    @apply border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    border: 1px solid #d1d5db;
+    transition: colors 0.15s ease-in-out;
+  }
+
+  .dark .mode-btn {
+    border-color: #6b7280;
+  }
+
+  .mode-btn:hover {
+    background-color: #e5e7eb;
+  }
+
+  .dark .mode-btn:hover {
+    background-color: #4b5563;
   }
 
   .mode-btn.active {
-    @apply bg-blue-600 text-white border-transparent;
+    background-color: #2563eb;
+    color: white;
+    border-color: transparent;
   }
 
   .message {
-    @apply rounded p-2;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
   }
 
   .message.user {
-    @apply bg-gray-100 dark:bg-gray-700 ml-4;
+    background-color: #e5e7eb;
+    margin-left: 1rem;
+  }
+
+  .dark .message.user {
+    background-color: #374151;
   }
 
   .message.assistant {
-    @apply bg-blue-50 dark:bg-blue-900/20 mr-4;
+    background-color: #dbeafe;
+    margin-right: 1rem;
+  }
+
+  .dark .message.assistant {
+    background-color: #1e3a8a;
   }
 
   .send-btn {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
+    background-color: #2563eb;
+    color: white;
+  }
+
+  .send-btn:hover:not(:disabled) {
+    background-color: #1d4ed8;
   }
 
   .prompt-toggle-btn, .action-btn {
-    @apply bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-500;
+    background-color: #e5e7eb;
+    color: #111827;
+  }
+
+  .dark .prompt-toggle-btn, .dark .action-btn {
+    background-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .prompt-toggle-btn:hover, .action-btn:hover {
+    background-color: #d1d5db;
+  }
+
+  .dark .prompt-toggle-btn:hover, .dark .action-btn:hover {
+    background-color: #6b7280;
   }
 
   .spinner {
-    @apply w-3 h-3 border border-gray-300 border-t-transparent rounded-full;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid #d1d5db;
+    border-top-color: transparent;
+    border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
@@ -439,6 +501,7 @@
   }
 
   .cancel-btn {
-    @apply underline cursor-pointer;
+    text-decoration: underline;
+    cursor: pointer;
   }
 </style>

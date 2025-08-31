@@ -48,7 +48,7 @@
   }
 </script>
 
-<div class="reminder-system p-4 bg-gray-50 dark:bg-gray-800">
+<div class="reminder-system p-4 bg-gray-100 dark:bg-gray-900">
   <!-- Header and Controls -->
   <div class="header mb-4">
     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">Reminders</h3>
