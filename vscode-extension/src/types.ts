@@ -180,6 +180,30 @@ export interface RepositoryContext {
   filePath?: string; // VSCode-specific: current file path
 }
 
+// Spark Tables System Types  
+export interface SparkTable {
+  name: string;
+  source: string; // file path or 'built-in'
+  entries: string[];
+  lastModified: number;
+  enabled: boolean;
+  weight: number;
+  oracleEnabled: boolean;
+  sparksEnabled: boolean;
+  categories: string[];
+  isDefault: boolean;
+}
+
+export interface SparkTableList {
+  [key: string]: SparkTable;
+}
+
+export interface SparkResult {
+  keywords: string[];
+  tableNames?: string[];
+  timestamp: number;
+}
+
 // Repository resolution result
 export interface ResolvedRepositoryItem {
   item: RepositoryItem;
