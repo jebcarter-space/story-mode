@@ -190,6 +190,16 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the default keyword table"
+        },
+        "storyMode.enableStreaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming responses for smoother text generation"
+        },
+        "storyMode.streamingDelay": {
+          "type": "number",
+          "default": 50,
+          "description": "Delay between token updates in milliseconds"
         }
       }
     }
