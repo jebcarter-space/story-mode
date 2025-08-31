@@ -75,6 +75,7 @@ export interface Template {
   llmEnabled?: boolean;
   appendMode?: boolean;
   repositoryTarget?: string;
+  llmProfile?: string; // Key of the specific LLM profile to use for this template
 }
 
 export interface TemplateList {
