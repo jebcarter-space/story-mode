@@ -11,6 +11,19 @@ export interface LLMGenerationOptions {
   llmProfile?: string;
 }
 
+export interface StreamingOptions {
+  onToken?: (token: string) => void;
+  onComplete?: (fullText: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface ContextOptimizationOptions {
+  prioritizeRecent: boolean;
+  includeRepositoryItems: boolean;
+  maxTokens: number;
+  preserveDialogue: boolean;
+}
+
 export class LLMService {
   constructor(private context: vscode.ExtensionContext) {}
 
@@ -37,6 +50,65 @@ export class LLMService {
 
     // Make LLM request
     return await this.callLLM(profile, context, cancellationToken);
+  }
+
+  /**
+   * Generate continuation with streaming support
+   */
+  async generateStreamingContinuation(
+    textBeforeCursor: string,
+    streamingOptions: StreamingOptions = {},
+    options?: LLMGenerationOptions,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<string> {
+    // Get LLM profile from settings or use default
+    const profileKey = options?.llmProfile || vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
+    const profile = await this.getLLMProfile(profileKey);
+    
+    if (!profile) {
+      throw new Error('No LLM profile configured. Please set up an LLM profile in settings.');
+    }
+
+    // Use optimized context if we have repository items, otherwise use simple context
+    let context: string;
+    if (options?.repositoryItems && options.repositoryItems.length > 0) {
+      context = this.optimizeContext(textBeforeCursor, {
+        prioritizeRecent: true,
+        includeRepositoryItems: true,
+        maxTokens: profile.settings.maxTokens || 4000,
+        preserveDialogue: true
+      }, options.repositoryItems);
+    } else {
+      context = this.truncateContext(textBeforeCursor, options?.maxContextLength || 4000);
+    }
+
+    // Check if provider supports streaming
+    if (this.supportsStreaming(profile)) {
+      return await this.streamLLMRequest(profile, context, streamingOptions, cancellationToken);
+    } else {
+      // Fallback to non-streaming
+      const result = await this.callLLM(profile, context, cancellationToken);
+      if (streamingOptions.onComplete) {
+        streamingOptions.onComplete(result);
+      }
+      return result;
+    }
+  }
+
+  /**
+   * Get the active LLM profile (exposes profile access for external use)
+   */
+  async getActiveProfile(profileKey?: string): Promise<LLMProfile | null> {
+    const key = profileKey || vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
+    return await this.getLLMProfile(key);
+  }
+
+  /**
+   * Check if streaming is supported for the current profile
+   */
+  async supportsStreamingForProfile(profileKey?: string): Promise<boolean> {
+    const profile = await this.getActiveProfile(profileKey);
+    return profile ? this.supportsStreaming(profile) : false;
   }
 
   async expandTemplate(template: Template, currentText: string): Promise<string> {
@@ -71,6 +143,257 @@ export class LLMService {
       console.error(`Failed to load LLM profile ${profileKey}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Smart context optimization (from StreamingLLMService)
+   */
+  private optimizeContext(
+    text: string,
+    options: ContextOptimizationOptions,
+    repositoryItems: RepositoryItem[] = []
+  ): string {
+    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+    const maxChars = options.maxTokens * 4;
+    let context = '';
+
+    // Add repository context first if enabled
+    if (options.includeRepositoryItems && repositoryItems.length > 0) {
+      const repoContext = this.buildRepositoryContext(repositoryItems);
+      context += repoContext + '\n\n';
+    }
+
+    // If text is too long, apply intelligent truncation
+    if (text.length + context.length > maxChars) {
+      const availableChars = maxChars - context.length;
+      
+      if (options.prioritizeRecent) {
+        // Keep the most recent text, but try to preserve dialogue and important sections
+        context += this.intelligentTruncation(text, availableChars, options.preserveDialogue);
+      } else {
+        // Simple truncation from the end
+        context += text.slice(-availableChars);
+      }
+    } else {
+      context += text;
+    }
+
+    return context;
+  }
+
+  /**
+   * Intelligent truncation that preserves important content
+   */
+  private intelligentTruncation(text: string, maxChars: number, preserveDialogue: boolean): string {
+    if (text.length <= maxChars) {
+      return text;
+    }
+
+    // Start with the most recent text
+    let truncated = text.slice(-maxChars);
+    
+    if (preserveDialogue) {
+      // Find dialogue markers and try to include complete conversations
+      const dialogueMarkers = ['"', "'", ':', '—', '–', '"', '"'];
+      let dialogueStart = -1;
+      
+      for (const marker of dialogueMarkers) {
+        const index = truncated.indexOf(marker);
+        if (index !== -1 && (dialogueStart === -1 || index < dialogueStart)) {
+          dialogueStart = index;
+        }
+      }
+      
+      if (dialogueStart > 0) {
+        // Start from the dialogue to preserve context
+        truncated = truncated.slice(dialogueStart);
+      }
+    }
+    
+    // Try to start at a sentence boundary
+    const sentenceBoundary = truncated.search(/[.!?]\s+[A-Z]/);
+    if (sentenceBoundary > 0 && sentenceBoundary < truncated.length * 0.3) {
+      truncated = truncated.slice(sentenceBoundary + 2);
+    }
+
+    return truncated;
+  }
+
+  /**
+   * Check if provider supports streaming
+   */
+  private supportsStreaming(profile: LLMProfile): boolean {
+    return ['openai', 'koboldcpp', 'custom'].includes(profile.provider);
+  }
+
+  /**
+   * Stream LLM request with real-time updates
+   */
+  private async streamLLMRequest(
+    profile: LLMProfile,
+    context: string,
+    streamingOptions: StreamingOptions,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<string> {
+    const messages = [
+      { role: 'system' as const, content: this.getSystemPrompt(profile) },
+      { role: 'user' as const, content: context }
+    ];
+
+    const requestBody = {
+      messages,
+      model: profile.model,
+      temperature: profile.settings.temperature || 0.7,
+      max_tokens: profile.settings.maxTokens || 500,
+      stream: true,
+      ...this.getProviderSpecificParams(profile)
+    };
+
+    let fullResponse = '';
+    
+    try {
+      const response = await fetch(this.getEndpoint(profile), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${profile.apiKey}`,
+          ...this.getProviderSpecificHeaders(profile)
+        },
+        body: JSON.stringify(requestBody),
+        signal: cancellationToken?.isCancellationRequested ? undefined : undefined
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response stream available');
+      }
+
+      // Use Node.js stream instead of browser ReadableStream
+      const stream = response.body as any; // Cast to any to handle both browser and Node.js stream types
+      let buffer = '';
+      
+      return new Promise<string>((resolve, reject) => {
+        stream.on('data', (chunk: Buffer) => {
+          if (cancellationToken?.isCancellationRequested) {
+            if (stream.destroy) {
+              stream.destroy();
+            }
+            reject(new Error('Request cancelled'));
+            return;
+          }
+
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || '';
+          
+          for (const line of lines) {
+            if (line.trim().startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              
+              if (data === '[DONE]') {
+                if (streamingOptions.onComplete) {
+                  streamingOptions.onComplete(fullResponse);
+                }
+                resolve(fullResponse);
+                return;
+              }
+              
+              try {
+                const parsed = JSON.parse(data);
+                const token = this.extractTokenFromResponse(parsed, profile.provider);
+                
+                if (token) {
+                  fullResponse += token;
+                  if (streamingOptions.onToken) {
+                    streamingOptions.onToken(token);
+                  }
+                }
+              } catch (e) {
+                // Ignore JSON parse errors for incomplete chunks
+                console.warn('Failed to parse streaming chunk:', data);
+              }
+            }
+          }
+        });
+
+        stream.on('end', () => {
+          if (streamingOptions.onComplete) {
+            streamingOptions.onComplete(fullResponse);
+          }
+          resolve(fullResponse);
+        });
+
+        stream.on('error', (error: Error) => {
+          if (streamingOptions.onError) {
+            streamingOptions.onError(error);
+          }
+          reject(error);
+        });
+      });
+
+    } catch (error) {
+      if (streamingOptions.onError) {
+        streamingOptions.onError(error as Error);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Extract token from streaming response based on provider
+   */
+  private extractTokenFromResponse(response: any, provider: string): string {
+    switch (provider) {
+      case 'openai':
+      case 'mistral':
+      case 'custom':
+      default:
+        return response.choices?.[0]?.delta?.content || '';
+      case 'koboldcpp':
+        return response.choices?.[0]?.text || response.choices?.[0]?.delta?.content || '';
+    }
+  }
+
+  /**
+   * Get provider-specific parameters
+   */
+  private getProviderSpecificParams(profile: LLMProfile): Record<string, any> {
+    const params: Record<string, any> = {};
+    
+    if (profile.provider === 'koboldcpp') {
+      const settings = profile.settings;
+      if (settings.topK) params.top_k = settings.topK;
+      if (settings.topP) params.top_p = settings.topP;
+      if (settings.repPen) params.rep_pen = settings.repPen;
+      if (settings.repPenRange) params.rep_pen_range = settings.repPenRange;
+    }
+    
+    return params;
+  }
+
+  /**
+   * Get provider-specific headers
+   */
+  private getProviderSpecificHeaders(profile: LLMProfile): Record<string, string> {
+    const headers: Record<string, string> = {};
+    
+    if (profile.provider === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://vscode-story-mode';
+    }
+    
+    return headers;
+  }
+
+  /**
+   * Get system prompt
+   */
+  private getSystemPrompt(profile: LLMProfile): string {
+    return profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
   }
 
   private truncateContext(text: string, maxLength: number): string {
