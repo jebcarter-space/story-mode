@@ -19,6 +19,11 @@ export class TableConfigurationPicker {
   async showTableConfiguration(): Promise<void> {
     const action = await vscode.window.showQuickPick([
       {
+        label: 'Visual Table Manager',
+        description: '🎨 Open enhanced visual table configuration interface',
+        detail: 'Rich UI with table cards, toggles, sliders, and bulk operations'
+      },
+      {
         label: 'Configure Oracle Tables',
         description: 'Select which tables are enabled for Oracle queries',
         detail: 'Oracle provides Yes/No answers with keyword inspiration'
@@ -41,6 +46,9 @@ export class TableConfigurationPicker {
     if (!action) return;
 
     switch (action.label) {
+      case 'Visual Table Manager':
+        await vscode.commands.executeCommand('story-mode.openTableManager');
+        break;
       case 'Configure Oracle Tables':
         await this.configureOracleTables();
         break;

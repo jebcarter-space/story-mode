@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Spark Table Configuration - Demo</title>
+    <style>
+        :root {
+            --vscode-foreground: #cccccc;
+            --vscode-editor-background: #1e1e1e;
+            --vscode-button-background: #0e639c;
+            --vscode-button-foreground: #ffffff;
+            --vscode-button-hoverBackground: #1177bb;
+            --vscode-button-secondaryBackground: #3c3c3c;
+            --vscode-button-secondaryForeground: #cccccc;
+            --vscode-button-secondaryHoverBackground: #505050;
+            --vscode-panel-border: #3c3c3c;
+            --vscode-progressBar-background: #0e70c0;
+            --vscode-descriptionForeground: #9d9d9d;
+            --vscode-textBlockQuote-background: #262626;
+            --vscode-textBlockQuote-border: #007acc;
+            --vscode-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+        
+        .btn.secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+        
+        .btn.secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+        
+        .table-grid {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .table-card {
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 5px;
+            padding: 15px;
+            background: var(--vscode-editor-background);
+        }
+        
+        .table-card.enabled {
+            border-left: 4px solid var(--vscode-progressBar-background);
+        }
+        
+        .table-card.disabled {
+            opacity: 0.6;
+            border-left: 4px solid var(--vscode-descriptionForeground);
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .table-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .table-stats {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+        
+        .table-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .toggle-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .toggle input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .weight-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .weight-slider {
+            width: 60px;
+        }
+        
+        .table-preview {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--vscode-panel-border);
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+        
+        .preview-keywords {
+            margin: 5px 0;
+        }
+        
+        .summary {
+            background: var(--vscode-textBlockQuote-background);
+            border-left: 4px solid var(--vscode-textBlockQuote-border);
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .summary h3 {
+            margin: 0 0 10px 0;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Spark Table Configuration</h1>
+        <div class="actions">
+            <button class="btn secondary">🔄 Refresh</button>
+            <button class="btn secondary">Enable All</button>
+            <button class="btn secondary">Disable All</button>
+            <button class="btn secondary">Reset Weights</button>
+        </div>
+    </div>
+    
+    <div class="table-grid">
+        <!-- Default Table - Always Enabled -->
+        <div class="table-card enabled">
+            <div class="table-header">
+                <div class="table-title">✅ default (Default)</div>
+                <div class="table-stats">47 keywords</div>
+            </div>
+            <div class="table-controls">
+                <div class="toggle-group">
+                    <div class="toggle">
+                        <input type="checkbox" id="oracle-default" checked>
+                        <label for="oracle-default">Oracle</label>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="sparks-default" checked>
+                        <label for="sparks-default">Sparks</label>
+                    </div>
+                </div>
+                <div class="weight-control">
+                    <label>Weight:</label>
+                    <input type="range" class="weight-slider" min="1" max="6" value="1">
+                    <span>1</span>
+                </div>
+            </div>
+            <div class="table-preview">
+                <div>Last used: 12/15/2023</div>
+                <div>Used 42 times</div>
+                <div class="preview-keywords">
+                    Sample: Turgid, Decayed, Glitter, Village, Craft...
+                    <button class="btn secondary">Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gothic Atmosphere Table - Enabled -->
+        <div class="table-card enabled">
+            <div class="table-header">
+                <div class="table-title">✅ gothic-atmosphere</div>
+                <div class="table-stats">89 keywords</div>
+            </div>
+            <div class="table-controls">
+                <div class="toggle-group">
+                    <div class="toggle">
+                        <input type="checkbox" id="oracle-gothic" checked>
+                        <label for="oracle-gothic">Oracle</label>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="sparks-gothic" checked>
+                        <label for="sparks-gothic">Sparks</label>
+                    </div>
+                </div>
+                <div class="weight-control">
+                    <label>Weight:</label>
+                    <input type="range" class="weight-slider" min="1" max="6" value="2">
+                    <span>2</span>
+                </div>
+            </div>
+            <div class="table-preview">
+                <div>Last used: 12/14/2023</div>
+                <div>Used 18 times</div>
+                <div class="preview-keywords">
+                    Sample: mysterious, shadowy, ancient, crumbling, haunted...
+                    <button class="btn secondary">Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Steampunk Elements Table - Disabled -->
+        <div class="table-card disabled">
+            <div class="table-header">
+                <div class="table-title">❌ steampunk-elements</div>
+                <div class="table-stats">156 keywords</div>
+            </div>
+            <div class="table-controls">
+                <div class="toggle-group">
+                    <div class="toggle">
+                        <input type="checkbox" id="oracle-steampunk">
+                        <label for="oracle-steampunk">Oracle</label>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="sparks-steampunk">
+                        <label for="sparks-steampunk">Sparks</label>
+                    </div>
+                </div>
+                <div class="weight-control">
+                    <label>Weight:</label>
+                    <input type="range" class="weight-slider" min="1" max="6" value="1">
+                    <span>1</span>
+                </div>
+            </div>
+            <div class="table-preview">
+                <div>Never used</div>
+                <div class="preview-keywords">
+                    Sample: clockwork, brass, steam, gear, cogwheel...
+                    <button class="btn secondary">Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Personality Table - Sparks Only -->
+        <div class="table-card enabled">
+            <div class="table-header">
+                <div class="table-title">✅ character-personality</div>
+                <div class="table-stats">124 keywords</div>
+            </div>
+            <div class="table-controls">
+                <div class="toggle-group">
+                    <div class="toggle">
+                        <input type="checkbox" id="oracle-character">
+                        <label for="oracle-character">Oracle</label>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="sparks-character" checked>
+                        <label for="sparks-character">Sparks</label>
+                    </div>
+                </div>
+                <div class="weight-control">
+                    <label>Weight:</label>
+                    <input type="range" class="weight-slider" min="1" max="6" value="3">
+                    <span>3</span>
+                </div>
+            </div>
+            <div class="table-preview">
+                <div>Last used: 12/10/2023</div>
+                <div>Used 7 times</div>
+                <div class="preview-keywords">
+                    Sample: brave, cunning, loyal, rebellious, wise...
+                    <button class="btn secondary">Preview</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Haunting Grounds Table - Oracle Only -->
+        <div class="table-card enabled">
+            <div class="table-header">
+                <div class="table-title">✅ haunting-grounds</div>
+                <div class="table-stats">67 keywords</div>
+            </div>
+            <div class="table-controls">
+                <div class="toggle-group">
+                    <div class="toggle">
+                        <input type="checkbox" id="oracle-haunting" checked>
+                        <label for="oracle-haunting">Oracle</label>
+                    </div>
+                    <div class="toggle">
+                        <input type="checkbox" id="sparks-haunting">
+                        <label for="sparks-haunting">Sparks</label>
+                    </div>
+                </div>
+                <div class="weight-control">
+                    <label>Weight:</label>
+                    <input type="range" class="weight-slider" min="1" max="6" value="4">
+                    <span>4</span>
+                </div>
+            </div>
+            <div class="table-preview">
+                <div>Last used: 12/12/2023</div>
+                <div>Used 23 times</div>
+                <div class="preview-keywords">
+                    Sample: cemetery, mausoleum, fog, whisper, chains...
+                    <button class="btn secondary">Preview</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h3>📋 Current Selection Summary</h3>
+        <div class="summary-stats">
+            <div><strong>Oracle Tables:</strong> 4 tables (327 keywords)</div>
+            <div><strong>Sparks Tables:</strong> 3 tables (260 keywords)</div>
+            <div><strong>Keyword Count:</strong> 3</div>
+            <div><strong>Include Table Names:</strong> No</div>
+        </div>
+    </div>
+
+    <script>
+        // Demo functionality - in real extension this communicates with VSCode
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const card = this.closest('.table-card');
+                const hasCheckedBoxes = card.querySelector('input[type="checkbox"]:checked');
+                
+                if (hasCheckedBoxes) {
+                    card.classList.remove('disabled');
+                    card.classList.add('enabled');
+                    card.querySelector('.table-title').textContent = card.querySelector('.table-title').textContent.replace('❌', '✅');
+                } else {
+                    card.classList.remove('enabled');
+                    card.classList.add('disabled');
+                    card.querySelector('.table-title').textContent = card.querySelector('.table-title').textContent.replace('✅', '❌');
+                }
+            });
+        });
+
+        document.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value;
+            });
+        });
+    </script>
+</body>
+</html>

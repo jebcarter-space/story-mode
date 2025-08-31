@@ -34,6 +34,7 @@
     "onCommand:story-mode.continueWithSparks",
     "onCommand:story-mode.continueWithSparksCustom",
     "onCommand:story-mode.configureSparkTables",
+    "onCommand:story-mode.openTableManager",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -113,6 +114,11 @@
         "command": "story-mode.configureSparkTables",
         "title": "Configure Spark Tables",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "title": "Visual Spark Table Manager",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -157,6 +163,11 @@
         "key": "ctrl+shift+alt+k",
         "mac": "cmd+shift+alt+k",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.openTableManager",
+        "key": "ctrl+shift+alt+t",
+        "mac": "cmd+shift+alt+t"
       }
     ],
     "views": {
