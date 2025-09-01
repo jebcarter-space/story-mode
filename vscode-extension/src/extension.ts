@@ -812,12 +812,49 @@ async function handleCreateLibrary() {
         await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storyModeRoot, 'llm-profiles'));
         await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storyModeRoot, 'shelves'));
 
-        // Create initial files
+        // Create comprehensive example library with Fantasy Adventures shelf and The Crystal Quest book
+        const now = Date.now();
         const library = {
-            shelves: {},
+            shelves: {
+                'fantasy-adventures': {
+                    id: 'fantasy-adventures',
+                    name: 'Fantasy Adventures',
+                    bannerImage: '',
+                    books: {
+                        'the-crystal-quest': {
+                            id: 'the-crystal-quest',
+                            name: 'The Crystal Quest',
+                            coverImage: '',
+                            chapters: {
+                                'chapter-1-the-beginning': {
+                                    id: 'chapter-1-the-beginning',
+                                    name: 'Chapter 1: The Beginning',
+                                    content: {},
+                                    createdAt: now,
+                                    updatedAt: now
+                                },
+                                'chapter-2-the-journey': {
+                                    id: 'chapter-2-the-journey',
+                                    name: 'Chapter 2: The Journey',
+                                    content: {},
+                                    createdAt: now,
+                                    updatedAt: now
+                                }
+                            },
+                            lastAccessedChapter: 'chapter-1-the-beginning',
+                            createdAt: now,
+                            updatedAt: now
+                        }
+                    },
+                    createdAt: now,
+                    updatedAt: now
+                }
+            },
             settings: {
-                created: Date.now(),
-                updated: Date.now()
+                created: now,
+                updated: now,
+                lastAccessedShelf: 'fantasy-adventures',
+                lastAccessedBook: 'the-crystal-quest'
             }
         };
         
@@ -826,120 +863,789 @@ async function handleCreateLibrary() {
             Buffer.from(JSON.stringify(library, null, 2))
         );
 
-        // Create example repository item
-        const exampleCharacter = `---
+        // Create comprehensive character repository items (4 characters)
+        
+        // Character 1: Aria the Mage (Protagonist)
+        const ariaTheMage = `---
 type: character
-tags: [hero, brave, determined]
+tags: [protagonist, mage, aria, magic, wizard, hero]
 scope: library
 forceContext: false
 llmProfile: ""
 ---
 
-# Example Hero
+# Aria the Mage
 
-A brave and determined hero ready for adventure.
+A brilliant young mage with an insatiable curiosity about ancient magic and a destiny tied to crystal magic.
 
 ## Personality
-- Courageous in the face of danger
-- Loyal to friends and allies
-- Driven by a strong moral compass
+- Intelligent and quick-witted
+- Compassionate but sometimes impulsive
+- Driven by a thirst for knowledge
+- Loyal to her friends and mentors
 
 ## Background
-Born in a small village, they left home to seek their destiny...
+Born in the Village of Brightwater, Aria discovered her magical abilities at a young age when she accidentally made flowers bloom with her touch. She was trained by the Elder Sage and has become one of the most promising mages of her generation.
+
+## Abilities
+- Crystal magic specialist
+- Healing spells
+- Elemental manipulation (particularly light magic)
+- Ancient text translation
+
+## Equipment
+- Crystal staff inherited from her grandmother
+- Spellbook of ancient incantations
+- Protective amulet from Elder Sage
+- Traveling robes with magical protection enchantments
 `;
 
         await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'example-hero.md'),
-            Buffer.from(exampleCharacter)
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'aria-the-mage.md'),
+            Buffer.from(ariaTheMage)
         );
 
-        // Create example location
-        const exampleLocation = `---
-type: location
-tags: [tavern, social, cozy]
+        // Character 2: Lord Darkmore (Antagonist)
+        const lordDarkmore = `---
+type: character
+tags: [antagonist, darkmore, villain, dark-lord, evil, shadow]
 scope: library
 forceContext: false
 llmProfile: ""
 ---
 
-# The Prancing Pony Tavern
+# Lord Darkmore
 
-A warm, welcoming tavern that serves as a gathering place for travelers and locals alike.
+A powerful dark sorcerer who seeks to corrupt the crystal magic for his own evil purposes and rule over all lands.
 
-## Description
-The tavern features a large common room with wooden tables, a stone fireplace, and oil lamps that cast dancing shadows on the walls. The air is filled with the aroma of hearty stews and fresh bread.
+## Personality
+- Ruthlessly ambitious
+- Manipulative and cunning
+- Believes might makes right
+- Harbors ancient grudges against the light mages
 
-## Notable Features
-- Friendly bartender who knows all the local gossip
-- Private rooms upstairs for rent
-- Stable out back for horses
-- Notice board with job postings and news
+## Background
+Once a promising student alongside Elder Sage, Darkmore was corrupted by forbidden shadow magic. He was banished from the magical community but has spent decades growing his power and building his dark army from his fortress in the Dark Tower.
+
+## Abilities
+- Shadow magic mastery
+- Mind manipulation and control
+- Dark crystal corruption
+- Necromancy and undead summoning
+
+## Equipment
+- Staff of Shadows (corrupted crystal focus)
+- Armor of Dark Steel
+- Crown of Mind Control
+- Ancient tomes of forbidden magic
 `;
 
         await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'prancing-pony-tavern.md'),
-            Buffer.from(exampleLocation)
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'lord-darkmore.md'),
+            Buffer.from(lordDarkmore)
         );
 
-        // Create enhanced example template
-        const exampleTemplate = `---
-name: "Character Introduction"
-description: "Template for introducing a new character with LLM enhancement"
+        // Character 3: Finn the Rogue (Supporting)
+        const finnTheRogue = `---
+type: character
+tags: [rogue, finn, thief, scout, supporting, agile]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Finn the Rogue
+
+A skilled scout and former street thief who becomes Aria's loyal companion and provides crucial reconnaissance and stealth support.
+
+## Personality
+- Quick-witted and street-smart
+- Loyal once trust is earned
+- Humorous and lighthearted to mask deeper insecurities
+- Values freedom above material wealth
+
+## Background
+Grew up as an orphan on the streets, surviving by wit and stealth. Initially tried to pickpocket Aria but was caught by her magic. Instead of turning him in, she offered him friendship and a chance for a better life, earning his unwavering loyalty.
+
+## Abilities
+- Master of stealth and infiltration
+- Lock picking and trap detection
+- Archery and dual-wielding daggers
+- Urban navigation and information gathering
+
+## Equipment
+- Twin enchanted daggers
+- Composite longbow
+- Thieves' tools and lockpicks
+- Cloak of Blending (minor invisibility)
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'finn-the-rogue.md'),
+            Buffer.from(finnTheRogue)
+        );
+
+        // Character 4: Elder Sage (Supporting)
+        const elderSage = `---
+type: character
+tags: [elder, sage, mentor, wisdom, teacher, old-mage]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Elder Sage
+
+The wise and ancient mentor who trained Aria in the ways of magic and holds crucial knowledge about the crystal magic's true potential.
+
+## Personality
+- Deeply wise and patient
+- Speaks in riddles and metaphors
+- Protective of his students
+- Carries the weight of past mistakes
+
+## Background
+One of the last surviving members of the original Crystal Mage order, Elder Sage witnessed the corruption of Lord Darkmore and has spent his life preparing the next generation to face the coming darkness. He discovered Aria's potential and has been secretly grooming her for her destiny.
+
+## Abilities
+- Master of all magical disciplines
+- Prophetic visions and scrying
+- Ancient lore and crystal magic history
+- Protective ward creation
+
+## Equipment
+- Staff of Ancient Woods (predates crystal magic)
+- Robes of the Crystal Order
+- Scrying crystal for visions
+- Library of ancient magical tomes
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'characters', 'elder-sage.md'),
+            Buffer.from(elderSage)
+        );
+
+        // Create comprehensive location repository items (4 locations)
+        
+        // Location 1: Crystal Caves
+        const crystalCaves = `---
+type: location
+tags: [caves, crystals, magical, underground, ancient]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Crystal Caves
+
+Ancient underground caverns filled with naturally occurring magic crystals that pulse with inner light and hold immense magical power.
+
+## Description
+Deep beneath the mountains, these vast caverns stretch for miles in every direction. The walls are lined with crystals of every color imaginable, each one humming with magical energy. The air itself seems to shimmer with power, and soft, multicolored light emanates from the crystal formations.
+
+## Notable Features
+- Central Crystal Chamber with massive formation
+- Echoing corridors that amplify magical energy
+- Underground pools that reflect crystal light
+- Hidden passages leading to ancient crystal workshops
+- Magical creatures that have been changed by crystal exposure
+
+## Dangers
+- Unstable magical fields that can overload spellcasters
+- Crystal golems that guard important formations
+- Maze-like passages that can trap explorers
+- Raw magical energy that can corrupt those unprepared
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'crystal-caves.md'),
+            Buffer.from(crystalCaves)
+        );
+
+        // Location 2: Mystic Forest
+        const mysticForest = `---
+type: location
+tags: [forest, mystic, magical, trees, nature, ancient]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Mystic Forest
+
+An ancient woodland where magic has seeped into every tree and leaf, creating a living ecosystem that responds to the emotions and intentions of those who enter.
+
+## Description
+Towering ancient trees with silver bark and leaves that shimmer between green and gold create a dense canopy that filters sunlight into dancing patterns. The forest floor is covered in luminescent moss and flowers that bloom in impossible colors. Whispered voices seem to come from the trees themselves.
+
+## Notable Features
+- Talking trees that offer wisdom to the worthy
+- Paths that change based on the traveler's need
+- Clearings where time moves differently
+- Ancient druid circles with powerful magic
+- Wildlife that can communicate telepathically
+
+## Inhabitants
+- Forest sprites and nature spirits
+- Wise old druids who guard ancient secrets
+- Magical creatures seeking sanctuary
+- Lost travelers from across time and space
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'mystic-forest.md'),
+            Buffer.from(mysticForest)
+        );
+
+        // Location 3: Dark Tower
+        const darkTower = `---
+type: location
+tags: [tower, fortress, dark, evil, stronghold, darkmore]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Dark Tower
+
+Lord Darkmore's imposing fortress of black stone that rises from a barren wasteland, serving as the stronghold for his dark magic and undead army.
+
+## Description
+A massive spire of obsidian-black stone that pierces the sky like a dagger. The tower is surrounded by a desolate wasteland where nothing grows, and the very air seems thick with malevolent energy. Dark clouds perpetually swirl around its peak, and lightning occasionally illuminates its angular architecture.
+
+## Notable Features
+- Throne room at the apex with views of all surrounding lands
+- Dungeons filled with corrupted crystal formations
+- Laboratory for dark magical experiments
+- Armory containing weapons of shadow and corruption
+- Portal chambers for summoning and transportation
+
+## Defenses
+- Undead guardians patrolling every level
+- Magical wards that repel light magic
+- Maze of deadly traps and illusions
+- Corrupted crystal barriers
+- Flying dark creatures as sentries
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'dark-tower.md'),
+            Buffer.from(darkTower)
+        );
+
+        // Location 4: Village of Brightwater
+        const villageOfBrightwater = `---
+type: location
+tags: [village, peaceful, home, brightwater, starting-point]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Village of Brightwater
+
+A small, peaceful village known for its clear spring waters and the birthplace of Aria the Mage, representing hope and innocence in a world threatened by darkness.
+
+## Description
+Nestled in a green valley beside a crystal-clear stream, Brightwater is a collection of cozy cottages with thatched roofs and flower gardens. The village is famous for its magical spring that bubbles up from underground sources and is said to have minor healing properties.
+
+## Notable Features
+- The Brightwater Spring at the village center
+- Elder Sage's cottage and magical library
+- Village inn "The Laughing Brook"
+- Market square where traveling merchants gather
+- Ancient stone circle on the hill overlooking the village
+
+## Inhabitants
+- Simple folk who live in harmony with nature
+- Local blacksmith who creates basic magical implements
+- Herbalist who knows the properties of magical plants
+- Village elder who maintains local traditions
+- Children who show early magical potential
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'locations', 'village-of-brightwater.md'),
+            Buffer.from(villageOfBrightwater)
+        );
+
+        // Create comprehensive situation repository items (4 scenes + 4 plot points)
+        
+        // Scene 1: The Quest Begins
+        const questBegins = `---
+type: situation
+tags: [scene, quest-begins, starting-scene, adventure, call-to-adventure]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# The Quest Begins
+
+The opening scene where Aria receives her quest and sets out from the Village of Brightwater to find the legendary Crystal of Power.
+
+## Setup
+Aria is studying ancient texts in Elder Sage's cottage when she discovers a prophecy about a great crystal that can either save the world or destroy it. Dark omens suggest Lord Darkmore is already searching for it.
+
+## Key Elements
+- Elder Sage reveals the prophecy and Aria's role
+- Warning signs of Darkmore's growing power
+- Aria's decision to leave her comfortable life
+- Meeting with Finn the Rogue who offers to guide her
+- Preparation for the dangerous journey ahead
+
+## Mood
+Mixture of excitement and trepidation, hope tinged with fear, the weight of destiny settling on young shoulders.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'the-quest-begins.md'),
+            Buffer.from(questBegins)
+        );
+
+        // Scene 2: Forest Encounter
+        const forestEncounter = `---
+type: situation
+tags: [scene, forest-encounter, mystic-forest, action, adventure]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Forest Encounter
+
+A pivotal scene where Aria and Finn encounter magical creatures and face their first real test in the Mystic Forest.
+
+## Setup
+While traveling through the Mystic Forest, the party encounters both helpful forest spirits and dangerous corrupted creatures sent by Lord Darkmore's influence.
+
+## Key Elements
+- Test of Aria's growing magical abilities
+- Finn proves his worth as a scout and protector
+- Meeting with forest spirits who offer cryptic guidance
+- Battle with shadow creatures tracking them
+- Discovery of ancient forest magic that aids their quest
+
+## Mood
+Wonder at the forest's beauty contrasted with lurking danger, growing confidence in abilities, strengthening bond between companions.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'forest-encounter.md'),
+            Buffer.from(forestEncounter)
+        );
+
+        // Scene 3: Crystal Discovery
+        const crystalDiscovery = `---
+type: situation
+tags: [scene, crystal-discovery, crystal-caves, magical, revelation]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Crystal Discovery
+
+The climactic scene where Aria finally reaches the Crystal Caves and discovers the true nature of her power and destiny.
+
+## Setup
+Deep within the Crystal Caves, Aria and Finn find the legendary Crystal of Power, but discover it's not what they expected - it's a test that will either awaken Aria's true potential or destroy her.
+
+## Key Elements
+- Navigation through the dangerous Crystal Caves
+- Solving ancient puzzles to reach the central chamber
+- Aria's magical connection with the crystal formations
+- Revelation about her family's connection to crystal magic
+- The crystal's test of worthiness and character
+
+## Mood
+Awe and wonder at the crystal formations, tension from unknown dangers, triumph mixed with the weight of great responsibility.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'crystal-discovery.md'),
+            Buffer.from(crystalDiscovery)
+        );
+
+        // Scene 4: Final Confrontation
+        const finalConfrontation = `---
+type: situation
+tags: [scene, final-confrontation, dark-tower, climax, battle]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Final Confrontation
+
+The epic final battle where Aria, now empowered by crystal magic, faces Lord Darkmore in his Dark Tower to prevent him from corrupting the world.
+
+## Setup
+With her newfound powers and loyal companions, Aria storms the Dark Tower to confront Lord Darkmore before he can complete his ritual to corrupt all crystal magic in the world.
+
+## Key Elements
+- Infiltration of the heavily guarded Dark Tower
+- Battle through undead minions and dark magic traps
+- Emotional confrontation with Darkmore revealing their shared history
+- Epic magical duel using light versus shadow magic
+- Resolution that saves the world but comes at great personal cost
+
+## Mood
+High tension and epic scope, the weight of the world's fate, courage in the face of overwhelming odds, bittersweet victory.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'final-confrontation.md'),
+            Buffer.from(finalConfrontation)
+        );
+
+        // Plot Point 1: Call to Adventure
+        const callToAdventure = `---
+type: situation
+tags: [plot-point, call-to-adventure, inciting-incident, prophecy]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Call to Adventure
+
+The fundamental plot point where Aria is called from her ordinary life to embark on a extraordinary quest to save the world.
+
+## Story Function
+This plot point establishes the central conflict and gives the protagonist a clear goal that will drive the entire narrative forward.
+
+## Key Components
+- Discovery of the ancient prophecy about the Crystal of Power
+- Realization that Lord Darkmore is seeking the same crystal
+- Elder Sage's revelation about Aria's special heritage
+- The moral imperative to prevent catastrophe
+- Aria's internal struggle between safety and duty
+
+## Narrative Impact
+Transforms Aria from a student mage into a hero with a world-saving mission, establishing the story's central quest and raising the stakes to global consequences.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'call-to-adventure.md'),
+            Buffer.from(callToAdventure)
+        );
+
+        // Plot Point 2: Meeting the Mentor
+        const meetingTheMentor = `---
+type: situation
+tags: [plot-point, meeting-mentor, elder-sage, guidance, wisdom]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Meeting the Mentor
+
+The crucial plot point where Elder Sage provides Aria with wisdom, training, and magical tools necessary for her quest.
+
+## Story Function
+Provides the protagonist with knowledge, skills, and confidence needed to face the challenges ahead while establishing the mentor-student relationship.
+
+## Key Components
+- Elder Sage's revelation of Aria's true magical heritage
+- Training in advanced crystal magic techniques
+- Gifting of protective magical items and ancient knowledge
+- Sharing of crucial information about Lord Darkmore's weaknesses
+- Emotional preparation for the dangers ahead
+
+## Narrative Impact
+Elevates Aria's capabilities and confidence while creating an emotional anchor to her past that will motivate her throughout the journey.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'meeting-the-mentor.md'),
+            Buffer.from(meetingTheMentor)
+        );
+
+        // Plot Point 3: Crossing the Threshold
+        const crossingThreshold = `---
+type: situation
+tags: [plot-point, crossing-threshold, leaving-home, commitment, transformation]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# Crossing the Threshold
+
+The pivotal plot point where Aria leaves the familiar world of Brightwater behind and fully commits to her dangerous quest.
+
+## Story Function
+Marks the point of no return where the protagonist fully enters the adventure world and accepts the challenges that lie ahead.
+
+## Key Components
+- Final farewell to the Village of Brightwater and normal life
+- Crossing into the dangerous wilderness with Finn
+- First encounter with real magical threats
+- Commitment to the quest despite fear and uncertainty
+- Beginning of true character growth and transformation
+
+## Narrative Impact
+Establishes that this is now a true adventure with real stakes, moving beyond preparation into actual danger and growth.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'crossing-the-threshold.md'),
+            Buffer.from(crossingThreshold)
+        );
+
+        // Plot Point 4: The Ordeal
+        const theOrdeal = `---
+type: situation
+tags: [plot-point, ordeal, greatest-test, crisis, transformation]
+scope: library
+forceContext: false
+llmProfile: ""
+---
+
+# The Ordeal
+
+The most challenging plot point where Aria faces her greatest test and must overcome seemingly impossible odds to prove her worth.
+
+## Story Function
+The crisis point that tests everything the protagonist has learned and forces them to dig deep to find the strength to continue.
+
+## Key Components
+- Aria's magical abilities pushed to their absolute limits
+- Confrontation with her deepest fears and insecurities
+- Moment where failure seems inevitable and hope is lost
+- Discovery of inner strength she didn't know she possessed
+- Transformation from student to true magical master
+
+## Narrative Impact
+Creates the lowest point of the journey that makes the eventual triumph more meaningful and demonstrates complete character growth.
+`;
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'situations', 'the-ordeal.md'),
+            Buffer.from(theOrdeal)
+        );
+
+        // Create comprehensive Character Template
+        const characterTemplate = `---
+name: "Character Profile Template"
+description: "Complete character profile template for creating detailed NPCs and protagonists"
 category: "Characters"
 llmEnabled: true
-llmInstructions: "Generate a vivid character introduction based on the provided details, focusing on atmosphere and first impressions"
+llmInstructions: "Generate a complete character profile with physical description, personality traits, background, motivations, and role in the story"
 llmProfile: ""
 appendMode: false
 repositoryTarget: "Character"
 ---
 
-## {{random_character}} Enters the Scene
+# {{character_name}} {{surname}}
 
-**Age:** {{rand 18-65}}
-**Initial Impression:** {{roll 1d6}}
+## Basic Information
+- **Full Name:** {{character_name}} {{surname}}
+- **Age:** {{rand 16-70}}
+- **Gender:** [Choose: Male/Female/Non-binary/Other]
+- **Race/Species:** [Human/Elf/Dwarf/etc.]
+- **Occupation:** {{profession}}
+- **Social Status:** {{roll 1d6}} (1-2: Common, 3-4: Middle Class, 5-6: Noble)
 
-{{#llm}}Describe this character's dramatic entrance into the scene, including their appearance, mannerisms, and the immediate impression they make on others present{{/llm}}
+## Physical Description
+{{#llm}}Create a detailed physical description including height, build, distinctive features, clothing style, and any notable characteristics{{/llm}}
 
-**Notable Equipment:** 
-- Primary weapon/tool: {{rand 1-10}}
-- Distinctive clothing or accessory
+- **Height:** {{rand 5.0-6.5}} feet
+- **Build:** [Slim/Athletic/Average/Stocky/Heavy]
+- **Hair:** {{hair_color}}, {{hair_style}}
+- **Eyes:** {{eye_color}}
+- **Distinctive Features:** [Scars, tattoos, unusual features]
 
-**Random Quirk:** {{rand 1-100}}% chance of having an unusual habit
+## Personality
+{{#llm}}Develop a complex personality including core traits, flaws, fears, and quirks that make this character memorable and three-dimensional{{/llm}}
+
+### Core Traits
+- Primary: {{personality_trait}}
+- Secondary: {{personality_trait}}
+- Hidden Trait: [Something not immediately obvious]
+
+### Motivations & Goals
+- **Primary Goal:** [What drives them most]
+- **Secret Desire:** [What they secretly want]
+- **Greatest Fear:** [What terrifies them most]
+
+## Background & History
+{{#llm}}Create a compelling backstory that explains how this character became who they are, including formative experiences and relationships{{/llm}}
+
+### Personal History
+- **Birthplace:** {{location}}
+- **Family:** [Parents, siblings, spouse, children]
+- **Education/Training:** [How they learned their skills]
+- **Significant Events:** [3-5 life-changing moments]
+
+## Abilities & Skills
+- **Primary Skill:** {{skill}} (Expert)
+- **Secondary Skills:** {{skill}}, {{skill}} (Proficient)
+- **Weapon of Choice:** {{weapon}}
+- **Special Abilities:** [Magic, unique talents, etc.]
+- **Weaknesses:** [Physical or mental limitations]
+
+## Relationships & Connections
+- **Allies:** [Who supports them]
+- **Enemies:** [Who opposes them]
+- **Romantic Interest:** [Current or potential]
+- **Mentor/Student:** [Who taught/teaches them]
+
+## Role in Story
+- **Narrative Function:** [Hero, Villain, Mentor, etc.]
+- **Character Arc:** [How they change/grow]
+- **Key Scenes:** [Where they're most important]
+- **Potential Conflicts:** [Internal and external struggles]
+
+## Equipment & Possessions
+- **Weapons:** {{weapon}}
+- **Armor/Protection:** {{armor}}
+- **Important Items:** {{magical_item}}
+- **Wealth:** {{roll 1d100}} gold coins equivalent
+- **Residence:** [Where they live]
+
+## Notes & Hooks
+{{#llm}}Add interesting plot hooks, secrets, or potential story connections that could involve this character in adventures{{/llm}}
+
+- **Secret:** [Something they hide]
+- **Plot Hooks:** [3 ways to involve them in stories]
+- **Rumors:** [What people say about them]
 `;
 
         await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-introduction.md'),
-            Buffer.from(exampleTemplate)
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'character-profile-template.md'),
+            Buffer.from(characterTemplate)
         );
 
-        // Create location template example
+        // Create comprehensive Location Template  
         const locationTemplate = `---
-name: "Tavern Scene"
-description: "Generate a detailed tavern scene with atmosphere"
-category: "Locations"  
+name: "Location Description Template"
+description: "Detailed location template for creating immersive settings and environments"
+category: "Locations"
 llmEnabled: true
-llmInstructions: "Create a vivid tavern scene with sensory details, atmosphere, and notable features"
+llmInstructions: "Generate a vivid, immersive location description with atmosphere, history, inhabitants, and adventure potential"
 llmProfile: ""
-appendMode: true
+appendMode: false
 repositoryTarget: "Location"
 ---
 
-# The {{random_location}} Tavern
+# {{location_name}}
 
-**Crowd Level:** {{rand 5-50}} patrons  
-**Atmosphere Check:** {{roll 2d6}}
+## Basic Information
+- **Type:** [City, Village, Dungeon, Wilderness, etc.]
+- **Size:** {{roll 1d6}} (1-2: Small, 3-4: Medium, 5-6: Large)
+- **Population:** {{rand 50-5000}} inhabitants
+- **Climate:** {{climate}}
+- **Terrain:** {{terrain_type}}
 
-## Basic Setup
-- **Lighting:** Flickering candlelight and oil lamps
-- **Sounds:** {{roll 1d4}} conversations happening simultaneously  
-- **Notable Patron:** {{random_character}} sits in the corner
+## Overview & Atmosphere
+{{#llm}}Create an evocative overview that captures the location's essence, mood, and first impression for visitors{{/llm}}
 
-## Scene Enhancement
-{{#llm}}Add rich atmospheric details about the tavern's mood, smells, sounds, and any interesting events happening right now{{/llm}}
+### First Impressions
+- **Approach:** [What visitors see arriving]
+- **Sounds:** {{roll 1d4}} distinct ambient sounds
+- **Smells:** [Characteristic scents and aromas]
+- **Overall Mood:** {{atmosphere}}
+
+## Physical Description
+{{#llm}}Provide detailed descriptions of the location's layout, architecture, notable landmarks, and environmental features{{/llm}}
+
+### Layout & Architecture
+- **Central Feature:** [Main landmark or focal point]
+- **Building Style:** [Architectural characteristics]
+- **Materials:** [Primary construction materials]
+- **Condition:** {{roll 1d6}} (1-2: Poor, 3-4: Fair, 5-6: Excellent)
+
+### Notable Locations
+1. **{{building_type}}** - [Important building/area]
+2. **{{landmark}}** - [Significant landmark]
+3. **{{gathering_place}}** - [Where people meet]
+
+## History & Background
+{{#llm}}Develop the location's history, including its founding, major events, and how it became what it is today{{/llm}}
+
+### Historical Timeline
+- **Founded:** [When and by whom]
+- **Major Events:** [3-5 significant historical moments]
+- **Current Era:** [Recent developments]
+- **Legends:** [Myths and stories told about this place]
+
+## Inhabitants & Culture
+{{#llm}}Describe the people who live here, their customs, social structure, and daily life{{/llm}}
+
+### Population
+- **Primary Race/Species:** {{race}}
+- **Social Structure:** [How society is organized]
+- **Common Occupations:** {{profession}}, {{profession}}, {{profession}}
+- **Cultural Traits:** [Customs, traditions, values]
+
+### Important NPCs
+- **Leader:** {{character_name}} the {{title}}
+- **Notable Merchant:** {{character_name}}
+- **Local Expert:** {{character_name}} ({{expertise}})
+- **Troublemaker:** {{character_name}}
+
+## Economy & Resources
+- **Primary Industry:** {{industry}}
+- **Exports:** [What they sell to others]
+- **Imports:** [What they need from elsewhere]
+- **Currency:** [Standard/Barter/Special]
+- **Wealth Level:** {{roll 1d6}} (1-2: Poor, 3-4: Modest, 5-6: Wealthy)
+
+## Conflicts & Challenges
+{{#llm}}Identify current problems, tensions, or threats that could drive adventures and conflicts{{/llm}}
+
+### Current Issues
+- **Primary Threat:** [Main danger or problem]
+- **Political Tensions:** [Internal conflicts]
+- **External Pressures:** [Outside threats]
+- **Environmental Hazards:** [Natural dangers]
+
+## Adventure Opportunities
+{{#llm}}Generate specific plot hooks, quests, and adventure opportunities centered around this location{{/llm}}
+
+### Plot Hooks
+1. **{{mystery}}** needs investigation
+2. **{{threat}}** threatens the community
+3. **{{opportunity}}** presents itself to bold adventurers
+
+### Rumors & Secrets
+- **Common Rumor:** [What everyone talks about]
+- **Hidden Secret:** [What few know]
+- **Ancient Mystery:** [Old legends with truth]
+
+## Practical Information
+### Services Available
+- **Inn/Lodging:** {{inn_name}} ({{roll 1d10}} silver per night)
+- **Shops:** {{shop_type}}, {{shop_type}}, {{shop_type}}
+- **Temple/Shrine:** Dedicated to {{deity}}
+- **Tavern:** {{tavern_name}} (Atmosphere: {{atmosphere}})
+
+### Travel Information
+- **Access Routes:** [How to reach this location]
+- **Travel Time:** {{rand 1-7}} days from nearest major city
+- **Dangers:** [Hazards on the journey]
+- **Guides Available:** [Who can show the way]
+
+## Seasonal Variations
+- **Spring:** [How location changes]
+- **Summer:** [Seasonal characteristics]
+- **Autumn:** [Autumn features]
+- **Winter:** [Winter conditions]
+
+## Map Notes
+{{#llm}}Provide specific details that would be useful for creating a map or planning tactical encounters{{/llm}}
+
+- **Key Distances:** [Between important locations]
+- **Defensive Features:** [Natural or artificial fortifications]
+- **Hidden Areas:** [Secret or hard-to-find locations]
+- **Tactical Considerations:** [For combat encounters]
 `;
 
         await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'templates', 'tavern-scene.md'),
+            vscode.Uri.joinPath(storyModeRoot, 'templates', 'location-description-template.md'),
             Buffer.from(locationTemplate)
         );
 
@@ -969,12 +1675,55 @@ repositoryTarget: "Location"
             Buffer.from(JSON.stringify(defaultProfile, null, 2))
         );
 
-        // Create metadata files for repository categories
+        // Create comprehensive workbooks system
+        const workbookSystem = {
+            stacks: {
+                'story-development': {
+                    id: 'story-development',
+                    name: 'Story Development',
+                    workbooks: {
+                        'story-bible': {
+                            id: 'story-bible',
+                            name: 'Story Bible',
+                            description: 'Main story elements and world-building notes for The Crystal Quest',
+                            stackId: 'story-development',
+                            masterScope: 'library',
+                            masterScopeContext: {},
+                            tags: ['world-building', 'lore', 'bible', 'reference'],
+                            createdAt: now,
+                            updatedAt: now
+                        },
+                        'chapter-notes': {
+                            id: 'chapter-notes',
+                            name: 'Chapter Notes',
+                            description: 'Planning and development notes for current chapter writing',
+                            stackId: 'story-development',
+                            masterScope: 'chapter',
+                            masterScopeContext: {
+                                chapterId: 'chapter-1-the-beginning',
+                                bookId: 'the-crystal-quest',
+                                shelfId: 'fantasy-adventures'
+                            },
+                            tags: ['planning', 'notes', 'chapter', 'writing'],
+                            createdAt: now,
+                            updatedAt: now
+                        }
+                    }
+                }
+            }
+        };
+
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'workbooks.json'),
+            Buffer.from(JSON.stringify(workbookSystem, null, 2))
+        );
+
+        // Create metadata files for repository categories with correct counts
         const categoriesMetadata = {
-            characters: { count: 1, lastUpdated: Date.now() },
-            locations: { count: 1, lastUpdated: Date.now() },
-            objects: { count: 0, lastUpdated: Date.now() },
-            situations: { count: 0, lastUpdated: Date.now() }
+            characters: { count: 4, lastUpdated: now },
+            locations: { count: 4, lastUpdated: now },
+            objects: { count: 0, lastUpdated: now },
+            situations: { count: 8, lastUpdated: now }
         };
 
         await vscode.workspace.fs.writeFile(
