@@ -37,7 +37,7 @@ import type { InlineContinuationOptions, Template } from './types';
 // Global reference to context indicator for streaming status
 let globalContextIndicator: ContextIndicator | null = null;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     console.log('Story Mode extension is now active!');
 
     // Validate setup first
@@ -72,6 +72,9 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize file watcher
     const fileWatcher = new FileWatcher(context);
     fileWatcher.startWatching();
+
+    // Initialize library service
+    await libraryService.initialize();
 
     // Initialize tree data provider
     const storyModeExplorer = new StoryModeExplorer(context, repositoryManager, workbookService, libraryService);
