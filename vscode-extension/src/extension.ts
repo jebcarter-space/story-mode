@@ -17,7 +17,8 @@ import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import { TableManagerWebview } from './ui/table-manager-webview';
 import { TableAnalyticsService } from './services/table-analytics-service';
 import { WorkflowService } from './services/workflow-service';
-import type { InlineContinuationOptions } from './types';
+import { ConfigurationWizard } from './ui/configuration-wizard';
+import type { InlineContinuationOptions, Template } from './types';
 
 // Global reference to context indicator for streaming status
 let globalContextIndicator: ContextIndicator | null = null;
@@ -48,6 +49,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Initialize smart suggestions
     const smartSuggestions = new SmartSuggestionsService(repositoryManager, templateManager);
+
+    // Initialize configuration wizard
+    const configurationWizard = new ConfigurationWizard(context);
 
     // Initialize file watcher
     const fileWatcher = new FileWatcher(context);
@@ -190,6 +194,11 @@ export function activate(context: vscode.ExtensionContext) {
         await handleWorkflowStatus(workflowService);
     });
 
+    // Configuration Wizard
+    const configurationWizardCommand = vscode.commands.registerCommand('story-mode.configurationWizard', async () => {
+        await configurationWizard.showWizard();
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -211,14 +220,16 @@ export function activate(context: vscode.ExtensionContext) {
         refreshTableManagerCommand,
         executeWorkflowCommand,
         manageWorkflowsCommand,
-        workflowStatusCommand
+        workflowStatusCommand,
+        configurationWizardCommand
     );
 }
 
 // CORE FUNCTIONALITY: Continue text with AI
 async function handleContinueText(
     llmService: LLMService, 
-    repositoryManager: RepositoryManager
+    repositoryManager: RepositoryManager,
+    template?: Template
 ) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -231,9 +242,9 @@ async function handleContinueText(
     const streamingDelay = vscode.workspace.getConfiguration('storyMode').get('streamingDelay', 50);
 
     if (streamingEnabled) {
-        return await handleStreamingContinueText(llmService, repositoryManager, streamingDelay, globalContextIndicator!);
+        return await handleStreamingContinueText(llmService, repositoryManager, streamingDelay, globalContextIndicator!, template);
     } else {
-        return await handleNonStreamingContinueText(llmService, repositoryManager);
+        return await handleNonStreamingContinueText(llmService, repositoryManager, template);
     }
 }
 
@@ -242,7 +253,8 @@ async function handleStreamingContinueText(
     llmService: LLMService,
     repositoryManager: RepositoryManager,
     streamingDelay: number,
-    contextIndicator: ContextIndicator
+    contextIndicator: ContextIndicator,
+    template?: Template
 ) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
@@ -323,7 +335,8 @@ async function handleStreamingContinueText(
                 {
                     repositoryItems,
                     maxContextLength: 4000,
-                    includeRepositoryContext: true
+                    includeRepositoryContext: true,
+                    template
                 },
                 cancellationTokenSource.token
             );
@@ -349,7 +362,8 @@ async function handleStreamingContinueText(
 // Non-streaming fallback implementation  
 async function handleNonStreamingContinueText(
     llmService: LLMService,
-    repositoryManager: RepositoryManager
+    repositoryManager: RepositoryManager,
+    template?: Template
 ) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
@@ -377,7 +391,8 @@ async function handleNonStreamingContinueText(
             const continuation = await llmService.generateContinuation(textBeforeCursor, {
                 repositoryItems,
                 maxContextLength: vscode.workspace.getConfiguration('storyMode').get('maxContextLength', 4000),
-                includeRepositoryContext: true
+                includeRepositoryContext: true,
+                template
             }, token);
 
             if (token.isCancellationRequested) {
@@ -639,7 +654,7 @@ async function handleContinueWithTemplate(
 
         // Now continue with AI using the template result as context
         vscode.window.showInformationMessage(`Template "${template.name}" applied, continuing with AI...`);
-        await handleContinueText(llmService, repositoryManager);
+        await handleContinueText(llmService, repositoryManager, template);
 
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to process template: ${error}`);
@@ -649,7 +664,7 @@ async function handleContinueWithTemplate(
             editBuilder.insert(position, `\n\n${template.content}\n\n`);
         });
         
-        await handleContinueText(llmService, repositoryManager);
+        await handleContinueText(llmService, repositoryManager, template);
     }
 }
 
