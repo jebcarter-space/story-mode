@@ -9,10 +9,18 @@ import type { Workbook, Stack, WorkbookSystem } from '../types';
 export class WorkbookService {
     private workbookSystem: WorkbookSystem = { stacks: {} };
     private workbookFilePath: vscode.Uri | null = null;
+    private contextService: any = null; // Will be set later
 
     constructor(private context: vscode.ExtensionContext) {
         this.initializeWorkbookPath();
         this.loadWorkbooks();
+    }
+
+    /**
+     * Set the context service for context-aware workbook filtering
+     */
+    setContextService(contextService: any): void {
+        this.contextService = contextService;
     }
 
     /**
@@ -227,6 +235,27 @@ export class WorkbookService {
      */
     async reloadWorkbooks(): Promise<void> {
         await this.loadWorkbooks();
+    }
+
+    /**
+     * Get workbooks filtered by current context
+     */
+    async getWorkbooksInCurrentScope(): Promise<Workbook[]> {
+        if (!this.contextService) {
+            return this.getAllWorkbooks(); // Fallback to all workbooks
+        }
+
+        try {
+            const currentContext = await this.contextService.getCurrentContext();
+            const allWorkbooks = this.getAllWorkbooks();
+            
+            return allWorkbooks.filter(workbook => 
+                this.isWorkbookInCurrentScope(workbook, currentContext)
+            );
+        } catch (error) {
+            console.warn('Failed to filter workbooks by context:', error);
+            return this.getAllWorkbooks();
+        }
     }
 
     /**

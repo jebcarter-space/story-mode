@@ -53,6 +53,8 @@
     "onCommand:story-mode.editChapter",
     "onCommand:story-mode.deleteChapter",
     "onCommand:story-mode.openChapter",
+    "onCommand:story-mode.setContext",
+    "onCommand:story-mode.clearContext",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -227,6 +229,16 @@
         "command": "story-mode.openChapter",
         "title": "Open Chapter",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.setContext",
+        "title": "Set Repository Context",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.clearContext",
+        "title": "Clear Context Override",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -282,6 +294,16 @@
         "key": "ctrl+shift+w",
         "mac": "cmd+shift+w",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "story-mode.setContext",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c"
+      },
+      {
+        "command": "story-mode.clearContext",
+        "key": "ctrl+shift+alt+c",
+        "mac": "cmd+shift+alt+c"
       }
     ],
     "views": {
