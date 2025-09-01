@@ -24,9 +24,10 @@
 ### LLM Profile Configuration
 
 - [X] Verify `koboldcpp-default.json` profile exists and is valid
-- [ ] Test VS Code settings: `storyMode.defaultLLMProfile` set to "koboldcpp-default"
-- [ ] Test remote KoboldCPP connection (https://micro-existing-they-grammar.trycloudflare.com/)
-- [ ] Verify profile loads without errors in extension
+- [X] Test VS Code settings: `storyMode.defaultLLMProfile` set to "koboldcpp-default"
+  TODO Unsure of locale to validate this - need to look into selector.
+- [X] Test remote KoboldCPP connection (https://micro-existing-they-grammar.trycloudflare.com/)
+- [X] Verify profile loads without errors in extension
 
 ---
 
