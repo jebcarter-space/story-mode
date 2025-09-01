@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { RepositoryManager } from '../services/repository-manager';
 import { WorkbookService } from '../services/workbook-service';
+import { LibraryService } from '../services/library-service';
 
 export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<StoryModeItem | undefined | null | void> = new vscode.EventEmitter<StoryModeItem | undefined | null | void>();
@@ -9,7 +10,8 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
   constructor(
     private context: vscode.ExtensionContext,
     private repositoryManager: RepositoryManager,
-    private workbookService: WorkbookService
+    private workbookService: WorkbookService,
+    private libraryService: LibraryService
   ) {}
 
   refresh(): void {
@@ -35,6 +37,10 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
     switch (element.contextValue) {
       case 'stories':
         return this.getStoryItems();
+      case 'shelf':
+        return this.getShelfItems(element.shelfId!);
+      case 'book':
+        return this.getBookItems(element.shelfId!, element.bookId!);
       case 'repository':
         return this.getRepositoryItems();
       case 'repository-category':
@@ -54,27 +60,104 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
 
   private async getStoryItems(): Promise<StoryModeItem[]> {
     const items: StoryModeItem[] = [];
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) return items;
-
+    
     try {
-      const shelvesPath = vscode.Uri.joinPath(workspaceFolders[0].uri, '.story-mode', 'shelves');
-      const shelves = await vscode.workspace.fs.readDirectory(shelvesPath);
+      const shelves = await this.libraryService.getShelves();
       
-      for (const [shelfName, fileType] of shelves) {
-        if (fileType === vscode.FileType.Directory) {
+      if (shelves.length === 0) {
+        items.push(new StoryModeItem('No shelves yet', vscode.TreeItemCollapsibleState.None, 'empty'));
+      } else {
+        for (const shelf of shelves) {
+          const books = await this.libraryService.getBooks(shelf.id);
+          const shelfLabel = `${shelf.name} (${books.length} book${books.length !== 1 ? 's' : ''})`;
+          
           items.push(new StoryModeItem(
-            shelfName,
+            shelfLabel,
             vscode.TreeItemCollapsibleState.Collapsed,
             'shelf',
             undefined,
-            vscode.Uri.joinPath(shelvesPath, shelfName)
+            undefined,
+            undefined,
+            undefined,
+            shelf.id
           ));
         }
       }
     } catch (error) {
-      // No stories yet
       items.push(new StoryModeItem('No stories yet', vscode.TreeItemCollapsibleState.None, 'empty'));
+    }
+
+    return items;
+  }
+
+  private async getShelfItems(shelfId: string): Promise<StoryModeItem[]> {
+    const items: StoryModeItem[] = [];
+    
+    try {
+      const books = await this.libraryService.getBooks(shelfId);
+      
+      if (books.length === 0) {
+        items.push(new StoryModeItem('No books yet', vscode.TreeItemCollapsibleState.None, 'empty'));
+      } else {
+        for (const book of books) {
+          const chapters = await this.libraryService.getChapters(shelfId, book.id);
+          const bookLabel = `${book.name} (${chapters.length} chapter${chapters.length !== 1 ? 's' : ''})`;
+          
+          items.push(new StoryModeItem(
+            bookLabel,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            'book',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            shelfId,
+            book.id
+          ));
+        }
+      }
+    } catch (error) {
+      items.push(new StoryModeItem('Error loading books', vscode.TreeItemCollapsibleState.None, 'error'));
+    }
+
+    return items;
+  }
+
+  private async getBookItems(shelfId: string, bookId: string): Promise<StoryModeItem[]> {
+    const items: StoryModeItem[] = [];
+    
+    try {
+      const chapters = await this.libraryService.getChapters(shelfId, bookId);
+      
+      if (chapters.length === 0) {
+        items.push(new StoryModeItem('No chapters yet', vscode.TreeItemCollapsibleState.None, 'empty'));
+      } else {
+        for (const chapter of chapters) {
+          const chapterItem = new StoryModeItem(
+            chapter.name,
+            vscode.TreeItemCollapsibleState.None,
+            'chapter',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            shelfId,
+            bookId,
+            chapter.id
+          );
+          
+          // Add click command to open chapter
+          chapterItem.command = {
+            command: 'story-mode.openChapter',
+            title: 'Open Chapter',
+            arguments: [chapterItem]
+          };
+          
+          items.push(chapterItem);
+        }
+      }
+    } catch (error) {
+      items.push(new StoryModeItem('Error loading chapters', vscode.TreeItemCollapsibleState.None, 'error'));
     }
 
     return items;
@@ -276,7 +359,10 @@ class StoryModeItem extends vscode.TreeItem {
     public readonly category?: string,
     public readonly resourceUri?: vscode.Uri,
     public readonly stackId?: string,
-    public readonly workbookId?: string
+    public readonly workbookId?: string,
+    public readonly shelfId?: string,
+    public readonly bookId?: string,
+    public readonly chapterId?: string
   ) {
     super(label, collapsibleState);
     
@@ -292,6 +378,15 @@ class StoryModeItem extends vscode.TreeItem {
     switch (contextValue) {
       case 'stories':
         this.iconPath = new vscode.ThemeIcon('book');
+        break;
+      case 'shelf':
+        this.iconPath = new vscode.ThemeIcon('library');
+        break;
+      case 'book':
+        this.iconPath = new vscode.ThemeIcon('book');
+        break;
+      case 'chapter':
+        this.iconPath = new vscode.ThemeIcon('file-text');
         break;
       case 'repository':
         this.iconPath = new vscode.ThemeIcon('database');
@@ -310,9 +405,6 @@ class StoryModeItem extends vscode.TreeItem {
         break;
       case 'llm-profiles':
         this.iconPath = new vscode.ThemeIcon('settings-gear');
-        break;
-      case 'shelf':
-        this.iconPath = new vscode.ThemeIcon('folder');
         break;
       case 'repository-category':
         this.iconPath = new vscode.ThemeIcon('symbol-class');

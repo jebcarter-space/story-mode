@@ -43,6 +43,16 @@
     "onCommand:story-mode.editWorkbook",
     "onCommand:story-mode.deleteWorkbook",
     "onCommand:story-mode.manageWorkbooks",
+    "onCommand:story-mode.createShelf",
+    "onCommand:story-mode.editShelf",
+    "onCommand:story-mode.deleteShelf",
+    "onCommand:story-mode.createBook",
+    "onCommand:story-mode.editBook",
+    "onCommand:story-mode.deleteBook",
+    "onCommand:story-mode.createChapter",
+    "onCommand:story-mode.editChapter",
+    "onCommand:story-mode.deleteChapter",
+    "onCommand:story-mode.openChapter",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -134,7 +144,7 @@
         "category": "Story Mode"
       },
       {
-        "command": "story-mode.manageWorkflows", 
+        "command": "story-mode.manageWorkflows",
         "title": "Manage Workflows",
         "category": "Story Mode"
       },
@@ -166,6 +176,56 @@
       {
         "command": "story-mode.manageWorkbooks",
         "title": "Manage Workbooks",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.createShelf",
+        "title": "Create Shelf",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.editShelf",
+        "title": "Edit Shelf",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.deleteShelf",
+        "title": "Delete Shelf",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.createBook",
+        "title": "Create Book",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.editBook",
+        "title": "Edit Book",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.deleteBook",
+        "title": "Delete Book",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.createChapter",
+        "title": "Create Chapter",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.editChapter",
+        "title": "Edit Chapter",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.deleteChapter",
+        "title": "Delete Chapter",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.openChapter",
+        "title": "Open Chapter",
         "category": "Story Mode"
       }
     ],
@@ -255,7 +315,7 @@
           "group": "inline"
         },
         {
-          "command": "story-mode.editWorkbook", 
+          "command": "story-mode.editWorkbook",
           "when": "view == storyModeExplorer && viewItem == workbook",
           "group": "inline"
         },
@@ -263,6 +323,56 @@
           "command": "story-mode.deleteWorkbook",
           "when": "view == storyModeExplorer && viewItem == workbook",
           "group": "inline"
+        },
+        {
+          "command": "story-mode.createShelf",
+          "when": "view == storyModeExplorer && viewItem == stories",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.createBook",
+          "when": "view == storyModeExplorer && viewItem == shelf",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.editShelf",
+          "when": "view == storyModeExplorer && viewItem == shelf",
+          "group": "edit"
+        },
+        {
+          "command": "story-mode.deleteShelf",
+          "when": "view == storyModeExplorer && viewItem == shelf",
+          "group": "edit"
+        },
+        {
+          "command": "story-mode.createChapter",
+          "when": "view == storyModeExplorer && viewItem == book",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.editBook",
+          "when": "view == storyModeExplorer && viewItem == book",
+          "group": "edit"
+        },
+        {
+          "command": "story-mode.deleteBook",
+          "when": "view == storyModeExplorer && viewItem == book",
+          "group": "edit"
+        },
+        {
+          "command": "story-mode.openChapter",
+          "when": "view == storyModeExplorer && viewItem == chapter",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.editChapter",
+          "when": "view == storyModeExplorer && viewItem == chapter",
+          "group": "edit"
+        },
+        {
+          "command": "story-mode.deleteChapter",
+          "when": "view == storyModeExplorer && viewItem == chapter",
+          "group": "edit"
         }
       ]
     },
@@ -275,7 +385,7 @@
           "description": "Default LLM profile to use for text continuation"
         },
         "storyMode.defaultSystemPrompt": {
-          "type": "string", 
+          "type": "string",
           "default": "",
           "description": "Default system prompt for AI interactions (overrides LLM profile defaults)"
         },
@@ -316,12 +426,16 @@
         },
         "storyMode.oracleTables": {
           "type": "array",
-          "default": ["default"],
+          "default": [
+            "default"
+          ],
           "description": "Tables enabled for Oracle queries (uses all enabled tables if empty)"
         },
         "storyMode.sparksTables": {
-          "type": "array", 
-          "default": ["default"],
+          "type": "array",
+          "default": [
+            "default"
+          ],
           "description": "Tables enabled for Sparks generation (uses all enabled tables if empty)"
         },
         "storyMode.enableStreaming": {
@@ -369,16 +483,12 @@
   },
   "devDependencies": {
     "@types/node": "16.x",
-    "@types/vscode": "^1.74.0",
+    "@types/vscode": "^1.103.0",
     "typescript": "^4.9.4"
   },
   "dependencies": {
     "@types/node-fetch": "^2.6.13",
     "node-fetch": "^3.3.2",
     "yaml": "^2.3.4"
-  },
-  "optionalDependencies": {
-  },
-  "peerDependencies": {
   }
 }

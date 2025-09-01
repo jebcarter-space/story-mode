@@ -18,7 +18,20 @@ import { TableManagerWebview } from './ui/table-manager-webview';
 import { TableAnalyticsService } from './services/table-analytics-service';
 import { WorkflowService } from './services/workflow-service';
 import { WorkbookService } from './services/workbook-service';
+import { LibraryService } from './services/library-service';
 import { ConfigurationWizard } from './ui/configuration-wizard';
+import {
+  handleCreateShelf,
+  handleEditShelf,
+  handleDeleteShelf,
+  handleCreateBook,
+  handleEditBook,
+  handleDeleteBook,
+  handleCreateChapter,
+  handleEditChapter,
+  handleDeleteChapter,
+  handleOpenChapter
+} from './commands/library-commands';
 import type { InlineContinuationOptions, Template } from './types';
 
 // Global reference to context indicator for streaming status
@@ -38,6 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
     const analyticsService = new TableAnalyticsService(context);
     const workflowService = new WorkflowService(context);
     const workbookService = new WorkbookService(context);
+    const libraryService = new LibraryService(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
@@ -60,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
     fileWatcher.startWatching();
 
     // Initialize tree data provider
-    const storyModeExplorer = new StoryModeExplorer(context, repositoryManager, workbookService);
+    const storyModeExplorer = new StoryModeExplorer(context, repositoryManager, workbookService, libraryService);
     vscode.window.createTreeView('storyModeExplorer', {
         treeDataProvider: storyModeExplorer,
         showCollapseAll: true
@@ -220,9 +234,49 @@ export function activate(context: vscode.ExtensionContext) {
         await handleManageWorkbooks(workbookService, storyModeExplorer);
     });
 
-    // Configuration Wizard
     const configurationWizardCommand = vscode.commands.registerCommand('story-mode.configurationWizard', async () => {
         await configurationWizard.showWizard();
+    });
+
+    // Library Commands
+    const createShelfCommand = vscode.commands.registerCommand('story-mode.createShelf', async (treeItem?: any) => {
+        await handleCreateShelf(libraryService, storyModeExplorer);
+    });
+
+    const editShelfCommand = vscode.commands.registerCommand('story-mode.editShelf', async (treeItem?: any) => {
+        await handleEditShelf(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const deleteShelfCommand = vscode.commands.registerCommand('story-mode.deleteShelf', async (treeItem?: any) => {
+        await handleDeleteShelf(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const createBookCommand = vscode.commands.registerCommand('story-mode.createBook', async (treeItem?: any) => {
+        await handleCreateBook(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const editBookCommand = vscode.commands.registerCommand('story-mode.editBook', async (treeItem?: any) => {
+        await handleEditBook(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const deleteBookCommand = vscode.commands.registerCommand('story-mode.deleteBook', async (treeItem?: any) => {
+        await handleDeleteBook(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const createChapterCommand = vscode.commands.registerCommand('story-mode.createChapter', async (treeItem?: any) => {
+        await handleCreateChapter(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const editChapterCommand = vscode.commands.registerCommand('story-mode.editChapter', async (treeItem?: any) => {
+        await handleEditChapter(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const deleteChapterCommand = vscode.commands.registerCommand('story-mode.deleteChapter', async (treeItem?: any) => {
+        await handleDeleteChapter(libraryService, storyModeExplorer, treeItem);
+    });
+
+    const openChapterCommand = vscode.commands.registerCommand('story-mode.openChapter', async (treeItem?: any) => {
+        await handleOpenChapter(libraryService, treeItem);
     });
 
     // Register all commands
@@ -251,7 +305,18 @@ export function activate(context: vscode.ExtensionContext) {
         editWorkbookCommand,
         deleteWorkbookCommand,
         manageWorkbooksCommand,
-        configurationWizardCommand
+        configurationWizardCommand,
+        // Library commands
+        createShelfCommand,
+        editShelfCommand,
+        deleteShelfCommand,
+        createBookCommand,
+        editBookCommand,
+        deleteBookCommand,
+        createChapterCommand,
+        editChapterCommand,
+        deleteChapterCommand,
+        openChapterCommand
     );
 }
 
