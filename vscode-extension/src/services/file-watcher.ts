@@ -65,4 +65,8 @@ export class FileWatcher {
     return uri.fsPath.includes('.story-mode/spark-tables/') && 
            uri.fsPath.endsWith('.csv');
   }
+
+  isWorkbookFile(uri: vscode.Uri): boolean {
+    return uri.fsPath.includes('.story-mode/workbooks.json');
+  }
 }

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { RepositoryManager } from '../services/repository-manager';
+import { WorkbookService } from '../services/workbook-service';
 
 export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<StoryModeItem | undefined | null | void> = new vscode.EventEmitter<StoryModeItem | undefined | null | void>();
@@ -7,7 +8,8 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
 
   constructor(
     private context: vscode.ExtensionContext,
-    private repositoryManager: RepositoryManager
+    private repositoryManager: RepositoryManager,
+    private workbookService: WorkbookService
   ) {}
 
   refresh(): void {
@@ -24,6 +26,7 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
       return [
         new StoryModeItem('Stories', vscode.TreeItemCollapsibleState.Collapsed, 'stories'),
         new StoryModeItem('Repository', vscode.TreeItemCollapsibleState.Collapsed, 'repository'),
+        new StoryModeItem('Workbooks', vscode.TreeItemCollapsibleState.Collapsed, 'workbooks'),
         new StoryModeItem('Templates', vscode.TreeItemCollapsibleState.Collapsed, 'templates'),
         new StoryModeItem('LLM Profiles', vscode.TreeItemCollapsibleState.Collapsed, 'llm-profiles')
       ];
@@ -36,6 +39,10 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
         return this.getRepositoryItems();
       case 'repository-category':
         return this.getRepositoryCategoryItems(element.category!);
+      case 'workbooks':
+        return this.getWorkbookItems();
+      case 'workbook-stack':
+        return this.getWorkbookStackItems(element.stackId!);
       case 'templates':
         return this.getTemplateItems();
       case 'llm-profiles':
@@ -190,6 +197,75 @@ export class StoryModeExplorer implements vscode.TreeDataProvider<StoryModeItem>
 
     return items;
   }
+
+  private async getWorkbookItems(): Promise<StoryModeItem[]> {
+    const items: StoryModeItem[] = [];
+    const workbookSystem = this.workbookService.getWorkbookSystem();
+    
+    // Add each stack as a collapsible item
+    for (const stack of Object.values(workbookSystem.stacks)) {
+      const workbookCount = Object.keys(stack.workbooks).length;
+      const label = workbookCount > 0 ? `${stack.name} (${workbookCount})` : stack.name;
+      
+      items.push(new StoryModeItem(
+        label,
+        vscode.TreeItemCollapsibleState.Collapsed,
+        'workbook-stack',
+        undefined,
+        undefined,
+        stack.id
+      ));
+    }
+
+    // If no stacks exist, show helper message
+    if (items.length === 0) {
+      items.push(new StoryModeItem(
+        'No workbooks yet', 
+        vscode.TreeItemCollapsibleState.None, 
+        'empty'
+      ));
+    }
+
+    return items;
+  }
+
+  private async getWorkbookStackItems(stackId: string): Promise<StoryModeItem[]> {
+    const items: StoryModeItem[] = [];
+    const workbookSystem = this.workbookService.getWorkbookSystem();
+    const stack = workbookSystem.stacks[stackId];
+    
+    if (!stack) {
+      return items;
+    }
+
+    // Add each workbook in this stack
+    for (const workbook of Object.values(stack.workbooks)) {
+      let label = workbook.name;
+      
+      // Add scope indicator if workbook has a master scope
+      if (workbook.masterScope) {
+        const scopeDisplay = this.workbookService.getScopeDisplayName(workbook.masterScope);
+        label += ` [${scopeDisplay}]`;
+      }
+      
+      // Add tags if present
+      if (workbook.tags.length > 0) {
+        label += ` (${workbook.tags.join(', ')})`;
+      }
+
+      items.push(new StoryModeItem(
+        label,
+        vscode.TreeItemCollapsibleState.None,
+        'workbook',
+        undefined,
+        undefined,
+        stackId,
+        workbook.id
+      ));
+    }
+
+    return items;
+  }
 }
 
 class StoryModeItem extends vscode.TreeItem {
@@ -198,7 +274,9 @@ class StoryModeItem extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly contextValue: string,
     public readonly category?: string,
-    public readonly resourceUri?: vscode.Uri
+    public readonly resourceUri?: vscode.Uri,
+    public readonly stackId?: string,
+    public readonly workbookId?: string
   ) {
     super(label, collapsibleState);
     
@@ -217,6 +295,15 @@ class StoryModeItem extends vscode.TreeItem {
         break;
       case 'repository':
         this.iconPath = new vscode.ThemeIcon('database');
+        break;
+      case 'workbooks':
+        this.iconPath = new vscode.ThemeIcon('notebook');
+        break;
+      case 'workbook-stack':
+        this.iconPath = new vscode.ThemeIcon('folder');
+        break;
+      case 'workbook':
+        this.iconPath = new vscode.ThemeIcon('note');
         break;
       case 'templates':
         this.iconPath = new vscode.ThemeIcon('file-text');

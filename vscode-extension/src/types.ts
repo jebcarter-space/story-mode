@@ -373,3 +373,30 @@ export interface CustomNodeConfig {
   scriptPath: string;
   parameters: Record<string, any>;
 }
+
+// Workbook System Types (ported from web app)
+export interface Workbook {
+  id: string;
+  name: string;
+  description?: string;
+  stackId: string; // Which stack contains this workbook
+  masterScope?: 'chapter' | 'book' | 'shelf' | 'library';
+  masterScopeContext?: {
+    chapterId?: string;
+    bookId?: string;
+    shelfId?: string;
+  };
+  tags: string[]; // Tags this workbook represents
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Stack {
+  id: string;
+  name: string;
+  workbooks: Record<string, Workbook>;
+}
+
+export interface WorkbookSystem {
+  stacks: Record<string, Stack>;
+}
