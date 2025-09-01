@@ -151,6 +151,9 @@ export interface Template {
   appendMode?: boolean;
   repositoryTarget?: string;
   llmProfile?: string; // Route to specific LLM
+  // System Prompt and Author's Note override fields
+  systemPrompt?: string; // Override connection's system prompt
+  authorNote?: string;   // Override connection's author note
 }
 
 export interface TemplateList {

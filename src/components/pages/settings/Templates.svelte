@@ -31,7 +31,9 @@
     llmEnabled: false,
     appendMode: false,
     repositoryTarget: 'None',
-    llmProfile: undefined
+    llmProfile: undefined,
+    systemPrompt: undefined,
+    authorNote: undefined
   });
   let selectedKey: string = $state('');
   let importData: string = $state('');
@@ -52,7 +54,9 @@
       llmEnabled: false,
       appendMode: false,
       repositoryTarget: 'None',
-      llmProfile: undefined
+      llmProfile: undefined,
+      systemPrompt: undefined,
+      authorNote: undefined
     };
     selectedKey = '';
     open = 'create';
@@ -76,7 +80,9 @@
         llmEnabled: false,
         appendMode: false,
         repositoryTarget: 'None',
-        llmProfile: undefined
+        llmProfile: undefined,
+        systemPrompt: undefined,
+        authorNote: undefined
       };
       selectedKey = '';
       open = '';
@@ -255,6 +261,34 @@
                     Select a specific LLM profile for this template, or use the main UI selection as fallback
                   </p>
                 </div>
+
+                <!-- System Prompt Override -->
+                <div>
+                  <label class="block text-sm font-medium mb-1">System Prompt Override</label>
+                  <textarea 
+                    bind:value={template.systemPrompt} 
+                    placeholder="Override the connection's system prompt (leave empty to inherit)..."
+                    class="w-full p-2 border rounded text-sm resize-vertical"
+                    rows="3"
+                  ></textarea>
+                  <p class="text-xs text-gray-500 mt-1">
+                    If specified, this will override the system prompt from the selected LLM profile. Leave empty to inherit from connection.
+                  </p>
+                </div>
+
+                <!-- Author's Note Override -->
+                <div>
+                  <label class="block text-sm font-medium mb-1">Author's Note Override</label>
+                  <textarea 
+                    bind:value={template.authorNote} 
+                    placeholder="Override the connection's author note (leave empty to inherit)..."
+                    class="w-full p-2 border rounded text-sm resize-vertical"
+                    rows="2"
+                  ></textarea>
+                  <p class="text-xs text-gray-500 mt-1">
+                    If specified, this will override the author's note from the selected LLM profile. Leave empty to inherit from connection.
+                  </p>
+                </div>
               </div>
             {/if}
           </div>
@@ -318,6 +352,25 @@
         </div>
         <p class="mb-3 text-gray-600">{template.description}</p>
         <p class="mb-3"><strong>Category:</strong> {template.category}</p>
+        
+        {#if template.llmEnabled}
+          <div class="mb-3 space-y-2">
+            <p><strong>LLM Profile:</strong> {template.llmProfile || 'Use Main UI Selection'}</p>
+            {#if template.systemPrompt}
+              <div class="bg-blue-50 p-2 rounded">
+                <strong>System Prompt Override:</strong>
+                <pre class="whitespace-pre-wrap mt-1 text-sm">{template.systemPrompt}</pre>
+              </div>
+            {/if}
+            {#if template.authorNote}
+              <div class="bg-green-50 p-2 rounded">
+                <strong>Author's Note Override:</strong>
+                <pre class="whitespace-pre-wrap mt-1 text-sm">{template.authorNote}</pre>
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
         <div class="bg-gray-50 p-3 rounded">
           <strong>Content:</strong>
           <pre class="whitespace-pre-wrap mt-2">{template.content}</pre>

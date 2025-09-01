@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 import type { LLMProfile, RepositoryItem, Template, InlineContinuationOptions, StreamingReliabilityOptions } from '../types';
+import { TemplateEngine } from '../lib/template-engine';
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_AUTHOR_NOTE } from '../lib/system-prompt-presets';
 
-const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant helping with creative writing and interactive storytelling. Continue the story naturally, maintaining consistency with the established tone, characters, and setting. Keep responses engaging and appropriate for the context.`;
+const DEFAULT_SYSTEM_PROMPT_FALLBACK = `You are an AI assistant helping with creative writing and interactive storytelling. Continue the story naturally, maintaining consistency with the established tone, characters, and setting. Keep responses engaging and appropriate for the context.`;
 
 export interface LLMGenerationOptions {
   repositoryItems?: RepositoryItem[];
   maxContextLength: number;
   includeRepositoryContext: boolean;
   llmProfile?: string;
+  template?: Template; // Add template for inheritance
 }
 
 export interface StreamingOptions {
@@ -25,7 +28,11 @@ export interface ContextOptimizationOptions {
 }
 
 export class LLMService {
-  constructor(private context: vscode.ExtensionContext) {}
+  private templateEngine: TemplateEngine;
+
+  constructor(private context: vscode.ExtensionContext) {
+    this.templateEngine = new TemplateEngine();
+  }
 
   async generateContinuation(
     textBeforeCursor: string, 
@@ -34,11 +41,16 @@ export class LLMService {
   ): Promise<string> {
     // Get LLM profile from settings or use default
     const profileKey = options.llmProfile || vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
-    const profile = await this.getLLMProfile(profileKey);
+    const baseProfile = await this.getLLMProfile(profileKey);
     
-    if (!profile) {
+    if (!baseProfile) {
       throw new Error('No LLM profile configured. Please set up an LLM profile in settings.');
     }
+
+    // Apply template inheritance if template is provided
+    const effectiveProfile = options.template ? 
+      this.templateEngine.createEffectiveLLMProfile(options.template, baseProfile) : 
+      baseProfile;
 
     // Build context with repository items
     let context = this.truncateContext(textBeforeCursor, options.maxContextLength);
@@ -48,8 +60,8 @@ export class LLMService {
       context = repositoryContext + '\n\n' + context;
     }
 
-    // Make LLM request
-    return await this.callLLM(profile, context, cancellationToken);
+    // Make LLM request with effective profile
+    return await this.callLLM(effectiveProfile, context, cancellationToken);
   }
 
   /**
@@ -63,11 +75,16 @@ export class LLMService {
   ): Promise<string> {
     // Get LLM profile from settings or use default
     const profileKey = options?.llmProfile || vscode.workspace.getConfiguration('storyMode').get('defaultLLMProfile', '');
-    const profile = await this.getLLMProfile(profileKey);
+    const baseProfile = await this.getLLMProfile(profileKey);
     
-    if (!profile) {
+    if (!baseProfile) {
       throw new Error('No LLM profile configured. Please set up an LLM profile in settings.');
     }
+
+    // Apply template inheritance if template is provided
+    const effectiveProfile = options?.template ? 
+      this.templateEngine.createEffectiveLLMProfile(options.template, baseProfile) : 
+      baseProfile;
 
     // Use optimized context if we have repository items, otherwise use simple context
     let context: string;
@@ -75,7 +92,7 @@ export class LLMService {
       context = this.optimizeContext(textBeforeCursor, {
         prioritizeRecent: true,
         includeRepositoryItems: true,
-        maxTokens: profile.settings.maxTokens || 4000,
+        maxTokens: effectiveProfile.settings.maxTokens || 4000,
         preserveDialogue: true
       }, options.repositoryItems);
     } else {
@@ -94,9 +111,9 @@ export class LLMService {
     };
 
     // Check if provider supports streaming
-    if (this.supportsStreaming(profile)) {
+    if (this.supportsStreaming(effectiveProfile)) {
       try {
-        return await this.streamLLMRequestWithRetry(profile, context, streamingOptions, reliabilityOptions, cancellationToken);
+        return await this.streamLLMRequestWithRetry(effectiveProfile, context, streamingOptions, reliabilityOptions, cancellationToken);
       } catch (error) {
         // If fallback is enabled and this is a streaming failure, try non-streaming
         if (reliabilityOptions.fallbackToNonStreaming && error instanceof Error) {
@@ -107,7 +124,7 @@ export class LLMService {
             streamingOptions.onError(new Error(`Streaming unavailable, using standard mode: ${this.categorizeError(error)}`));
           }
           
-          const result = await this.callLLM(profile, context, cancellationToken);
+          const result = await this.callLLM(effectiveProfile, context, cancellationToken);
           if (streamingOptions.onComplete) {
             streamingOptions.onComplete(result);
           }
@@ -117,7 +134,7 @@ export class LLMService {
       }
     } else {
       // Fallback to non-streaming
-      const result = await this.callLLM(profile, context, cancellationToken);
+      const result = await this.callLLM(effectiveProfile, context, cancellationToken);
       if (streamingOptions.onComplete) {
         streamingOptions.onComplete(result);
       }
@@ -525,7 +542,25 @@ export class LLMService {
    * Get system prompt
    */
   private getSystemPrompt(profile: LLMProfile): string {
-    return profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    return profile.systemPrompt || this.getDefaultSystemPrompt();
+  }
+
+  /**
+   * Get default system prompt from settings or fallback
+   */
+  private getDefaultSystemPrompt(): string {
+    const config = vscode.workspace.getConfiguration('storyMode');
+    const defaultSystemPrompt = config.get<string>('defaultSystemPrompt', '');
+    return defaultSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+  }
+
+  /**
+   * Get default author's note from settings or fallback
+   */
+  private getDefaultAuthorNote(): string {
+    const config = vscode.workspace.getConfiguration('storyMode');
+    const defaultAuthorNote = config.get<string>('defaultAuthorNote', '');
+    return defaultAuthorNote || DEFAULT_AUTHOR_NOTE;
   }
 
   private truncateContext(text: string, maxLength: number): string {
@@ -557,11 +592,18 @@ export class LLMService {
     prompt: string, 
     cancellationToken?: vscode.CancellationToken
   ): Promise<string> {
-    const systemPrompt = profile.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    const systemPrompt = profile.systemPrompt || this.getDefaultSystemPrompt();
+    
+    // Add author's note at the end of the prompt if present
+    let finalPrompt = prompt;
+    const authorNote = profile.authorNote || this.getDefaultAuthorNote();
+    if (authorNote) {
+      finalPrompt += `\n\n[Author's Note: ${authorNote}]`;
+    }
     
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      { role: 'user' as const, content: prompt }
+      { role: 'user' as const, content: finalPrompt }
     ];
 
     const requestBody = {
@@ -649,7 +691,7 @@ export class LLMService {
       apiKey,
       endpoint: '',
       model: provider === 'openai' ? 'gpt-4' : provider === 'openrouter' ? 'meta-llama/llama-2-70b-chat' : 'llama-2-7b-chat',
-      systemPrompt: DEFAULT_SYSTEM_PROMPT,
+      systemPrompt: this.getDefaultSystemPrompt(),
       settings: {
         temperature: 0.7,
         maxTokens: 500,
