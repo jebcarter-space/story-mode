@@ -71,6 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
         let shouldRefreshRepo = false;
         let shouldRefreshTree = false;
         let shouldReloadSparkTables = false;
+        let shouldReloadWorkbooks = false;
 
         for (const uri of changedFiles) {
             if (fileWatcher.isRepositoryFile(uri)) {
@@ -80,6 +81,9 @@ export function activate(context: vscode.ExtensionContext) {
                 shouldRefreshTree = true;
             } else if (fileWatcher.isSparkTableFile(uri)) {
                 shouldReloadSparkTables = true;
+            } else if (fileWatcher.isWorkbookFile(uri)) {
+                shouldReloadWorkbooks = true;
+                shouldRefreshTree = true;
             }
         }
 
@@ -91,6 +95,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
         if (shouldReloadSparkTables) {
             sparkTableManager.reloadTables();
+        }
+        if (shouldReloadWorkbooks) {
+            workbookService.reloadWorkbooks();
         }
     });
 
@@ -197,16 +204,16 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Workbook Commands
-    const createWorkbookCommand = vscode.commands.registerCommand('story-mode.createWorkbook', async () => {
-        await handleCreateWorkbook(workbookService, storyModeExplorer);
+    const createWorkbookCommand = vscode.commands.registerCommand('story-mode.createWorkbook', async (treeItem?: any) => {
+        await handleCreateWorkbook(workbookService, storyModeExplorer, treeItem);
     });
 
-    const editWorkbookCommand = vscode.commands.registerCommand('story-mode.editWorkbook', async () => {
-        await handleEditWorkbook(workbookService, storyModeExplorer);
+    const editWorkbookCommand = vscode.commands.registerCommand('story-mode.editWorkbook', async (treeItem?: any) => {
+        await handleEditWorkbook(workbookService, storyModeExplorer, treeItem);
     });
 
-    const deleteWorkbookCommand = vscode.commands.registerCommand('story-mode.deleteWorkbook', async () => {
-        await handleDeleteWorkbook(workbookService, storyModeExplorer);
+    const deleteWorkbookCommand = vscode.commands.registerCommand('story-mode.deleteWorkbook', async (treeItem?: any) => {
+        await handleDeleteWorkbook(workbookService, storyModeExplorer, treeItem);
     });
 
     const manageWorkbooksCommand = vscode.commands.registerCommand('story-mode.manageWorkbooks', async () => {
@@ -1316,14 +1323,23 @@ async function showWorkflowList(workflowService: WorkflowService) {
 // Workbook Management Handlers
 
 // Create a new workbook
-async function handleCreateWorkbook(workbookService: WorkbookService, explorer: any) {
+async function handleCreateWorkbook(workbookService: WorkbookService, explorer: any, treeItem?: any) {
+    // If called from a stack context menu, pre-select that stack
+    let preselectedStackId: string | undefined;
+    
+    if (treeItem && treeItem.contextValue === 'workbook-stack' && treeItem.stackId) {
+        preselectedStackId = treeItem.stackId;
+    }
+    
     // First, get or create a stack
     const workbookSystem = workbookService.getWorkbookSystem();
     const stacks = Object.values(workbookSystem.stacks);
     
     let selectedStackId: string;
     
-    if (stacks.length === 0) {
+    if (preselectedStackId) {
+        selectedStackId = preselectedStackId;
+    } else if (stacks.length === 0) {
         // Create first stack
         const stackName = await vscode.window.showInputBox({
             prompt: 'Enter stack name (stacks organize related workbooks)',
@@ -1434,29 +1450,45 @@ async function handleCreateWorkbook(workbookService: WorkbookService, explorer: 
 }
 
 // Edit an existing workbook
-async function handleEditWorkbook(workbookService: WorkbookService, explorer: any) {
-    const allWorkbooks = workbookService.getAllWorkbooks();
+async function handleEditWorkbook(workbookService: WorkbookService, explorer: any, treeItem?: any) {
+    let selectedWorkbook: any;
     
-    if (allWorkbooks.length === 0) {
-        vscode.window.showInformationMessage('No workbooks found. Create one first.');
-        return;
+    // If called from workbook context menu, pre-select that workbook
+    if (treeItem && treeItem.contextValue === 'workbook' && treeItem.workbookId && treeItem.stackId) {
+        const workbookSystem = workbookService.getWorkbookSystem();
+        const stack = workbookSystem.stacks[treeItem.stackId];
+        if (stack && stack.workbooks[treeItem.workbookId]) {
+            selectedWorkbook = {
+                workbook: stack.workbooks[treeItem.workbookId]
+            };
+        }
     }
     
-    const workbookOptions = allWorkbooks.map(workbook => ({
-        label: workbook.name,
-        description: workbook.description || 'No description',
-        detail: `Tags: ${workbook.tags.join(', ') || 'none'} | Scope: ${workbook.masterScope || 'none'}`,
-        workbook
-    }));
-    
-    const selectedWorkbook = await vscode.window.showQuickPick(workbookOptions, {
-        placeHolder: 'Select workbook to edit',
-        matchOnDescription: true,
-        matchOnDetail: true
-    });
-    
+    // If no workbook pre-selected, show picker
     if (!selectedWorkbook) {
-        return;
+        const allWorkbooks = workbookService.getAllWorkbooks();
+        
+        if (allWorkbooks.length === 0) {
+            vscode.window.showInformationMessage('No workbooks found. Create one first.');
+            return;
+        }
+        
+        const workbookOptions = allWorkbooks.map(workbook => ({
+            label: workbook.name,
+            description: workbook.description || 'No description',
+            detail: `Tags: ${workbook.tags.join(', ') || 'none'} | Scope: ${workbook.masterScope || 'none'}`,
+            workbook
+        }));
+        
+        selectedWorkbook = await vscode.window.showQuickPick(workbookOptions, {
+            placeHolder: 'Select workbook to edit',
+            matchOnDescription: true,
+            matchOnDetail: true
+        });
+        
+        if (!selectedWorkbook) {
+            return;
+        }
     }
     
     const workbook = selectedWorkbook.workbook;
@@ -1500,7 +1532,7 @@ async function handleEditWorkbook(workbookService: WorkbookService, explorer: an
 }
 
 // Delete a workbook
-async function handleDeleteWorkbook(workbookService: WorkbookService, explorer: any) {
+async function handleDeleteWorkbook(workbookService: WorkbookService, explorer: any, treeItem?: any) {
     const allWorkbooks = workbookService.getAllWorkbooks();
     
     if (allWorkbooks.length === 0) {

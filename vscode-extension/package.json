@@ -242,6 +242,30 @@
         }
       ]
     },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "story-mode.createWorkbook",
+          "when": "view == storyModeExplorer && viewItem == workbooks",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.createWorkbook",
+          "when": "view == storyModeExplorer && viewItem == workbook-stack",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.editWorkbook", 
+          "when": "view == storyModeExplorer && viewItem == workbook",
+          "group": "inline"
+        },
+        {
+          "command": "story-mode.deleteWorkbook",
+          "when": "view == storyModeExplorer && viewItem == workbook",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "Story Mode",
       "properties": {
