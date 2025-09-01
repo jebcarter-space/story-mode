@@ -17,6 +17,7 @@ import { TableConfigurationPicker } from './ui/table-configuration-picker';
 import { TableManagerWebview } from './ui/table-manager-webview';
 import { TableAnalyticsService } from './services/table-analytics-service';
 import { WorkflowService } from './services/workflow-service';
+import { WorkbookService } from './services/workbook-service';
 import { ConfigurationWizard } from './ui/configuration-wizard';
 import type { InlineContinuationOptions, Template } from './types';
 
@@ -36,6 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
     const sparkTableManager = new SparkTableManager(context);
     const analyticsService = new TableAnalyticsService(context);
     const workflowService = new WorkflowService(context);
+    const workbookService = new WorkbookService(context);
     const oracleService = new OracleService(sparkTableManager);
     const sparksService = new SparksService(sparkTableManager);
     const diceService = new DiceService();
@@ -58,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
     fileWatcher.startWatching();
 
     // Initialize tree data provider
-    const storyModeExplorer = new StoryModeExplorer(context, repositoryManager);
+    const storyModeExplorer = new StoryModeExplorer(context, repositoryManager, workbookService);
     vscode.window.createTreeView('storyModeExplorer', {
         treeDataProvider: storyModeExplorer,
         showCollapseAll: true
@@ -194,6 +196,23 @@ export function activate(context: vscode.ExtensionContext) {
         await handleWorkflowStatus(workflowService);
     });
 
+    // Workbook Commands
+    const createWorkbookCommand = vscode.commands.registerCommand('story-mode.createWorkbook', async () => {
+        await handleCreateWorkbook(workbookService, storyModeExplorer);
+    });
+
+    const editWorkbookCommand = vscode.commands.registerCommand('story-mode.editWorkbook', async () => {
+        await handleEditWorkbook(workbookService, storyModeExplorer);
+    });
+
+    const deleteWorkbookCommand = vscode.commands.registerCommand('story-mode.deleteWorkbook', async () => {
+        await handleDeleteWorkbook(workbookService, storyModeExplorer);
+    });
+
+    const manageWorkbooksCommand = vscode.commands.registerCommand('story-mode.manageWorkbooks', async () => {
+        await handleManageWorkbooks(workbookService, storyModeExplorer);
+    });
+
     // Configuration Wizard
     const configurationWizardCommand = vscode.commands.registerCommand('story-mode.configurationWizard', async () => {
         await configurationWizard.showWizard();
@@ -221,6 +240,10 @@ export function activate(context: vscode.ExtensionContext) {
         executeWorkflowCommand,
         manageWorkflowsCommand,
         workflowStatusCommand,
+        createWorkbookCommand,
+        editWorkbookCommand,
+        deleteWorkbookCommand,
+        manageWorkbooksCommand,
         configurationWizardCommand
     );
 }
@@ -1288,6 +1311,383 @@ async function showWorkflowList(workflowService: WorkflowService) {
         
         vscode.window.showInformationMessage(details, { modal: true });
     }
+}
+
+// Workbook Management Handlers
+
+// Create a new workbook
+async function handleCreateWorkbook(workbookService: WorkbookService, explorer: any) {
+    // First, get or create a stack
+    const workbookSystem = workbookService.getWorkbookSystem();
+    const stacks = Object.values(workbookSystem.stacks);
+    
+    let selectedStackId: string;
+    
+    if (stacks.length === 0) {
+        // Create first stack
+        const stackName = await vscode.window.showInputBox({
+            prompt: 'Enter stack name (stacks organize related workbooks)',
+            placeHolder: 'e.g., "Character Development", "World Building"'
+        });
+        
+        if (!stackName) {
+            return;
+        }
+        
+        selectedStackId = await workbookService.createStack(stackName);
+    } else {
+        // Let user choose existing stack or create new one
+        const stackOptions = [
+            ...stacks.map(stack => ({
+                label: stack.name,
+                description: `${Object.keys(stack.workbooks).length} workbooks`,
+                stackId: stack.id
+            })),
+            {
+                label: '$(plus) Create New Stack',
+                description: 'Create a new workbook stack',
+                stackId: 'new'
+            }
+        ];
+        
+        const selectedStack = await vscode.window.showQuickPick(stackOptions, {
+            placeHolder: 'Select a stack for your workbook'
+        });
+        
+        if (!selectedStack) {
+            return;
+        }
+        
+        if (selectedStack.stackId === 'new') {
+            const stackName = await vscode.window.showInputBox({
+                prompt: 'Enter new stack name',
+                placeHolder: 'e.g., "Character Development"'
+            });
+            
+            if (!stackName) {
+                return;
+            }
+            
+            selectedStackId = await workbookService.createStack(stackName);
+        } else {
+            selectedStackId = selectedStack.stackId;
+        }
+    }
+    
+    // Get workbook details
+    const workbookName = await vscode.window.showInputBox({
+        prompt: 'Enter workbook name',
+        placeHolder: 'e.g., "Main Characters", "Kingdom Politics"'
+    });
+    
+    if (!workbookName) {
+        return;
+    }
+    
+    const description = await vscode.window.showInputBox({
+        prompt: 'Enter workbook description (optional)',
+        placeHolder: 'Brief description of what this workbook contains'
+    });
+    
+    const tagsInput = await vscode.window.showInputBox({
+        prompt: 'Enter tags (optional, comma-separated)',
+        placeHolder: 'e.g., "character, protagonist, main"'
+    });
+    
+    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    
+    // Scope selection
+    const scopeOptions = [
+        { label: 'No Scope', description: 'Available everywhere', value: undefined },
+        { label: 'Library Scope', description: 'Available across entire library', value: 'library' },
+        { label: 'Shelf Scope', description: 'Limited to current shelf', value: 'shelf' },
+        { label: 'Book Scope', description: 'Limited to current book', value: 'book' },
+        { label: 'Chapter Scope', description: 'Limited to current chapter', value: 'chapter' }
+    ];
+    
+    const selectedScope = await vscode.window.showQuickPick(scopeOptions, {
+        placeHolder: 'Select workbook scope (controls where workbook is active)'
+    });
+    
+    if (selectedScope === undefined) {
+        return;
+    }
+    
+    // TODO: Get current context for scope context
+    const masterScopeContext = undefined; // This would come from repositoryManager.getCurrentContext()
+    
+    try {
+        await workbookService.createWorkbook(
+            selectedStackId,
+            workbookName,
+            description || undefined,
+            tags,
+            selectedScope.value as any,
+            masterScopeContext
+        );
+        
+        explorer.refresh();
+        vscode.window.showInformationMessage(`Created workbook "${workbookName}"`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create workbook: ${error}`);
+    }
+}
+
+// Edit an existing workbook
+async function handleEditWorkbook(workbookService: WorkbookService, explorer: any) {
+    const allWorkbooks = workbookService.getAllWorkbooks();
+    
+    if (allWorkbooks.length === 0) {
+        vscode.window.showInformationMessage('No workbooks found. Create one first.');
+        return;
+    }
+    
+    const workbookOptions = allWorkbooks.map(workbook => ({
+        label: workbook.name,
+        description: workbook.description || 'No description',
+        detail: `Tags: ${workbook.tags.join(', ') || 'none'} | Scope: ${workbook.masterScope || 'none'}`,
+        workbook
+    }));
+    
+    const selectedWorkbook = await vscode.window.showQuickPick(workbookOptions, {
+        placeHolder: 'Select workbook to edit',
+        matchOnDescription: true,
+        matchOnDetail: true
+    });
+    
+    if (!selectedWorkbook) {
+        return;
+    }
+    
+    const workbook = selectedWorkbook.workbook;
+    
+    // Edit name
+    const newName = await vscode.window.showInputBox({
+        prompt: 'Edit workbook name',
+        value: workbook.name
+    });
+    
+    if (!newName) {
+        return;
+    }
+    
+    // Edit description
+    const newDescription = await vscode.window.showInputBox({
+        prompt: 'Edit workbook description (optional)',
+        value: workbook.description || ''
+    });
+    
+    // Edit tags
+    const newTagsInput = await vscode.window.showInputBox({
+        prompt: 'Edit tags (comma-separated)',
+        value: workbook.tags.join(', ')
+    });
+    
+    const newTags = newTagsInput ? newTagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    
+    try {
+        await workbookService.updateWorkbook(workbook.stackId, workbook.id, {
+            name: newName,
+            description: newDescription || undefined,
+            tags: newTags
+        });
+        
+        explorer.refresh();
+        vscode.window.showInformationMessage(`Updated workbook "${newName}"`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to update workbook: ${error}`);
+    }
+}
+
+// Delete a workbook
+async function handleDeleteWorkbook(workbookService: WorkbookService, explorer: any) {
+    const allWorkbooks = workbookService.getAllWorkbooks();
+    
+    if (allWorkbooks.length === 0) {
+        vscode.window.showInformationMessage('No workbooks found.');
+        return;
+    }
+    
+    const workbookOptions = allWorkbooks.map(workbook => ({
+        label: workbook.name,
+        description: workbook.description || 'No description',
+        detail: `Tags: ${workbook.tags.join(', ') || 'none'}`,
+        workbook
+    }));
+    
+    const selectedWorkbook = await vscode.window.showQuickPick(workbookOptions, {
+        placeHolder: 'Select workbook to delete',
+        matchOnDescription: true,
+        matchOnDetail: true
+    });
+    
+    if (!selectedWorkbook) {
+        return;
+    }
+    
+    const confirmDelete = await vscode.window.showWarningMessage(
+        `Are you sure you want to delete the workbook "${selectedWorkbook.workbook.name}"?`,
+        { modal: true },
+        'Delete'
+    );
+    
+    if (confirmDelete !== 'Delete') {
+        return;
+    }
+    
+    try {
+        await workbookService.deleteWorkbook(selectedWorkbook.workbook.stackId, selectedWorkbook.workbook.id);
+        explorer.refresh();
+        vscode.window.showInformationMessage(`Deleted workbook "${selectedWorkbook.workbook.name}"`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to delete workbook: ${error}`);
+    }
+}
+
+// Manage workbooks (overview and bulk operations)
+async function handleManageWorkbooks(workbookService: WorkbookService, explorer: any) {
+    const options = [
+        { label: 'View All Workbooks', value: 'view' },
+        { label: 'Create New Stack', value: 'create-stack' },
+        { label: 'Delete Stack', value: 'delete-stack' },
+        { label: 'View All Tags', value: 'view-tags' },
+        { label: 'Reload Workbooks', value: 'reload' }
+    ];
+
+    const selection = await vscode.window.showQuickPick(options, {
+        placeHolder: 'Select workbook management action'
+    });
+
+    if (!selection) {
+        return;
+    }
+
+    switch (selection.value) {
+        case 'view':
+            await showWorkbookList(workbookService);
+            break;
+        case 'create-stack':
+            await createStack(workbookService, explorer);
+            break;
+        case 'delete-stack':
+            await deleteStack(workbookService, explorer);
+            break;
+        case 'view-tags':
+            await showAllTags(workbookService);
+            break;
+        case 'reload':
+            await workbookService.reloadWorkbooks();
+            explorer.refresh();
+            vscode.window.showInformationMessage('Workbooks reloaded from file system');
+            break;
+    }
+}
+
+// Helper function to show workbook list
+async function showWorkbookList(workbookService: WorkbookService) {
+    const allWorkbooks = workbookService.getAllWorkbooks();
+    
+    if (allWorkbooks.length === 0) {
+        vscode.window.showInformationMessage('No workbooks found. Create your first workbook to get started.');
+        return;
+    }
+    
+    const workbookList = allWorkbooks.map(workbook => {
+        const scopeInfo = workbook.masterScope ? ` [${workbookService.getScopeDisplayName(workbook.masterScope)}]` : '';
+        const tagInfo = workbook.tags.length > 0 ? ` (${workbook.tags.join(', ')})` : '';
+        return `• ${workbook.name}${scopeInfo}${tagInfo}`;
+    }).join('\n');
+    
+    const message = `Total Workbooks: ${allWorkbooks.length}\n\n${workbookList}`;
+    
+    vscode.window.showInformationMessage(message, { modal: true });
+}
+
+// Helper function to create a new stack
+async function createStack(workbookService: WorkbookService, explorer: any) {
+    const stackName = await vscode.window.showInputBox({
+        prompt: 'Enter new stack name',
+        placeHolder: 'e.g., "Character Development", "World Building"'
+    });
+    
+    if (!stackName) {
+        return;
+    }
+    
+    try {
+        await workbookService.createStack(stackName);
+        explorer.refresh();
+        vscode.window.showInformationMessage(`Created stack "${stackName}"`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create stack: ${error}`);
+    }
+}
+
+// Helper function to delete a stack
+async function deleteStack(workbookService: WorkbookService, explorer: any) {
+    const workbookSystem = workbookService.getWorkbookSystem();
+    const stacks = Object.values(workbookSystem.stacks);
+    
+    if (stacks.length === 0) {
+        vscode.window.showInformationMessage('No stacks found.');
+        return;
+    }
+    
+    const stackOptions = stacks.map(stack => ({
+        label: stack.name,
+        description: `${Object.keys(stack.workbooks).length} workbooks`,
+        stack
+    }));
+    
+    const selectedStack = await vscode.window.showQuickPick(stackOptions, {
+        placeHolder: 'Select stack to delete'
+    });
+    
+    if (!selectedStack) {
+        return;
+    }
+    
+    const workbookCount = Object.keys(selectedStack.stack.workbooks).length;
+    const warning = workbookCount > 0 
+        ? `This will delete the stack "${selectedStack.stack.name}" and all ${workbookCount} workbooks in it.`
+        : `This will delete the empty stack "${selectedStack.stack.name}".`;
+        
+    const confirmDelete = await vscode.window.showWarningMessage(
+        warning + '\n\nAre you sure?',
+        { modal: true },
+        'Delete Stack'
+    );
+    
+    if (confirmDelete !== 'Delete Stack') {
+        return;
+    }
+    
+    try {
+        await workbookService.deleteStack(selectedStack.stack.id);
+        explorer.refresh();
+        vscode.window.showInformationMessage(`Deleted stack "${selectedStack.stack.name}"`);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to delete stack: ${error}`);
+    }
+}
+
+// Helper function to show all tags
+async function showAllTags(workbookService: WorkbookService) {
+    const allTags = workbookService.getAllTags();
+    
+    if (allTags.length === 0) {
+        vscode.window.showInformationMessage('No tags found in workbooks.');
+        return;
+    }
+    
+    const tagList = allTags.map(tag => {
+        const workbooksWithTag = workbookService.getWorkbooksByTag(tag);
+        return `• ${tag} (${workbooksWithTag.length} workbooks)`;
+    }).join('\n');
+    
+    const message = `All Tags (${allTags.length}):\n\n${tagList}`;
+    
+    vscode.window.showInformationMessage(message, { modal: true });
 }
 
 export function deactivate() {}

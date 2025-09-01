@@ -39,6 +39,10 @@
     "onCommand:story-mode.manageWorkflows",
     "onCommand:story-mode.workflowStatus",
     "onCommand:story-mode.configurationWizard",
+    "onCommand:story-mode.createWorkbook",
+    "onCommand:story-mode.editWorkbook",
+    "onCommand:story-mode.deleteWorkbook",
+    "onCommand:story-mode.manageWorkbooks",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -142,6 +146,26 @@
       {
         "command": "story-mode.configurationWizard",
         "title": "Configuration Wizard",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.createWorkbook",
+        "title": "Create Workbook",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.editWorkbook",
+        "title": "Edit Workbook",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.deleteWorkbook",
+        "title": "Delete Workbook",
+        "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.manageWorkbooks",
+        "title": "Manage Workbooks",
         "category": "Story Mode"
       }
     ],
