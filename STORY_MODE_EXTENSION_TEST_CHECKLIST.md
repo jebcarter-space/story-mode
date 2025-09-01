@@ -12,18 +12,18 @@
 
 ### Library Structure Setup
 
-- [ ] Test `story-mode.createLibrary` command
-- [ ] Verify `.story-mode/` folder created with subdirectories:
-  - [ ] `repositories/` (characters, locations, objects, situations)
-  - [ ] `templates/`
-  - [ ] `llm-profiles/`
-  - [ ] `shelves/`
-- [ ] Verify `library.json` created with correct structure
-- [ ] Check example files created (character, location, templates)
+- [X] Test `story-mode.createLibrary` command
+- [X] Verify `.story-mode/` folder created with subdirectories:
+  - [X] `repositories/` (characters, locations, objects, situations)
+  - [X] `templates/`
+  - [X] `llm-profiles/`
+  - [X] `shelves/`
+- [X] Verify `library.json` created with correct structure
+- [X] Check example files created (character, location, templates)
 
 ### LLM Profile Configuration
 
-- [ ] Verify `koboldcpp-default.json` profile exists and is valid
+- [X] Verify `koboldcpp-default.json` profile exists and is valid
 - [ ] Test VS Code settings: `storyMode.defaultLLMProfile` set to "koboldcpp-default"
 - [ ] Test remote KoboldCPP connection (https://micro-existing-they-grammar.trycloudflare.com/)
 - [ ] Verify profile loads without errors in extension
