@@ -77,7 +77,9 @@ export class TemplateManager {
         llmEnabled: metadata.llmEnabled === true || metadata.llmEnabled === 'true',
         appendMode: metadata.appendMode === true || metadata.appendMode === 'true',
         repositoryTarget: metadata.repositoryTarget || '',
-        llmProfile: metadata.llmProfile || ''
+        llmProfile: metadata.llmProfile || '',
+        systemPrompt: metadata.systemPrompt || undefined,
+        authorNote: metadata.authorNote || undefined
       };
 
       return template;

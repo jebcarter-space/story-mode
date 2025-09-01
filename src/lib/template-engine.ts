@@ -1,12 +1,56 @@
 import type { Template, TemplateList, RepositoryItem, RepositoryCategory, LLMProfile } from '../data/types';
 import { PlaceholderResolver, type ResolverOptions } from './placeholder-resolver';
 import { LLMService } from './llm-service';
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_AUTHOR_NOTE } from './system-prompt-presets';
 
 export class TemplateEngine {
   private resolver: PlaceholderResolver;
 
   constructor(resolverOptions?: ResolverOptions) {
     this.resolver = new PlaceholderResolver(resolverOptions);
+  }
+
+  /**
+   * Resolve systemPrompt with inheritance: Template → Connection → Default
+   */
+  public resolveSystemPrompt(template: Template, llmProfile?: LLMProfile): string {
+    // Priority: Template's systemPrompt → Connection's systemPrompt → Default
+    if (template.systemPrompt) {
+      return template.systemPrompt;
+    }
+    if (llmProfile?.systemPrompt) {
+      return llmProfile.systemPrompt;
+    }
+    return DEFAULT_SYSTEM_PROMPT;
+  }
+
+  /**
+   * Resolve authorNote with inheritance: Template → Connection → Default
+   */
+  public resolveAuthorNote(template: Template, llmProfile?: LLMProfile): string {
+    // Priority: Template's authorNote → Connection's authorNote → Default
+    if (template.authorNote) {
+      return template.authorNote;
+    }
+    if (llmProfile?.authorNote) {
+      return llmProfile.authorNote;
+    }
+    return DEFAULT_AUTHOR_NOTE;
+  }
+
+  /**
+   * Create a modified LLM profile that incorporates template-level overrides
+   * Made public for testing purposes
+   */
+  public createEffectiveLLMProfile(template: Template, baseLLMProfile: LLMProfile): LLMProfile {
+    const resolvedSystemPrompt = this.resolveSystemPrompt(template, baseLLMProfile);
+    const resolvedAuthorNote = this.resolveAuthorNote(template, baseLLMProfile);
+    
+    return {
+      ...baseLLMProfile,
+      systemPrompt: resolvedSystemPrompt,
+      authorNote: resolvedAuthorNote
+    };
   }
 
   public executeTemplate(template: Template): string {
@@ -31,8 +75,11 @@ export class TemplateEngine {
     }
 
     try {
-      // Create LLM service with the profile
-      const llmService = new LLMService(llmProfile);
+      // Create effective LLM profile with template-level overrides
+      const effectiveProfile = this.createEffectiveLLMProfile(template, llmProfile);
+      
+      // Create LLM service with the effective profile
+      const llmService = new LLMService(effectiveProfile);
       
       // Prepare the LLM instructions with template variables resolved
       const resolvedInstructions = template.llmInstructions 

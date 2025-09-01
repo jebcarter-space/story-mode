@@ -38,6 +38,7 @@
     "onCommand:story-mode.executeWorkflow",
     "onCommand:story-mode.manageWorkflows",
     "onCommand:story-mode.workflowStatus",
+    "onCommand:story-mode.configurationWizard",
     "onView:storyModeExplorer"
   ],
   "main": "./dist/extension.js",
@@ -137,6 +138,11 @@
         "command": "story-mode.workflowStatus",
         "title": "Workflow Status",
         "category": "Story Mode"
+      },
+      {
+        "command": "story-mode.configurationWizard",
+        "title": "Configuration Wizard",
+        "category": "Story Mode"
       }
     ],
     "keybindings": [
@@ -219,6 +225,16 @@
           "type": "string",
           "default": "",
           "description": "Default LLM profile to use for text continuation"
+        },
+        "storyMode.defaultSystemPrompt": {
+          "type": "string", 
+          "default": "",
+          "description": "Default system prompt for AI interactions (overrides LLM profile defaults)"
+        },
+        "storyMode.defaultAuthorNote": {
+          "type": "string",
+          "default": "",
+          "description": "Default author's note for AI interactions (overrides LLM profile defaults)"
         },
         "storyMode.autoSave": {
           "type": "boolean",
