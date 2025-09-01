@@ -9,6 +9,7 @@ import { FileWatcher } from './services/file-watcher';
 import { TemplatePicker } from './ui/template-picker';
 import { PlaceholderResolver } from './lib/placeholder-resolver';
 import { ContextIndicator } from './services/context-indicator';
+import { ContextService } from './services/context-service';
 import { SmartSuggestionsService } from './services/smart-suggestions';
 import { ErrorHandlingService } from './services/error-handling';
 import { SparkTableManager } from './services/spark-table-manager';
@@ -59,8 +60,18 @@ export async function activate(context: vscode.ExtensionContext) {
     const tableConfigurationPicker = new TableConfigurationPicker(context, sparkTableManager);
     const tableManagerWebview = new TableManagerWebview(context, sparkTableManager, analyticsService);
 
+    // Initialize context service
+    const contextService = new ContextService(context);
+    
+    // Connect context service to repository manager
+    repositoryManager.setContextService(contextService);
+    
+    // Connect context service to workbook service
+    workbookService.setContextService(contextService);
+
     // Initialize context indicator (status bar)
     const contextIndicator = new ContextIndicator(context, repositoryManager);
+    contextIndicator.setContextService(contextService);
     globalContextIndicator = contextIndicator;
 
     // Initialize smart suggestions
@@ -282,6 +293,15 @@ export async function activate(context: vscode.ExtensionContext) {
         await handleOpenChapter(libraryService, treeItem);
     });
 
+    // Context Commands
+    const setContextCommand = vscode.commands.registerCommand('story-mode.setContext', async () => {
+        await contextService.showContextPicker();
+    });
+
+    const clearContextCommand = vscode.commands.registerCommand('story-mode.clearContext', async () => {
+        await contextService.clearContextOverride();
+    });
+
     // Register all commands
     context.subscriptions.push(
         continueTextCommand,
@@ -319,7 +339,10 @@ export async function activate(context: vscode.ExtensionContext) {
         createChapterCommand,
         editChapterCommand,
         deleteChapterCommand,
-        openChapterCommand
+        openChapterCommand,
+        // Context commands
+        setContextCommand,
+        clearContextCommand
     );
 }
 

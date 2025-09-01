@@ -5,6 +5,7 @@ import type { RepositoryItem, RepositoryContext, ResolvedRepositoryItem, Reposit
 
 export class RepositoryManager {
   private contextResolver: ContextResolver;
+  private contextService: any = null; // Will be set later
   private repositoryCache = new Map<string, RepositoryItem>();
   private cacheLastUpdated = 0;
   
@@ -12,7 +13,18 @@ export class RepositoryManager {
     this.contextResolver = new ContextResolver();
   }
 
+  /**
+   * Set the context service for enhanced context management
+   */
+  setContextService(contextService: any): void {
+    this.contextService = contextService;
+  }
+
   async getContextForFile(fileUri: vscode.Uri): Promise<RepositoryContext> {
+    // Use context service if available, otherwise fallback to context resolver
+    if (this.contextService) {
+      return this.contextService.getCurrentContext(fileUri);
+    }
     return this.contextResolver.resolveContext(fileUri);
   }
 

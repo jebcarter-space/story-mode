@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import { RepositoryManager } from './repository-manager';
+import { ContextService } from './context-service';
 import type { RepositoryContext, RepositoryItem, StreamingStatus } from '../types';
 
 export class ContextIndicator {
   private statusBarItem: vscode.StatusBarItem;
   private repositoryManager: RepositoryManager;
+  private contextService: ContextService | null = null;
   private streamingStatus: StreamingStatus | null = null;
   private streamingUpdateInterval: NodeJS.Timeout | null = null;
 
@@ -16,8 +18,8 @@ export class ContextIndicator {
       vscode.StatusBarAlignment.Right, 
       100
     );
-    this.statusBarItem.command = 'story-mode.openRepository';
-    this.statusBarItem.tooltip = 'Story Mode Repository Status - Click to manage';
+    this.statusBarItem.command = 'story-mode.setContext';
+    this.statusBarItem.tooltip = 'Story Mode Context - Click to change';
     
     context.subscriptions.push(this.statusBarItem);
     
@@ -31,6 +33,18 @@ export class ContextIndicator {
     this.updateContext();
   }
 
+  /**
+   * Set the context service for enhanced context management
+   */
+  setContextService(contextService: ContextService): void {
+    this.contextService = contextService;
+    
+    // Listen for context changes
+    contextService.onDidChangeContext(() => {
+      this.updateContext();
+    });
+  }
+
   private async updateContext(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     
@@ -40,8 +54,13 @@ export class ContextIndicator {
     }
 
     try {
-      // Get repository context for current file
-      const context = await this.repositoryManager.getContextForFile(editor.document.uri);
+      // Get repository context - use context service if available
+      let context: RepositoryContext;
+      if (this.contextService) {
+        context = await this.contextService.getCurrentContext(editor.document.uri);
+      } else {
+        context = await this.repositoryManager.getContextForFile(editor.document.uri);
+      }
       
       // Get relevant items
       const textBeforeCursor = editor.document.getText(
@@ -62,13 +81,22 @@ export class ContextIndicator {
   private updateStatusBarText(context: RepositoryContext, items: RepositoryItem[]): void {
     const scopeInfo = this.getScopeInfo(context);
     const itemStats = this.getItemStats(items);
+    const overrideIndicator = this.contextService?.hasContextOverride() ? '🔒 ' : '';
     
-    let text = `Story Mode: ${scopeInfo}`;
+    let text = `${overrideIndicator}Story Mode: ${scopeInfo}`;
     if (itemStats.length > 0) {
       text += ` | ${itemStats}`;
     }
     
     this.statusBarItem.text = text;
+    
+    // Update tooltip
+    let tooltip = 'Story Mode Context';
+    if (this.contextService?.hasContextOverride()) {
+      tooltip += ' (Override Active)';
+    }
+    tooltip += ' - Click to change context';
+    this.statusBarItem.tooltip = tooltip;
   }
 
   private getScopeInfo(context: RepositoryContext): string {
