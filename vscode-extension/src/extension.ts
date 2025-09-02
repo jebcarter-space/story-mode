@@ -801,6 +801,32 @@ async function handleCreateLibrary() {
     const storyModeRoot = vscode.Uri.joinPath(workspaceRoot, '.story-mode');
 
     try {
+        // Ask user if they want to populate with example content
+        const includeExamples = await vscode.window.showQuickPick(
+            [
+                {
+                    label: 'Yes, include example content',
+                    description: 'Create sample characters, locations, scenes, templates, and story structure',
+                    detail: 'Recommended for new users - includes fantasy adventure examples to help you get started',
+                    includeExamples: true
+                },
+                {
+                    label: 'No, create empty structure',
+                    description: 'Create only the folder structure without example files',
+                    detail: 'For advanced users who prefer to start with a clean setup',
+                    includeExamples: false
+                }
+            ],
+            {
+                placeHolder: 'Would you like to populate the library with demonstration content?',
+                ignoreFocusOut: true
+            }
+        );
+
+        if (!includeExamples) {
+            return; // User cancelled
+        }
+
         // Create directory structure
         await vscode.workspace.fs.createDirectory(storyModeRoot);
         await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storyModeRoot, 'repositories'));
@@ -812,60 +838,152 @@ async function handleCreateLibrary() {
         await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storyModeRoot, 'llm-profiles'));
         await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storyModeRoot, 'shelves'));
 
-        // Create comprehensive example library with Fantasy Adventures shelf and The Crystal Quest book
+        // Create basic library structure
         const now = Date.now();
-        const library = {
-            shelves: {
-                'fantasy-adventures': {
-                    id: 'fantasy-adventures',
-                    name: 'Fantasy Adventures',
-                    bannerImage: '',
-                    books: {
-                        'the-crystal-quest': {
-                            id: 'the-crystal-quest',
-                            name: 'The Crystal Quest',
-                            coverImage: '',
-                            chapters: {
-                                'chapter-1-the-beginning': {
-                                    id: 'chapter-1-the-beginning',
-                                    name: 'Chapter 1: The Beginning',
-                                    content: {},
-                                    createdAt: now,
-                                    updatedAt: now
+        let library;
+        let categoriesMetadata;
+
+        if (includeExamples.includeExamples) {
+            // Create example content
+            await populateExampleContent(storyModeRoot, now);
+            
+            // Create comprehensive example library with Fantasy Adventures shelf and The Crystal Quest book
+            library = {
+                shelves: {
+                    'fantasy-adventures': {
+                        id: 'fantasy-adventures',
+                        name: 'Fantasy Adventures',
+                        bannerImage: '',
+                        books: {
+                            'the-crystal-quest': {
+                                id: 'the-crystal-quest',
+                                name: 'The Crystal Quest',
+                                coverImage: '',
+                                chapters: {
+                                    'chapter-1-the-beginning': {
+                                        id: 'chapter-1-the-beginning',
+                                        name: 'Chapter 1: The Beginning',
+                                        content: {},
+                                        createdAt: now,
+                                        updatedAt: now
+                                    },
+                                    'chapter-2-the-journey': {
+                                        id: 'chapter-2-the-journey',
+                                        name: 'Chapter 2: The Journey',
+                                        content: {},
+                                        createdAt: now,
+                                        updatedAt: now
+                                    }
                                 },
-                                'chapter-2-the-journey': {
-                                    id: 'chapter-2-the-journey',
-                                    name: 'Chapter 2: The Journey',
-                                    content: {},
-                                    createdAt: now,
-                                    updatedAt: now
-                                }
-                            },
-                            lastAccessedChapter: 'chapter-1-the-beginning',
-                            createdAt: now,
-                            updatedAt: now
-                        }
-                    },
-                    createdAt: now,
-                    updatedAt: now
+                                lastAccessedChapter: 'chapter-1-the-beginning',
+                                createdAt: now,
+                                updatedAt: now
+                            }
+                        },
+                        createdAt: now,
+                        updatedAt: now
+                    }
+                },
+                settings: {
+                    created: now,
+                    updated: now,
+                    lastAccessedShelf: 'fantasy-adventures',
+                    lastAccessedBook: 'the-crystal-quest'
                 }
-            },
-            settings: {
+            };
+
+            // Metadata with example counts
+            categoriesMetadata = {
+                characters: { count: 4, lastUpdated: now },
+                locations: { count: 4, lastUpdated: now },
+                objects: { count: 0, lastUpdated: now },
+                situations: { count: 8, lastUpdated: now }
+            };
+
+        } else {
+            // Create minimal empty library structure
+            library = {
+                shelves: {
+                    'default': {
+                        id: 'default',
+                        name: 'My Stories',
+                        bannerImage: '',
+                        books: {},
+                        createdAt: now,
+                        updatedAt: now
+                    }
+                },
+                settings: {
+                    created: now,
+                    updated: now,
+                    lastAccessedShelf: 'default'
+                }
+            };
+
+            // Empty metadata
+            categoriesMetadata = {
+                characters: { count: 0, lastUpdated: now },
+                locations: { count: 0, lastUpdated: now },
+                objects: { count: 0, lastUpdated: now },
+                situations: { count: 0, lastUpdated: now }
+            };
+
+            // Create minimal default LLM profile
+            const defaultProfile = {
+                name: "Default Creative Writer",
+                provider: "openai",
+                apiKey: "",
+                endpoint: "",
+                model: "gpt-4",
+                systemPrompt: "You are a creative writing assistant helping with interactive storytelling. Continue the narrative in a vivid, engaging style that matches the tone and genre of the existing text.",
+                settings: {
+                    temperature: 0.7,
+                    maxTokens: 500,
+                    topP: 1.0,
+                    frequencyPenalty: 0.0,
+                    presencePenalty: 0.0
+                },
+                includeSystemContent: true,
+                maxContextEntries: 10,
                 created: now,
-                updated: now,
-                lastAccessedShelf: 'fantasy-adventures',
-                lastAccessedBook: 'the-crystal-quest'
-            }
-        };
-        
+                updated: now
+            };
+
+            await vscode.workspace.fs.writeFile(
+                vscode.Uri.joinPath(storyModeRoot, 'llm-profiles', 'default.json'),
+                Buffer.from(JSON.stringify(defaultProfile, null, 2))
+            );
+        }
+
+        // Write library.json
         await vscode.workspace.fs.writeFile(
             vscode.Uri.joinPath(storyModeRoot, 'library.json'),
             Buffer.from(JSON.stringify(library, null, 2))
         );
 
-        // Create comprehensive character repository items (4 characters)
+        // Write metadata
+        await vscode.workspace.fs.writeFile(
+            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'metadata.json'),
+            Buffer.from(JSON.stringify(categoriesMetadata, null, 2))
+        );
+
+        // Show appropriate success message
+        if (includeExamples.includeExamples) {
+            vscode.window.showInformationMessage('Story Mode library created with example content! Check the .story-mode folder for characters, locations, scenes, and templates to get you started.');
+        } else {
+            vscode.window.showInformationMessage('Story Mode library structure created! You now have an empty .story-mode folder ready for your content.');
+        }
         
-        // Character 1: Aria the Mage (Protagonist)
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create library structure: ${error}`);
+    }
+}
+
+// Helper function to populate example content
+async function populateExampleContent(storyModeRoot: vscode.Uri, now: number) {
+    // Create comprehensive character repository items (4 characters)
+    
+    // Character 1: Aria the Mage (Protagonist)
         const ariaTheMage = `---
 type: character
 tags: [protagonist, mage, aria, magic, wizard, hero]
@@ -1649,32 +1767,6 @@ repositoryTarget: "Location"
             Buffer.from(locationTemplate)
         );
 
-        // Create default LLM profile
-        const defaultProfile = {
-            name: "Default Creative Writer",
-            provider: "openai",
-            apiKey: "",
-            endpoint: "",
-            model: "gpt-4",
-            systemPrompt: "You are a creative writing assistant helping with interactive storytelling. Continue the narrative in a vivid, engaging style that matches the tone and genre of the existing text.",
-            settings: {
-                temperature: 0.7,
-                maxTokens: 500,
-                topP: 1.0,
-                frequencyPenalty: 0.0,
-                presencePenalty: 0.0
-            },
-            includeSystemContent: true,
-            maxContextEntries: 10,
-            created: Date.now(),
-            updated: Date.now()
-        };
-
-        await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'llm-profiles', 'default.json'),
-            Buffer.from(JSON.stringify(defaultProfile, null, 2))
-        );
-
         // Create comprehensive workbooks system
         const workbookSystem = {
             stacks: {
@@ -1718,24 +1810,31 @@ repositoryTarget: "Location"
             Buffer.from(JSON.stringify(workbookSystem, null, 2))
         );
 
-        // Create metadata files for repository categories with correct counts
-        const categoriesMetadata = {
-            characters: { count: 4, lastUpdated: now },
-            locations: { count: 4, lastUpdated: now },
-            objects: { count: 0, lastUpdated: now },
-            situations: { count: 8, lastUpdated: now }
-        };
+    // Create default LLM profile
+    const defaultProfile = {
+        name: "Default Creative Writer",
+        provider: "openai",
+        apiKey: "",
+        endpoint: "",
+        model: "gpt-4",
+        systemPrompt: "You are a creative writing assistant helping with interactive storytelling. Continue the narrative in a vivid, engaging style that matches the tone and genre of the existing text.",
+        settings: {
+            temperature: 0.7,
+            maxTokens: 500,
+            topP: 1.0,
+            frequencyPenalty: 0.0,
+            presencePenalty: 0.0
+        },
+        includeSystemContent: true,
+        maxContextEntries: 10,
+        created: now,
+        updated: now
+    };
 
-        await vscode.workspace.fs.writeFile(
-            vscode.Uri.joinPath(storyModeRoot, 'repositories', 'metadata.json'),
-            Buffer.from(JSON.stringify(categoriesMetadata, null, 2))
-        );
-
-        vscode.window.showInformationMessage('Story Mode library structure created! Check the .story-mode folder.');
-        
-    } catch (error) {
-        vscode.window.showErrorMessage(`Failed to create library structure: ${error}`);
-    }
+    await vscode.workspace.fs.writeFile(
+        vscode.Uri.joinPath(storyModeRoot, 'llm-profiles', 'default.json'),
+        Buffer.from(JSON.stringify(defaultProfile, null, 2))
+    );
 }
 
 // Generate Sparks (uses configured tables, no prompts)
