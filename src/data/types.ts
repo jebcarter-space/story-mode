@@ -214,7 +214,7 @@ export interface Creature {
 
 export interface LLMProfile {
   name: string;
-  provider: 'openai' | 'mistral' | 'openrouter' | 'koboldcpp' | 'custom';
+  provider: 'openai' | 'anthropic' | 'mistral' | 'openrouter' | 'koboldcpp' | 'custom';
   apiKey: string;
   endpoint: string;
   model: string;
@@ -232,10 +232,12 @@ export interface LLMProfile {
     topK?: number;
     minP?: number;
     typical?: number;
+    nsigma?: number; // N-Sigma sampling
     // KoboldCPP Repetition Control
     repPen?: number;
     repPenRange?: number;
     samplerOrder?: number[];
+    samplerSeed?: number; // RNG seed for sampling
     // KoboldCPP Dynamic Temperature
     dynatempRange?: number;
     dynatempExponent?: number;
@@ -254,9 +256,21 @@ export interface LLMProfile {
     xtcProbability?: number;
     // KoboldCPP Grammar & Constraints
     grammar?: string;
+    grammarRetainState?: boolean; // Retain grammar state between generations
     bannedTokens?: string[];
     logitBias?: { [key: string]: number };
     memory?: string;
+    // KoboldCPP Control Settings
+    useDefaultBadWordsIds?: boolean; // Ban EOS token
+    trimStop?: boolean; // Remove stop sequences from output
+    renderSpecial?: boolean; // Render special tokens as text
+    bypassEOS?: boolean; // Allow EOS token generation
+    stopSequence?: string[]; // Custom stop sequences
+    // KoboldCPP Generation Settings
+    genkey?: string; // Unique generation key for multiuser
+    images?: string[]; // Base64 encoded images for multimodal models
+    logprobs?: boolean; // Return token logprobs
+    replaceInstructPlaceholders?: boolean; // Replace instruct placeholders
   };
   includeSystemContent: boolean;
   maxContextEntries: number;
